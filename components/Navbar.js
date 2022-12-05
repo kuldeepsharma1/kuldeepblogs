@@ -21,20 +21,23 @@ const Navbar = () => {
              Blogs
             </a>
             <ul class="dropdown-menu">
+              <li><a class="dropdown-item " href="/blogs">Blogs</a></li>
               <li><a class="dropdown-item " href="/trending">Trending</a></li>
               <li><a class="dropdown-item " href="/recent">Recently Uploaded</a></li>
               <li><hr class="dropdown-divider"/></li>
               <li><a class="dropdown-item" href="/more">More</a></li>
             </ul>
           </li>
-         
+          <li class="nav-item">
+            <a class="nav-link text-light" href="/contact">Contact</a>
+          </li>
         </ul>
         <form class="d-flex" role="search">
           <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
           <button class="btn btn-outline-success" type="submit">Search</button>
         </form>
-        <button class="btn btn-outline-primary ms-2" type="submit">Login</button>
-        <button class="btn btn-outline-warning ms-2" type="submit">Sign Up</button>
+        <a href='/login' class="btn btn-outline-primary ms-2" type="submit">Login</a>
+        <a href='/signup'  class="btn btn-outline-warning ms-2" type="submit">Sign Up</a>
       </div>
     </div>
   </nav>
