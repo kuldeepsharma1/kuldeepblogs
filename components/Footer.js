@@ -1,65 +1,31 @@
-import React from 'react'
+// import { ImFacebook, ImTwitter, ImYoutube } from "react-icons";
+import Link from 'next/link'
+import Newslatter from "./_child/newslatter";
 
-export const Footer = () => {
-    return (
-        <footer class="py-5 ps-4 pe-4">
-        <div class="row">
-          <div class="col-6 col-md-2 mb-3">
-            <h5>Section</h5>
-            <ul class="nav flex-column">
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Home</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Features</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Pricing</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">FAQs</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">About</a></li>
-            </ul>
-          </div>
-    
-          <div class="col-6 col-md-2 mb-3">
-            <h5>Section</h5>
-            <ul class="nav flex-column">
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Home</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Features</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Pricing</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">FAQs</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">About</a></li>
-            </ul>
-          </div>
-    
-          <div class="col-6 col-md-2 mb-3">
-            <h5>Section</h5>
-            <ul class="nav flex-column">
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Home</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Features</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Pricing</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">FAQs</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">About</a></li>
-            </ul>
-          </div>
-    
-          <div class="col-md-5 offset-md-1 mb-3">
-            <form>
-              <h5>Subscribe to our newsletter</h5>
-              <p>Monthly digest of what's new and exciting from us.</p>
-              <div class="d-flex flex-column flex-sm-row w-100 gap-2">
-                <label for="newsletter1" class="visually-hidden">Email address</label>
-                <input id="newsletter1" type="text" class="form-control" placeholder="Email address"/>
-                <button class="btn btn-primary" type="button">Subscribe</button>
+export default function footer() {
+
+  const bg = {
+    backgroundImage : "url('/images/footer.png')",
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: "bottom left"
+  }
+
+  return (
+    <footer className="bg-gray-50" style={bg}>
+      <Newslatter></Newslatter>
+      <div className="container mx-auto flex justify-center py-12">
+          <div className="py-5">
+              <div className="flex gap-6 justify-center">
+                    {/* <Link href={"/"}><a><ImFacebook color="#888888" /></a></Link> */}
+                    {/* <Link href={"/"}><a><ImTwitter color="#888888" /></a></Link>                     */}
+                    {/* <Link href={"/"}><a><ImYoutube color="#888888" /></a></Link> */}
               </div>
-            </form>
+
+              <p className="py-5 text-gray-400">Copyright ©2022 All rights reserved | This template is made by Kuldeep Sharma</p>
+              <p className="text-gray-400 text-center">Terms & Condition</p>
           </div>
-        </div>
-    
-        <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top">
-          <p>&copy; 2022 Company, Inc. All rights reserved.</p>
-          <ul class="list-unstyled d-flex">
-            <li class="ms-3"><a class="link-dark" href="#">fb</a></li>
-            <li class="ms-3"><a class="link-dark" href="#">insta</a></li>
-            <li class="ms-3"><a class="link-dark" href="#">twt</a></li>
-          </ul>
-        </div>
-      </footer>
-      )
-    }
-    
-    export default Footer
+      </div>
+
+    </footer>
+  )
+}
