@@ -1,9 +1,19 @@
-import { ModeToggle } from "@/components/ModeToggle";
+import { AboutSection } from "@/components/sections/about-section";
+import { FeaturedSection } from "@/components/sections/featured-section";
+import { HeroSection } from "@/components/sections/hero-section";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 
 export default function Home() {
   return (
-    <div className="min-h-screen ">
-     <div className="flex justify-center items-center"> <ModeToggle/></div>
+    <div className="min-h-screen bg-white text-zinc-950 transition-colors duration-200 dark:bg-zinc-950 dark:text-zinc-50">
+      <SiteHeader />
+      <main>
+        <HeroSection />
+        <FeaturedSection />
+        <AboutSection />
+      </main>
+      <SiteFooter />
     </div>
   );
 }

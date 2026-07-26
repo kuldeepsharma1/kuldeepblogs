@@ -2,28 +2,150 @@
 @plugin "@tailwindcss/typography";
 @custom-variant dark (&:where(.dark, .dark *));
 
-
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+  --border: rgba(0, 0, 0, 0.08);
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: rgba(0, 0, 0, 0.04);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  --font-mono: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --muted: #111113;
+  --muted-foreground: #a1a1aa;
+  --accent: rgba(255, 255, 255, 0.06);
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
+  margin: 0;
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(0, 0, 0, 0.15);
+  color: inherit;
+}
+
+.dark ::selection {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Premium Surface / Background Utilities */
+.hero-surface {
+  background: radial-gradient(circle at 50% 0%, rgba(24, 24, 27, 0.04) 0%, transparent 60%),
+              radial-gradient(circle at 100% 50%, rgba(24, 24, 27, 0.03) 0%, transparent 50%);
+}
+
+.dark .hero-surface {
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.1) 0%, transparent 60%),
+              radial-gradient(circle at 100% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dark .glass {
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Aurora Glow Animation */
+@keyframes aurora {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.aurora-text {
+  background: linear-gradient(135deg, #111, #555, #111);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: aurora 8s ease infinite;
+}
+
+.dark .aurora-text {
+  background: linear-gradient(135deg, #fff, #888, #fff);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: aurora 8s ease infinite;
+}
+
+/* Rehype Pretty Code Premium Styles */
+figure[data-rehype-pretty-code-figure] {
+  @apply overflow-hidden rounded-2xl border border-border bg-[#0d1117] my-8 shadow-xl;
+}
+
+figure[data-rehype-pretty-code-figure] pre {
+  @apply py-5 overflow-x-auto;
+}
+
+figure[data-rehype-pretty-code-figure] code {
+  @apply grid min-w-full text-sm leading-relaxed;
+  counter-reset: line;
+}
+
+figure[data-rehype-pretty-code-figure] code[data-line-numbers] {
+  counter-reset: line;
+}
+
+figure[data-rehype-pretty-code-figure] code[data-line-numbers] > [data-line]::before {
+  counter-increment: line;
+  content: counter(line);
+  @apply inline-block w-4 mr-6 text-right text-muted-foreground/50;
+}
+
+figure[data-rehype-pretty-code-figure] [data-line] {
+  @apply px-5 border-l-2 border-transparent;
+}
+
+figure[data-rehype-pretty-code-figure] [data-highlighted-line] {
+  @apply bg-white/5 border-l-blue-400;
+}
+
+figure[data-rehype-pretty-code-figure] [data-highlighted-chars] {
+  @apply bg-white/10 rounded px-1 py-0.5;
 }
