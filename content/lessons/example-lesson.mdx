@@ -1,0 +1,100 @@
+---
+title: "Introduction to React Hooks"
+description: "A comprehensive lesson on understanding and using React Hooks in modern web applications."
+slug: "introduction-to-react-hooks"
+publishedAt: "2023-11-20"
+author: "Kuldeep Sharma"
+category: "React"
+readingTime: "10 min read"
+quiz:
+  - question: "Which hook is used to manage state in functional components?"
+    options: ["useEffect", "useState", "useContext", "useReducer"]
+    correctAnswer: 1
+    explanation: "useState is the primary hook for adding state to functional components in React."
+  - question: "What does the useEffect hook do?"
+    options: ["Handles routing in React applications", "Manages complex state objects", "Performs side effects in function components", "Creates context for global state"]
+    correctAnswer: 2
+    explanation: "useEffect allows you to perform side effects, such as data fetching or subscriptions, in functional components."
+  - question: "When does the cleanup function in useEffect run?"
+    options: ["Before the component mounts", "After every render", "Before the component unmounts and before the next effect runs", "Only when the component is first rendered"]
+    correctAnswer: 2
+    explanation: "The cleanup function runs right before the component unmounts, and also before executing the effect again if its dependencies changed."
+---
+
+# Introduction to React Hooks
+
+React Hooks were introduced in React 16.8. They let you use state and other React features without writing a class. 
+
+## Why Hooks?
+
+Before Hooks, if you wrote a function component and realized you needed to add some state to it, you had to convert it to a class. Now you can use a Hook inside the existing function component.
+
+Hooks solve a wide variety of seemingly unconnected problems in React that we've encountered over five years of writing and maintaining tens of thousands of components:
+- It's hard to reuse stateful logic between components.
+- Complex components become hard to understand.
+- Classes confuse both people and machines.
+
+<Callout>
+  Hooks don't replace your knowledge of React concepts. Instead, Hooks provide a more direct API to the React concepts you already know: props, state, context, refs, and lifecycle.
+</Callout>
+
+## The State Hook: useState
+
+Here's an example of a counter that uses `useState`.
+
+```jsx
+import React, { useState } from 'react';
+
+function Example() {
+  // Declare a new state variable, which we'll call "count"
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>
+        Click me
+      </button>
+    </div>
+  );
+}
+```
+
+We call `useState` inside a function component to add some local state to it. React will preserve this state between re-renders. 
+
+## The Effect Hook: useEffect
+
+You've likely performed data fetching, subscriptions, or manually changing the DOM from React components before. We call these operations "side effects" (or just "effects") because they can affect other components and can't be done during rendering.
+
+The Effect Hook, `useEffect`, adds the ability to perform side effects from a function component.
+
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function Example() {
+  const [count, setCount] = useState(0);
+
+  // Similar to componentDidMount and componentDidUpdate:
+  useEffect(() => {
+    // Update the document title using the browser API
+    document.title = `You clicked ${count} times`;
+  });
+
+  return (
+    <div>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>
+        Click me
+      </button>
+    </div>
+  );
+}
+```
+
+When you call `useEffect`, you're telling React to run your "effect" function after flushing changes to the DOM.
+
+## Conclusion
+
+Hooks provide a robust and flexible way to manage state and side effects in React applications, making functional components more powerful and concise.
+
+Test your knowledge with the quiz below!
