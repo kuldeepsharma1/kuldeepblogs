@@ -1,6 +1,4 @@
 import { Container } from "@/components/ui/container";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { ButtonLink } from "@/components/ui/button-link";
 
 export const dynamic = "force-static";
@@ -8,7 +6,6 @@ export const dynamic = "force-static";
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-white text-zinc-950 transition-colors duration-200 dark:bg-zinc-950 dark:text-zinc-50">
-      <SiteHeader />
       <main className="py-16">
         <Container className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="max-w-2xl">
@@ -28,7 +25,6 @@ export default function ContactPage() {
           </div>
         </Container>
       </main>
-      <SiteFooter />
     </div>
   );
 }

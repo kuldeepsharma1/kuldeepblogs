@@ -3,8 +3,6 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getAllPosts, getPostBySlug } from "@/lib/posts";
 import { Container } from "@/components/ui/container";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { ButtonLink } from "@/components/ui/button-link";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
@@ -79,7 +77,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
-      <SiteHeader />
       <main>
         <article>
           <section className="border-b border-border py-16">
@@ -135,7 +132,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </section>
         </article>
       </main>
-      <SiteFooter />
     </div>
   );
 }

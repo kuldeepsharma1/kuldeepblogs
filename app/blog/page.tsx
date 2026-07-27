@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { getAllPosts, getAllCategories, getAllTags } from "@/lib/posts";
 import { Container } from "@/components/ui/container";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { ButtonLink } from "@/components/ui/button-link";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+
 
 export const dynamic = "force-static";
 
@@ -13,7 +11,6 @@ export default async function BlogPage() {
 
   return (
     <div className="min-h-screen bg-white text-zinc-950 transition-colors duration-200 dark:bg-zinc-950 dark:text-zinc-50">
-      <SiteHeader />
       <main>
         <section className="border-b border-zinc-200/80 py-16 dark:border-zinc-800/80">
           <Container className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
@@ -90,7 +87,6 @@ export default async function BlogPage() {
           </Container>
         </section>
       </main>
-      <SiteFooter />
     </div>
   );
 }

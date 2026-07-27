@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { getAllCategories, getAllPosts } from "@/lib/posts";
 import { Container } from "@/components/ui/container";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 
 export const dynamic = "force-static";
 
@@ -11,7 +9,6 @@ export default async function CategoriesPage() {
 
   return (
     <div className="min-h-screen bg-white text-zinc-950 transition-colors duration-200 dark:bg-zinc-950 dark:text-zinc-50">
-      <SiteHeader />
       <main className="py-16">
         <Container className="space-y-10">
           <div className="max-w-2xl">
@@ -37,7 +34,6 @@ export default async function CategoriesPage() {
           </div>
         </Container>
       </main>
-      <SiteFooter />
     </div>
   );
 }

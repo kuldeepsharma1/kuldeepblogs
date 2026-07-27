@@ -1,13 +1,12 @@
 import { Container } from "@/components/ui/container";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+
 
 export const dynamic = "force-static";
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white text-zinc-950 transition-colors duration-200 dark:bg-zinc-950 dark:text-zinc-50">
-      <SiteHeader />
+
       <main className="py-16">
         <Container className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="max-w-2xl">
@@ -26,7 +25,7 @@ export default function AboutPage() {
           </div>
         </Container>
       </main>
-      <SiteFooter />
+
     </div>
   );
 }
