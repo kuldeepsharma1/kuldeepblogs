@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { ReadingProgress } from "@/components/layout/ReadingProgress";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 
 export const metadata: Metadata = {
   title: {
@@ -41,7 +45,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <ReadingProgress />
+            <main className="flex-1 pt-16">
+              {children}
+            </main>
+            <Footer />
+            <ScrollToTop />
+          </div>
         </ThemeProvider>
       </body>
     </html>

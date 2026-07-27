@@ -41,7 +41,7 @@ async function getLessonFiles(): Promise<string[]> {
       .filter((entry) => entry.isFile() && entry.name.endsWith(".mdx"))
       .map((entry) => path.join(contentDir, entry.name))
       .sort();
-  } catch (e) {
+  } catch  {
     // Return empty array if directory doesn't exist yet
     return [];
   }
