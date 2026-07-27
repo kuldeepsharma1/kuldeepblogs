@@ -128,7 +128,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
                   </div>
                 )}
                 
-                <div className="prose prose-zinc max-w-none dark:prose-invert prose-headings:scroll-mt-32 prose-h2:mt-12 prose-h3:mt-8 prose-p:text-lg prose-p:leading-8 prose-a:text-foreground prose-a:underline-offset-4 prose-a:decoration-muted-foreground hover:prose-a:decoration-foreground prose-strong:text-foreground prose-pre:!p-0 prose-pre:!bg-transparent prose-pre:!m-0 prose-code:before:hidden prose-code:after:hidden">
+                <div className="prose prose-zinc max-w-none dark:prose-invert prose-headings:scroll-mt-32 prose-h2:mt-12 prose-h3:mt-8 prose-p:text-lg prose-p:leading-8 prose-a:text-foreground prose-a:underline-offset-4 prose-a:decoration-muted-foreground hover:prose-a:decoration-foreground prose-strong:text-foreground prose-pre:p-0! prose-pre:bg-transparent! prose-pre:m-0! prose-code:before:hidden prose-code:after:hidden">
                   {content}
                 </div>
                 
