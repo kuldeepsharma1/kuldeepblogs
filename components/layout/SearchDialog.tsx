@@ -43,7 +43,7 @@ export function SearchDialog() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white/50 text-neutral-600 shadow-sm backdrop-blur-md transition-all duration-300 hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:focus-visible:ring-neutral-600 dark:focus-visible:ring-offset-neutral-950 md:h-auto md:w-auto md:justify-start md:px-3"
+        className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white/50 text-neutral-600 shadow-sm backdrop-blur-md transition-all duration-300 hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:focus-visible:ring-neutral-600 dark:focus-visible:ring-offset-neutral-950 md:w-auto md:justify-start md:px-3"
         aria-label="Search"
       >
         <svg
