@@ -40,14 +40,41 @@ export interface Instructor {
 }
 
 // ─────────────────────────────────────────────
+// Enterprise Domain & Skill System
+// ─────────────────────────────────────────────
+
+export interface Domain extends ContentMeta {
+  icon?: string;
+  colorTheme?: string;
+  featuredSkills: string[];
+  featuredCourses: string[];
+  learningPaths: string[];
+  estimatedHours: string;
+}
+
+export interface Skill extends ContentMeta {
+  difficulty: Difficulty;
+  estimatedHours: string;
+  relatedCourses: string[];
+  relatedPaths: string[];
+  prerequisites: string[];
+  badges: string[];
+  careerRelevance: string;
+  relatedSkills: string[];
+  domain: string;
+}
+
+// ─────────────────────────────────────────────
 // Course System
 // ─────────────────────────────────────────────
 
 export interface Course extends ContentMeta {
   cover?: string;
   imageAlt?: string;
+  domain?: string;
   category: string;
   tags: string[];
+  skills: string[];
   difficulty: Difficulty;
   estimatedTime: string;
   prerequisites: string[];
@@ -88,7 +115,9 @@ export interface CourseLesson extends ContentMeta {
 export interface LearningPath extends ContentMeta {
   cover?: string;
   imageAlt?: string;
+  domain?: string;
   category: string;
+  careerGoal?: string;
   difficulty: Difficulty;
   estimatedTime: string;
   skills: string[];

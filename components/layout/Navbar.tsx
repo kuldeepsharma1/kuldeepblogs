@@ -4,14 +4,9 @@ import { MobileNav } from "./MobileNav";
 import { SearchDialog } from "./SearchDialog";
 import { ThemeToggle } from "./ThemeToggle";
 
-const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/blog", label: "Blog" },
-  { href: "/lessons", label: "Lessons" },
-  { href: "/categories", label: "Categories" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-];
+import { siteConfig } from "@/config/site";
+
+const navItems = [...siteConfig.nav.main];
 
 export function Navbar() {
   return (

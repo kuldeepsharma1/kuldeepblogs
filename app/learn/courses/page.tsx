@@ -33,7 +33,7 @@ export default async function CoursesPage() {
             className="group flex flex-col rounded-2xl border border-border bg-card transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:border-foreground/10"
           >
             {/* Card Top Accent */}
-            <div className="h-1.5 rounded-t-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-60 group-hover:opacity-100 transition-opacity" />
+            <div className="h-1.5 rounded-t-2xl bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 opacity-60 group-hover:opacity-100 transition-opacity" />
 
             <div className="flex flex-1 flex-col p-6">
               {/* Meta */}

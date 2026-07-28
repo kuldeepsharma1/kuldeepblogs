@@ -9,11 +9,14 @@ import {
   Bookmark,
   LayoutDashboard,
   BookText,
-  FileText,
+  Boxes,
+  Target,
 } from "lucide-react";
 
 const sidebarLinks = [
   { href: "/learn", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/learn/domains", label: "Domains", icon: Boxes },
+  { href: "/learn/skills", label: "Skills", icon: Target },
   { href: "/learn/courses", label: "Courses", icon: BookOpen },
   { href: "/learn/paths", label: "Learning Paths", icon: Route },
   { href: "/learn/badges", label: "Badges", icon: Award },

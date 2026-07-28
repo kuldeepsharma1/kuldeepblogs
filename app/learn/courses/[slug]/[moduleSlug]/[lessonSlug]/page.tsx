@@ -192,7 +192,7 @@ export default async function LessonPage({
                 <CheckCircle2 className="h-6 w-6 text-success" />
                 Test Your Knowledge
               </h2>
-              <Quiz questions={lesson.quiz} />
+              <Quiz questions={lesson.quiz as any} />
             </div>
           )}
 

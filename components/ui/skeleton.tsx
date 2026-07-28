@@ -17,7 +17,7 @@ export function Skeleton({ className }: SkeletonProps) {
       className={cn(
         "rounded-lg bg-muted",
         "animate-[shimmer_2s_ease-in-out_infinite]",
-        "bg-gradient-to-r from-muted via-muted-foreground/5 to-muted bg-[length:400%_100%]",
+        "bg-linear-to-r from-muted via-muted-foreground/5 to-muted bg-size-[400%_100%]",
         className
       )}
     />

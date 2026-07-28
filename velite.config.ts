@@ -59,6 +59,53 @@ const lessons = defineCollection({
 });
 
 // ─────────────────────────────────────────────
+// Domains & Skills
+// ─────────────────────────────────────────────
+
+const domains = defineCollection({
+  name: "domains",
+  pattern: "content/domains/*/domain.mdx",
+  schema: s.object({
+    title: s.string(),
+    description: s.string(),
+    slug: s.string(),
+    publishedAt: s.string(),
+    updatedAt: s.string().optional(),
+    author: s.string(),
+    draft: s.boolean().default(false),
+    icon: s.string().optional(),
+    colorTheme: s.string().optional(),
+    featuredSkills: s.array(s.string()).default([]),
+    featuredCourses: s.array(s.string()).default([]),
+    learningPaths: s.array(s.string()).default([]),
+    estimatedHours: s.string(),
+  }),
+});
+
+const skills = defineCollection({
+  name: "skills",
+  pattern: "content/skills/*.mdx",
+  schema: s.object({
+    title: s.string(),
+    description: s.string(),
+    slug: s.string(),
+    publishedAt: s.string(),
+    updatedAt: s.string().optional(),
+    author: s.string(),
+    draft: s.boolean().default(false),
+    difficulty: s.enum(["beginner", "intermediate", "advanced", "expert"]),
+    estimatedHours: s.string(),
+    relatedCourses: s.array(s.string()).default([]),
+    relatedPaths: s.array(s.string()).default([]),
+    prerequisites: s.array(s.string()).default([]),
+    badges: s.array(s.string()).default([]),
+    careerRelevance: s.string(),
+    relatedSkills: s.array(s.string()).default([]),
+    domain: s.string(),
+  }),
+});
+
+// ─────────────────────────────────────────────
 // Courses
 // ─────────────────────────────────────────────
 
@@ -74,8 +121,10 @@ const courses = defineCollection({
     author: s.string(),
     cover: s.string().optional(),
     imageAlt: s.string().optional(),
+    domain: s.string().optional(),
     category: s.string(),
     tags: s.array(s.string()).default([]),
+    skills: s.array(s.string()).default([]),
     difficulty: s.enum(["beginner", "intermediate", "advanced", "expert"]),
     estimatedTime: s.string(),
     prerequisites: s.array(s.string()).default([]),
@@ -192,7 +241,9 @@ const learningPaths = defineCollection({
     author: s.string(),
     cover: s.string().optional(),
     imageAlt: s.string().optional(),
+    domain: s.string().optional(),
     category: s.string(),
+    careerGoal: s.string().optional(),
     difficulty: s.enum(["beginner", "intermediate", "advanced", "expert"]),
     estimatedTime: s.string(),
     skills: s.array(s.string()).default([]),
@@ -251,7 +302,7 @@ const glossary = defineCollection({
 // ─────────────────────────────────────────────
 
 export default defineConfig({
-  collections: { posts, lessons, courses, modules, courseLessons, learningPaths, badges, glossary },
+  collections: { posts, lessons, domains, skills, courses, modules, courseLessons, learningPaths, badges, glossary },
   output: {
     assets: "public/static",
     data: ".velite",
