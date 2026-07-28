@@ -1,0 +1,154 @@
+---
+title: "Props and Data Flow"
+description: "Learn how to pass data between components using props and understand React's unidirectional data flow."
+slug: "03-props-and-data-flow"
+courseSlug: "react-fundamentals"
+moduleSlug: "01-getting-started"
+publishedAt: "2024-01-17"
+author: "Kuldeep Sharma"
+order: 3
+readingTime: "10 min"
+tags: ["react", "props", "data-flow"]
+objectives:
+  - "Pass data to components via props"
+  - "Destructure and validate props"
+  - "Understand unidirectional data flow"
+quiz:
+  - type: "multiple-choice"
+    question: "How does data flow in React?"
+    options:
+      - "Bidirectionally between parent and child"
+      - "Unidirectionally from parent to child"
+      - "From child to parent only"
+      - "Randomly between components"
+    correctAnswer: 1
+    explanation: "React enforces unidirectional (one-way) data flow. Data flows from parent components down to children via props. Children communicate back up through callback functions."
+    points: 1
+  - type: "multiple-choice"
+    question: "What happens if you try to modify a prop directly inside a component?"
+    options:
+      - "The component re-renders with the new value"
+      - "Nothing happens"
+      - "React throws an error — props are read-only"
+      - "The parent component updates automatically"
+    correctAnswer: 2
+    explanation: "Props are read-only. A component must never modify its own props. If you need mutable data, use state instead."
+    points: 1
+---
+
+# Props and Data Flow
+
+Props (short for "properties") are how you pass data from a parent component to a child component. Understanding props is fundamental to thinking in React.
+
+## Passing Props
+
+Props work just like HTML attributes:
+
+```jsx
+// Parent component passes data via props
+function App() {
+  return <UserCard name="Alice" role="Engineer" level={5} />;
+}
+
+// Child component receives props as an object
+function UserCard({ name, role, level }) {
+  return (
+    <div className="card">
+      <h2>{name}</h2>
+      <p>{role}</p>
+      <span>Level {level}</span>
+    </div>
+  );
+}
+```
+
+## Props Are Read-Only
+
+<Callout type="warning">
+  Never modify props inside a component. Props are immutable — they represent data owned by the parent.
+</Callout>
+
+```jsx
+// ❌ Never do this
+function BadComponent({ count }) {
+  count = count + 1; // This is wrong!
+  return <span>{count}</span>;
+}
+
+// ✅ Use state for mutable data
+function GoodComponent({ initialCount }) {
+  const [count, setCount] = useState(initialCount);
+  return <span>{count}</span>;
+}
+```
+
+## Children Prop
+
+The `children` prop lets you compose components by nesting JSX:
+
+```jsx
+function Card({ children, title }) {
+  return (
+    <div className="card">
+      <h3>{title}</h3>
+      <div className="card-body">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Usage:
+<Card title="Welcome">
+  <p>This content is passed as children.</p>
+  <button>Get Started</button>
+</Card>
+```
+
+## Default Props
+
+You can provide default values using JavaScript default parameters:
+
+```jsx
+function Avatar({ src, alt = "User avatar", size = 48 }) {
+  return <img src={src} alt={alt} width={size} height={size} />;
+}
+```
+
+## Unidirectional Data Flow
+
+React's data flow is **one-directional**: parent → child. This makes your application predictable and easier to debug.
+
+If a child needs to communicate with its parent, the parent passes a **callback function** as a prop:
+
+```jsx
+function Parent() {
+  const [message, setMessage] = useState('');
+
+  return (
+    <div>
+      <p>Message: {message}</p>
+      <ChildInput onSubmit={(msg) => setMessage(msg)} />
+    </div>
+  );
+}
+
+function ChildInput({ onSubmit }) {
+  const [value, setValue] = useState('');
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(value); }}>
+      <input value={value} onChange={(e) => setValue(e.target.value)} />
+      <button type="submit">Send</button>
+    </form>
+  );
+}
+```
+
+## Key Takeaways
+
+- Props pass data from parent to child components
+- Props are read-only — never modify them
+- Use `children` for component composition
+- Data flows one way: parent → child
+- Children communicate up via callback props

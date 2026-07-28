@@ -1,0 +1,72 @@
+---
+title: "Interfaces and Type Aliases"
+description: "Understand when to use interfaces vs type aliases, and how to structure your type definitions."
+slug: "02-interfaces-and-types"
+courseSlug: "typescript-mastery"
+moduleSlug: "01-type-system-fundamentals"
+publishedAt: "2024-02-02"
+author: "Kuldeep Sharma"
+order: 2
+readingTime: "10 min"
+tags: ["typescript", "interfaces", "type-aliases"]
+quiz:
+  - type: "multiple-choice"
+    question: "Which can be declaration-merged in TypeScript?"
+    options: ["Type aliases", "Interfaces", "Both", "Neither"]
+    correctAnswer: 1
+    explanation: "Interfaces support declaration merging — multiple declarations with the same name are automatically merged. Type aliases cannot be re-declared."
+    points: 1
+---
+
+# Interfaces and Type Aliases
+
+Both `interface` and `type` let you define the shape of data. Knowing when to use each is key to clean TypeScript code.
+
+## Interfaces
+
+```typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "user";
+}
+
+// Extend interfaces
+interface AdminUser extends User {
+  permissions: string[];
+}
+```
+
+## Type Aliases
+
+```typescript
+type Status = "active" | "inactive" | "pending";
+
+type ApiResponse<T> = {
+  data: T;
+  error: string | null;
+  status: number;
+};
+```
+
+## When to Use Which
+
+| Feature | Interface | Type Alias |
+|---------|-----------|------------|
+| Object shapes | ✅ | ✅ |
+| Union types | ❌ | ✅ |
+| Intersection | extends | `&` |
+| Declaration merging | ✅ | ❌ |
+| Computed properties | ❌ | ✅ |
+
+<Callout type="tip">
+  Rule of thumb: Use `interface` for public API contracts and object shapes. Use `type` for unions, intersections, and computed types.
+</Callout>
+
+## Key Takeaways
+
+- Interfaces are best for object shapes and extendability
+- Type aliases handle unions, tuples, and complex types
+- Interfaces support declaration merging
+- Both are equally valid in most cases

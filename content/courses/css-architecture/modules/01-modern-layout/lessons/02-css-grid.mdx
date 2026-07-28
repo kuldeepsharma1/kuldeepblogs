@@ -1,0 +1,83 @@
+---
+title: "CSS Grid"
+description: "Build complex two-dimensional layouts with CSS Grid — the most powerful layout system in CSS."
+slug: "02-css-grid"
+courseSlug: "css-architecture"
+moduleSlug: "01-modern-layout"
+publishedAt: "2024-03-02"
+author: "Kuldeep Sharma"
+order: 2
+readingTime: "15 min"
+tags: ["css", "grid", "layout"]
+quiz:
+  - type: "multiple-choice"
+    question: "What does `grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))` do?"
+    options:
+      - "Creates exactly 4 columns"
+      - "Creates responsive columns that are at least 250px wide"
+      - "Creates a single column of 250px"
+      - "Creates columns based on viewport height"
+    correctAnswer: 1
+    explanation: "This pattern creates a responsive grid where each column is at least 250px wide, and the grid automatically adjusts the number of columns to fit the container."
+    points: 1
+---
+
+# CSS Grid
+
+CSS Grid is a two-dimensional layout system that lets you place items in rows AND columns simultaneously.
+
+## Basic Grid
+
+```css
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: 1.5rem;
+}
+```
+
+## Responsive Grid (No Media Queries!)
+
+The most powerful pattern in modern CSS:
+
+```css
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+```
+
+This creates a grid that automatically adjusts the number of columns based on available space.
+
+## Named Grid Areas
+
+```css
+.layout {
+  display: grid;
+  grid-template-areas:
+    "header  header"
+    "sidebar main"
+    "footer  footer";
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+}
+
+.header  { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main    { grid-area: main; }
+.footer  { grid-area: footer; }
+```
+
+<Callout type="tip">
+  Use Grid for page-level layouts and card grids. Use Flexbox for component-level alignment. They work beautifully together.
+</Callout>
+
+## Key Takeaways
+
+- Grid is two-dimensional (rows AND columns)
+- `auto-fit` + `minmax()` = responsive without media queries
+- Named grid areas make complex layouts readable
+- Combine Grid and Flexbox for optimal layouts

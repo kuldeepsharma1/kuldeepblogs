@@ -1,0 +1,109 @@
+---
+title: "Component Composition"
+description: "Master the art of composing components for maximum reusability and flexibility."
+slug: "01-component-composition"
+courseSlug: "react-fundamentals"
+moduleSlug: "03-patterns-and-practices"
+publishedAt: "2024-01-25"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "10 min"
+tags: ["react", "composition", "patterns"]
+quiz:
+  - type: "multiple-choice"
+    question: "Which pattern allows a component to accept any content as its body?"
+    options:
+      - "Higher-Order Components"
+      - "Render Props"
+      - "Children Composition"
+      - "Context API"
+    correctAnswer: 2
+    explanation: "The children composition pattern lets you pass any JSX as the body of a component, making it highly flexible and reusable."
+    points: 1
+---
+
+# Component Composition
+
+Composition is React's primary mechanism for code reuse. Instead of inheritance, React favors composing components together.
+
+## The Children Pattern
+
+The simplest composition pattern uses the `children` prop:
+
+```jsx
+function Panel({ title, children }) {
+  return (
+    <section className="panel">
+      <h2>{title}</h2>
+      <div className="panel-body">{children}</div>
+    </section>
+  );
+}
+
+// Usage — the content is completely flexible
+<Panel title="Settings">
+  <ToggleSwitch label="Dark mode" />
+  <ToggleSwitch label="Notifications" />
+</Panel>
+```
+
+## Slot Pattern
+
+For more complex layouts, use multiple "slots" via named props:
+
+```jsx
+function Layout({ header, sidebar, children, footer }) {
+  return (
+    <div className="layout">
+      <header>{header}</header>
+      <aside>{sidebar}</aside>
+      <main>{children}</main>
+      <footer>{footer}</footer>
+    </div>
+  );
+}
+```
+
+## Compound Components
+
+Compound components share implicit state:
+
+```jsx
+function Select({ children, value, onChange }) {
+  return (
+    <SelectContext.Provider value={{ value, onChange }}>
+      <div className="select">{children}</div>
+    </SelectContext.Provider>
+  );
+}
+
+Select.Option = function Option({ value, children }) {
+  const ctx = useContext(SelectContext);
+  return (
+    <button
+      className={ctx.value === value ? 'selected' : ''}
+      onClick={() => ctx.onChange(value)}
+    >
+      {children}
+    </button>
+  );
+};
+
+// Clean, readable API
+<Select value={size} onChange={setSize}>
+  <Select.Option value="sm">Small</Select.Option>
+  <Select.Option value="md">Medium</Select.Option>
+  <Select.Option value="lg">Large</Select.Option>
+</Select>
+```
+
+<Callout type="tip">
+  Prefer composition over configuration. A component that accepts children is almost always more flexible than one with many props.
+</Callout>
+
+## Key Takeaways
+
+- Use `children` for simple content injection
+- Use named props (slots) for multi-area layouts
+- Compound components share state via Context
+- Composition is more flexible than configuration

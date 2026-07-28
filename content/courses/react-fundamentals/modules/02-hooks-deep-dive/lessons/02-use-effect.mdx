@@ -1,0 +1,110 @@
+---
+title: "useEffect — Side Effects"
+description: "Handle side effects like data fetching, subscriptions, and DOM manipulation with the useEffect hook."
+slug: "02-use-effect"
+courseSlug: "react-fundamentals"
+moduleSlug: "02-hooks-deep-dive"
+publishedAt: "2024-01-21"
+author: "Kuldeep Sharma"
+order: 2
+readingTime: "12 min"
+tags: ["react", "hooks", "useEffect", "side-effects"]
+quiz:
+  - type: "multiple-choice"
+    question: "When does useEffect run by default (with no dependency array)?"
+    options:
+      - "Only on mount"
+      - "Only when props change"
+      - "After every render"
+      - "Only on unmount"
+    correctAnswer: 2
+    explanation: "Without a dependency array, useEffect runs after every render (mount + every update). Pass an empty array [] to run only on mount."
+    points: 1
+---
+
+# useEffect — Side Effects
+
+The `useEffect` hook lets you synchronize a component with an external system — APIs, DOM manipulation, timers, subscriptions, and more.
+
+## Basic Usage
+
+```jsx
+import { useState, useEffect } from 'react';
+
+function DocumentTitle({ title }) {
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
+
+  return <h1>{title}</h1>;
+}
+```
+
+## The Dependency Array
+
+The dependency array controls when the effect re-runs:
+
+```jsx
+// Runs after every render
+useEffect(() => { /* ... */ });
+
+// Runs only on mount (and cleanup on unmount)
+useEffect(() => { /* ... */ }, []);
+
+// Runs when `count` or `name` changes
+useEffect(() => { /* ... */ }, [count, name]);
+```
+
+## Cleanup Function
+
+Return a function from your effect to clean up:
+
+```jsx
+useEffect(() => {
+  const handler = (e) => console.log(e.key);
+  window.addEventListener('keydown', handler);
+
+  // Cleanup: runs before the next effect and on unmount
+  return () => window.removeEventListener('keydown', handler);
+}, []);
+```
+
+<Callout type="tip">
+  Always clean up subscriptions, timers, and event listeners to prevent memory leaks.
+</Callout>
+
+## Data Fetching
+
+```jsx
+function UserProfile({ userId }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchUser() {
+      setLoading(true);
+      const res = await fetch(\`/api/users/\${userId}\`);
+      const data = await res.json();
+      if (!cancelled) {
+        setUser(data);
+        setLoading(false);
+      }
+    }
+
+    fetchUser();
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  if (loading) return <p>Loading...</p>;
+  return <h1>{user?.name}</h1>;
+}
+```
+
+## Key Takeaways
+
+- `useEffect` runs after render, not during
+- The dependency array controls re-execution
+- Always return a cleanup function for subscriptions
+- Use the abort pattern for async effects
