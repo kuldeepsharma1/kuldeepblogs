@@ -12,6 +12,8 @@ import {
   Boxes,
   Target,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { Metadata } from "next";
 
 const sidebarLinks = [
   { href: "/learn", label: "Dashboard", icon: LayoutDashboard },
@@ -23,7 +25,30 @@ const sidebarLinks = [
   { href: "/learn/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/learn/glossary", label: "Glossary", icon: BookText },
 ];
-
+export const metadata: Metadata = {
+  title: {
+    default: "learn Kuldeep | Design Engineer & Writer",
+    template: "%s | Kuldeep Blogs",
+  },
+  description: "A premium blog and portfolio for thoughtful design, frontend craft, and modern product storytelling.",
+  metadataBase: new URL("https://kuldeepblogs.com"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Kuldeep Blogs",
+    description: "Premium writing on design, frontend engineering, and product craft.",
+    url: "https://kuldeepblogs.com",
+    siteName: "Kuldeep Blogs",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kuldeep Blogs",
+    description: "Premium writing on design, frontend engineering, and product craft.",
+  },
+};
 /**
  * Layout for the /learn section.
  * Renders a sidebar on desktop and passes children as the main content area.
@@ -66,6 +91,7 @@ export default function LearnLayout({ children }: { children: ReactNode }) {
 
           {/* Sidebar Footer */}
           <div className="border-t border-sidebar-border px-5 py-4">
+             <ThemeToggle />
             <p className="text-[10px] text-muted-foreground">
               © {new Date().getFullYear()} {siteConfig.author.name}
             </p>

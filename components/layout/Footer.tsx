@@ -9,7 +9,7 @@ const footerLinks = {
     links: [
       { name: "Home", href: "/" },
       { name: "Blog", href: "/blog" },
-      { name: "Lessons", href: "/lessons" },
+      { name: "Lessons", href: "/learn" },
       { name: "Categories", href: "/categories" },
       { name: "About", href: "/about" },
     ],

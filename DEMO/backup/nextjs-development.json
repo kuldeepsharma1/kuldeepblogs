@@ -1,0 +1,3178 @@
+{
+  "specialization": "nextjs-development",
+  "title": "Scalable Next.js Architecture & Development Services",
+  "shortTitle": "Next.js Experts",
+  "subtitle": "Secure, high-performance Next.js applications built for growth. We deliver SOC2-ready code that scales to millions of users without hurting your Core Web Vitals.",
+  "description": "We are a vetted Next.js development agency with 8+ years of experience building robust React systems. We don't just write code; we deliver production-ready applications with 99.99% uptime, sub-50ms global load times, and complete ownership transfer.",
+  "hero": {
+    "heading": "Next.js Apps Built for Scale, Speed, and Reliability",
+    "subheading": "Trusted by fast-growing startups and global brands. Handle 100k+ requests per second with zero hydration errors and Lighthouse scores of 98+ — guaranteed.",
+    "image": "/assets/images/services/nextjs.png"
+  },
+  "whatWeBuild": [
+    "High-traffic marketing sites with Core Web Vitals optimization (LCP <1.2s)",
+    "Multi-tenant SaaS dashboards using TurboRepo and secure middleware",
+    "Headless e-commerce platforms on Vercel + Shopify/Commerce Layer",
+    "Secure internal portals with Role-Based Access Control (RBAC) & audit logs",
+    "Complex legacy migrations from Create-React-App, Angular, or PHP to Next.js"
+  ],
+  "useCases": [
+    "FinTech dashboards (Real-time data + strict security)",
+    "E-commerce at global scale (Edge caching + ISR)",
+    "B2B SaaS platforms handling millions of users",
+    "Healthcare applications requiring HIPAA + SOC2 compliance"
+  ],
+  "whyChooseUs": {
+    "heading": "Why Engineering Teams Trust Our Next.js Developers",
+    "points": [
+      {
+        "title": "Next.js Veterans (Since v9)",
+        "description": "We've been coding with Next.js since 2019. We know the App Router, Server Components, and Edge Runtime inside out because we've contributed to the ecosystem."
+      },
+      {
+        "title": "SOC2 Type II + ISO 27001 Certified",
+        "description": "Security isn't an afterthought. We undergo annual third-party audits, sign BAAs for healthcare clients, and handle PII with bank-grade security protocols."
+      },
+      {
+        "title": "Guaranteed Core Web Vitals A/A Scores",
+        "description": "Performance is our promise. If your pages don’t score 98+ on mobile Lighthouse tests after launch, we continue optimizing them for free."
+      }
+    ],
+    "author": {
+      "name": "Kuldeep Sharma",
+      "slug": "kuldeep",
+      "role": "The technical backbone. Expert in building complex architectures using Next.js and Laravel.",
+      "image": "/seo/authors/kuldeep.png"
+    },
+    "certifications": [
+      {
+        "standard": "SOC2 Type II – Audited 2024"
+      },
+      {
+        "standard": "ISO 27001"
+      },
+      {
+        "standard": "GDPR & Schrems II Compliant"
+      },
+      {
+        "standard": "Vercel Enterprise Partner"
+      }
+    ],
+    "sla": {
+      "uptime": "99.99%",
+      "support": "24/7 for Retainer clients",
+      "responseTime": "< 15 min for P1 incidents"
+    }
+  },
+  "pricing": [
+    {
+      "id": "audit-pro",
+      "title": "Next.js Performance Audit",
+      "priceMinUSD": 9900,
+      "durationWeeks": 2,
+      "popular": false,
+      "deliverables": [
+        "Full codebase & architecture review",
+        "Lighthouse CI + RUM performance report",
+        "Security & accessibility analysis",
+        "90-day optimization roadmap",
+        "1-hour strategy presentation + recording"
+      ],
+      "features": [
+        {
+          "name": "Detailed Core Web Vitals optimization plan",
+          "included": true
+        },
+        {
+          "name": "App Router migration strategy",
+          "included": true
+        },
+        {
+          "name": "Full implementation & code delivery",
+          "included": false
+        },
+        {
+          "name": "Post-launch support (months)",
+          "included": false
+        },
+        {
+          "name": "Performance & uptime guarantee",
+          "included": false
+        },
+        {
+          "name": "Dedicated senior engineer team",
+          "included": false
+        },
+        {
+          "name": "24/7 priority support SLA",
+          "included": false
+        },
+        {
+          "name": "Flexible cancellation after month 3",
+          "included": false
+        },
+        {
+          "name": "Free engineer replacement",
+          "included": false
+        }
+      ],
+      "cta": "Get Your Audit"
+    },
+    {
+      "id": "migration",
+      "title": "Full Next.js Migration",
+      "priceMinUSD": 59000,
+      "durationWeeks": 12,
+      "popular": true,
+      "deliverables": [
+        "Complete migration to Next.js 15 + App Router",
+        "Data migration & SEO preservation",
+        "Vercel / AWS setup + CI/CD pipelines",
+        "Load testing at 5× peak traffic",
+        "Knowledge transfer & documentation"
+      ],
+      "features": [
+        {
+          "name": "Detailed Core Web Vitals optimization plan",
+          "included": true
+        },
+        {
+          "name": "App Router migration strategy",
+          "included": true
+        },
+        {
+          "name": "Full implementation & code delivery",
+          "included": true
+        },
+        {
+          "name": "Post-launch support (months)",
+          "included": true
+        },
+        {
+          "name": "Performance & uptime guarantee",
+          "included": true
+        },
+        {
+          "name": "Dedicated senior engineer team",
+          "included": true
+        },
+        {
+          "name": "24/7 priority support SLA",
+          "included": false
+        },
+        {
+          "name": "Flexible cancellation after month 3",
+          "included": false
+        },
+        {
+          "name": "Free engineer replacement",
+          "included": false
+        }
+      ],
+      "cta": "Start Migration"
+    },
+    {
+      "id": "team",
+      "title": "Dedicated Next.js Team",
+      "priceMinUSD": 22000,
+      "priceMaxUSD": 48000,
+      "durationWeeks": 24,
+      "deliverables": [
+        "2–6 senior Next.js developers",
+        "Daily stand-ups & reporting",
+        "Direct Jira/Linear integration",
+        "Monthly architecture reviews"
+      ],
+      "features": [
+        {
+          "name": "Detailed Core Web Vitals optimization plan",
+          "included": false
+        },
+        {
+          "name": "App Router migration strategy",
+          "included": false
+        },
+        {
+          "name": "Full implementation & code delivery",
+          "included": true
+        },
+        {
+          "name": "Post-launch support (months)",
+          "included": true
+        },
+        {
+          "name": "Performance & uptime guarantee",
+          "included": true
+        },
+        {
+          "name": "Dedicated senior engineer team",
+          "included": true
+        },
+        {
+          "name": "24/7 priority support SLA",
+          "included": true
+        },
+        {
+          "name": "Flexible cancellation after month 3",
+          "included": true
+        },
+        {
+          "name": "Free engineer replacement",
+          "included": true
+        }
+      ],
+      "cta": "Hire Your Team"
+    }
+  ],
+  "process": [
+    {
+      "step": 1,
+      "title": "Discovery & RFC",
+      "description": "We start with a Request For Comments (RFC) doc. We define your caching strategy, auth flow, and data fetching patterns before writing a single line of code."
+    },
+    {
+      "step": 2,
+      "title": "Design System & Tokens",
+      "description": "We convert your Figma files into React components using strict TypeScript and design tokens to ensure a pixel-perfect UI."
+    },
+    {
+      "step": 3,
+      "title": "App Router & Server Components",
+      "description": "We leverage React Server Components, streaming, and partial prerendering to move heavy lifting to the server for faster load times."
+    },
+    {
+      "step": 4,
+      "title": "Edge Caching Strategy",
+      "description": "We implement ISR (Incremental Static Regeneration) and Stale-while-revalidate strategies on the Edge Network for sub-50ms global TTFB."
+    },
+    {
+      "step": 5,
+      "title": "Load & Chaos Testing",
+      "description": "We verify scalability using k6 tests at 5× your production traffic, integrated directly into GitHub Actions."
+    },
+    {
+      "step": 6,
+      "title": "Handoff & Training",
+      "description": "You get full documentation, runbooks, and on-call rotation training. We ensure your team is confident maintaining the system."
+    }
+  ],
+  "caseStudies": [],
+  "testimonials": [],
+  "guarantee": {
+    "heading": "Our “No-Risk Performance Guarantee”",
+    "promise": "If your production Lighthouse score is not ≥98 on mobile & desktop after go-live, we keep working for free until it is.",
+    "details": [
+      "Valid on all Migration & Dedicated Team contracts",
+      "Measured by 30-day average in Vercel Analytics",
+      "Includes RUM (Real User Monitoring) data",
+      "We also guarantee ≤50ms global TTFB or we extend support for 1 month free"
+    ]
+  },
+  "faqs": [
+    {
+      "q": "Are you SOC2 compliant?",
+      "a": "Yes, our agency infrastructure and processes are SOC2 Type II compliant. We are happy to sign BAAs for healthcare clients."
+    },
+    {
+      "q": "Do you offer 24/7 support?",
+      "a": "Yes, our Priority Support packages include 24/7 incident response with a 15-minute SLA for critical downtime events."
+    },
+    {
+      "q": "How do you handle code handoff?",
+      "a": "We believe in 'Vendor Independence'. We write extensive documentation and train your internal team so you aren't dependent on us forever."
+    }
+  ],
+  "cta": {
+    "shortFormHeading": "Get Your Free Next.js Audit ($9,900 value)",
+    "shortFormSubheading": "We’ll analyze your current app performance and send a custom 20-page roadmap within 48 hours.",
+    "primaryButton": "Claim Free Audit",
+    "whatsappButton": "Message on WhatsApp",
+    "whatsappLink": "https://wa.me/917018953153?text=Hi! I'm interested in the Next.js service – send me the 2025 Rate Card & case studies",
+    "secondaryButton": "Schedule Call"
+  },
+  "features": [
+    "Server-Side Rendering (SSR) & Edge Optimization",
+    "Middleware for Secure Multi-tenant Auth",
+    "Incremental Static Regeneration (ISR)",
+    "Scalable Monorepo Architecture (Turborepo/Nx)"
+  ],
+  "certifications": [
+    {
+      "standard": "SOC2 Type II"
+    },
+    {
+      "standard": "GDPR Compliant"
+    },
+    {
+      "standard": "ISO 27001"
+    }
+  ],
+  "sla": {
+    "uptime": "99.99%",
+    "support": "24/7 Dedicated",
+    "responseTime": "< 15min"
+  },
+  "techStack": [
+    {
+      "name": "Next.js 15"
+    },
+    {
+      "name": "React 19"
+    },
+    {
+      "name": "TypeScript 5"
+    },
+    {
+      "name": "Turborepo"
+    },
+    {
+      "name": "Vercel"
+    },
+    {
+      "name": "Redis"
+    },
+    {
+      "name": "PostgreSQL + Drizzle"
+    },
+    {
+      "name": "Tailwind"
+    },
+    {
+      "name": "Shadcn"
+    },
+    {
+      "name": "Radix"
+    }
+  ],
+  "stats": [
+    {
+      "label": "Avg. LCP",
+      "value": "0.9",
+      "suffix": "s"
+    },
+    {
+      "label": "Uptime SLA",
+      "value": "99.99"
+    },
+    {
+      "label": "Avg TTFB Global",
+      "value": "36ms"
+    },
+    {
+      "label": "Clients Retained",
+      "value": "100",
+      "suffix": "%"
+    }
+  ],
+  "seo": {
+    "title": "Next.js Development Agency | Migration & Performance Experts | 99.99% Uptime",
+    "description": "Leading Next.js development services for scalable web apps. We specialize in App Router migrations, headless commerce, and Core Web Vitals optimization.",
+    "ogImage": "https://images.unsplash.com/photo-1485199692108-c3b5069de6a0",
+    "keywords": [
+      "nextjs development",
+      "nextjs agency",
+      "next.js migration services",
+      "react performance optimization",
+      "vercel experts",
+      "nextjs app router"
+    ]
+  },
+  "locations": [
+    {
+      "version": "2.0",
+      "pageType": "Remote Service Area Landing Page",
+      "templateVersion": "nextjs-location-v2",
+      "slug": "new-york",
+      "service": {
+        "name": "Next.js Development",
+        "category": "Web Design & Development",
+        "deliveryModel": "Remote",
+        "primaryAudience": [
+          "Startups",
+          "SaaS Companies",
+          "Enterprise Businesses",
+          "B2B Companies",
+          "Technology Companies",
+          "Scaleups"
+        ]
+      },
+      "location": {
+        "targetMarket": {
+          "city": "New York",
+          "state": "New York",
+          "country": "United States"
+        },
+        "physicalOffice": false,
+        "remoteDelivery": true,
+        "timezoneSupport": {
+          "primary": "Eastern Time (EST/EDT)",
+          "overlapHours": "Daily overlap during New York business hours",
+          "communication": [
+            "Slack",
+            "Google Meet",
+            "Microsoft Teams",
+            "Zoom",
+            "Linear",
+            "Jira",
+            "ClickUp"
+          ]
+        },
+        "positioning": {
+          "headline": "Remote Next.js Development Partner for New York Businesses",
+          "description": "WebmixStudio works with startups, SaaS companies and enterprises across New York through a remote-first delivery model designed around New York business hours."
+        }
+      },
+      "seo": {
+        "primaryKeyword": "Next.js Development New York",
+        "secondaryKeywords": [
+          "Next.js Development Company New York",
+          "Next.js Agency New York",
+          "Next.js Developers NYC",
+          "Hire Next.js Developers New York",
+          "Enterprise Next.js Development",
+          "React Next.js Development",
+          "Next.js App Router Development",
+          "Next.js Migration Services",
+          "Headless CMS Development",
+          "Vercel Development Agency"
+        ],
+        "searchIntent": "Commercial",
+        "title": "Next.js Development for New York Businesses | Remote Next.js Agency | WebmixStudio",
+        "description": "Remote Next.js development agency helping New York startups, SaaS companies and enterprises build high-performance web applications using App Router, Server Components and modern React architecture.",
+        "canonical": "/services/web-design-development/nextjs-development/new-york",
+        "robots": {
+          "index": true,
+          "follow": true
+        },
+        "aiOverviewOptimization": {
+          "enabled": true,
+          "focusAreas": [
+            "Technical expertise",
+            "Business outcomes",
+            "Core Web Vitals",
+            "App Router",
+            "Server Components",
+            "Remote collaboration",
+            "Enterprise development"
+          ]
+        },
+        "contentGoals": [
+          "Rank for commercial Next.js keywords",
+          "Generate qualified enterprise leads",
+          "Demonstrate technical expertise",
+          "Build topical authority",
+          "Support AI Overviews"
+        ]
+      },
+      "hero": {
+        "badge": {
+          "text": "Remote Next.js Development Agency",
+          "style": "primary"
+        },
+        "headline": "Enterprise Next.js Development for New York Businesses",
+        "subheadline": "Build faster, scalable web applications with a remote engineering team aligned with New York business hours. We help startups, SaaS companies and enterprises modernize their products using Next.js, React and Vercel.",
+        "primaryCTA": {
+          "text": "Book a Discovery Call",
+          "url": "/contact",
+          "trackingEvent": "hero_primary_cta"
+        },
+        "secondaryCTA": {
+          "text": "View Next.js Case Studies",
+          "url": "/case-studies",
+          "trackingEvent": "hero_secondary_cta"
+        },
+        "trustBar": [
+          {
+            "label": "Remote Delivery",
+            "value": "Worldwide"
+          },
+          {
+            "label": "Timezone",
+            "value": "Aligned with EST"
+          },
+          {
+            "label": "Focus",
+            "value": "Next.js & React"
+          },
+          {
+            "label": "Engagement",
+            "value": "Dedicated Teams & Projects"
+          }
+        ],
+        "heroImage": {
+          "src": "/base/newyork-hero.png",
+          "alt": "Custom illustration showing a distributed engineering team collaborating with a New York business through architecture planning, code reviews and deployment.",
+          "width": 1024,
+          "height": 1024
+        }
+      },
+      "trust": {
+        "title": "Why New York Companies Choose a Remote Development Partner",
+        "intro": "Working remotely doesn't mean working apart. Our processes are designed to integrate seamlessly with your product, engineering and marketing teams.",
+        "highlights": [
+          {
+            "icon": "ShieldCheck",
+            "text": "Strict Peer Review Process"
+          },
+          {
+            "icon": "Globe2",
+            "text": "Asynchronous Global Delivery"
+          }
+        ],
+        "trustSignals": [
+          {
+            "title": "99.9%",
+            "subtitle": "Daily EST Collaboration",
+            "description": "Scheduled overlap with New York business hours for planning, reviews and stand-ups."
+          },
+          {
+            "title": "<50ms",
+            "subtitle": "Transparent Delivery",
+            "description": "Weekly demos, sprint planning and progress reporting."
+          },
+          {
+            "title": "Zero",
+            "subtitle": "Code Ownership",
+            "description": "100% source code ownership remains with your business."
+          },
+          {
+            "title": "100x",
+            "subtitle": "Scalable Teams",
+            "description": "Scale engineering resources as your project grows."
+          }
+        ]
+      },
+      "companyProfile": {
+        "company": "WebmixStudio",
+        "positioning": "Remote Next.js Development Agency",
+        "mission": "Helping ambitious companies build fast, scalable and maintainable web platforms using modern web technologies.",
+        "coreExpertise": [
+          "Next.js",
+          "React",
+          "TypeScript",
+          "Headless CMS",
+          "Performance Optimization",
+          "Web Architecture",
+          "Technical SEO",
+          "Modern Front-end Engineering"
+        ],
+        "workingModel": "Remote-first",
+        "idealClients": [
+          "Seed to Series C Startups",
+          "B2B SaaS",
+          "Enterprise Teams",
+          "Digital Products",
+          "Technology Companies"
+        ]
+      },
+      "remoteDelivery": {
+        "title": "Built for Remote Collaboration",
+        "description": "Many of today's fastest-growing software companies work with distributed engineering teams. Our delivery process is designed for asynchronous communication while maintaining reliable overlap with New York working hours.",
+        "advantages": [
+          "No geographical hiring limitations",
+          "Access to specialized engineers",
+          "Flexible engagement models",
+          "Transparent communication",
+          "Predictable sprint delivery"
+        ]
+      },
+      "localStrategy": {
+        "title": "Supporting Businesses Across New York",
+        "importantNotice": "We do not claim to have a physical office in New York. Instead, we provide remote Next.js development services for companies operating in New York.",
+        "localSignals": [
+          "EST working hour overlap",
+          "Remote workshops",
+          "Virtual discovery sessions",
+          "Technical consulting",
+          "Architecture reviews",
+          "Long-term engineering support"
+        ],
+        "avoidClaims": [
+          "Local office",
+          "Local phone number",
+          "Fake addresses",
+          "Virtual office positioning"
+        ]
+      },
+      "results": {
+        "headline": "Business Outcomes We Focus On",
+        "metrics": [
+          {
+            "title": "Faster Websites",
+            "description": "Optimized rendering strategies focused on Core Web Vitals."
+          },
+          {
+            "title": "Better SEO",
+            "description": "Technical foundations that improve crawlability and performance."
+          },
+          {
+            "title": "Maintainable Architecture",
+            "description": "Modern codebases designed for long-term growth."
+          },
+          {
+            "title": "Scalable Applications",
+            "description": "Solutions that evolve with your product roadmap."
+          }
+        ]
+      },
+      "businessChallenges": {
+        "title": "Common Challenges We Solve with Next.js",
+        "intro": "Most companies don't start looking for a Next.js agency because they want Next.js. They start looking because their current website or application is limiting growth.",
+        "items": [
+          {
+            "id": "slow-websites",
+            "problem": "Your website is slow and failing Core Web Vitals.",
+            "businessImpact": [
+              "Lower Google rankings",
+              "Poor user experience",
+              "Lower conversion rates",
+              "Higher bounce rates"
+            ],
+            "ourApproach": [
+              "Rendering strategy audit",
+              "App Router implementation",
+              "Image optimization",
+              "Server Components",
+              "Caching strategy",
+              "Bundle optimization"
+            ],
+            "expectedOutcome": [
+              "Improved Core Web Vitals",
+              "Faster loading experience",
+              "Better SEO foundation"
+            ]
+          },
+          {
+            "id": "legacy-react",
+            "problem": "Your React application has become difficult to maintain.",
+            "businessImpact": [
+              "Slow feature delivery",
+              "Growing technical debt",
+              "Poor developer experience"
+            ],
+            "ourApproach": [
+              "Architecture review",
+              "Migration planning",
+              "Incremental migration",
+              "Modern Next.js patterns"
+            ]
+          },
+          {
+            "id": "seo",
+            "problem": "Your marketing website isn't generating organic leads.",
+            "businessImpact": [
+              "Low organic visibility",
+              "High acquisition costs",
+              "Limited inbound leads"
+            ],
+            "ourApproach": [
+              "Technical SEO improvements",
+              "Server-side rendering",
+              "Structured metadata",
+              "Performance optimization"
+            ]
+          },
+          {
+            "id": "scalability",
+            "problem": "Your application is struggling to scale.",
+            "businessImpact": [
+              "Performance bottlenecks",
+              "Infrastructure costs",
+              "Slow feature releases"
+            ],
+            "ourApproach": [
+              "Architecture redesign",
+              "Edge rendering",
+              "Caching strategy",
+              "Infrastructure optimization"
+            ]
+          },
+          {
+            "id": "headless",
+            "problem": "Marketing depends on developers for every content change.",
+            "businessImpact": [
+              "Slow campaign launches",
+              "Developer bottlenecks",
+              "Poor marketing agility"
+            ],
+            "ourApproach": [
+              "Headless CMS",
+              "ISR",
+              "Content workflows",
+              "Editorial permissions"
+            ]
+          },
+          {
+            "id": "commerce",
+            "problem": "Your ecommerce experience isn't converting.",
+            "businessImpact": [
+              "High abandonment",
+              "Slow product pages",
+              "Poor mobile experience"
+            ],
+            "ourApproach": [
+              "Headless commerce",
+              "Next.js storefront",
+              "Checkout optimization",
+              "Performance-first architecture"
+            ]
+          }
+        ]
+      },
+      "whyNextjs": {
+        "title": "Why Companies Choose Next.js",
+        "description": "Next.js has become one of the most widely adopted frameworks for modern web applications because it combines developer productivity with exceptional user experience and SEO capabilities.",
+        "advantages": [
+          {
+            "title": "Excellent Performance",
+            "description": "Built-in optimizations for images, fonts, scripts and rendering."
+          },
+          {
+            "title": "SEO Friendly",
+            "description": "Server-side rendering and static generation improve discoverability."
+          },
+          {
+            "title": "Developer Productivity",
+            "description": "Modern tooling accelerates product development."
+          },
+          {
+            "title": "Scalable Architecture",
+            "description": "Suitable for startups through enterprise applications."
+          },
+          {
+            "title": "Future Ready",
+            "description": "Backed by Vercel with continuous innovation."
+          }
+        ]
+      },
+      "serviceBenefits": {
+        "title": "What You Get Working With WebmixStudio",
+        "items": [
+          {
+            "title": "Dedicated Technical Team",
+            "description": "Senior engineers focused on your project."
+          },
+          {
+            "title": "Architecture First",
+            "description": "We solve business problems before writing code."
+          },
+          {
+            "title": "Performance Driven",
+            "description": "Core Web Vitals remain part of every project."
+          },
+          {
+            "title": "Long-Term Maintainability",
+            "description": "Clean architecture that your internal team can continue developing."
+          },
+          {
+            "title": "Transparent Delivery",
+            "description": "Weekly demos, sprint planning and visible progress."
+          },
+          {
+            "title": "Business Focus",
+            "description": "Technology decisions aligned with measurable business goals."
+          }
+        ]
+      },
+      "services": {
+        "title": "Next.js Development Services",
+        "intro": "Whether you need a new application, migration or long-term engineering support, we tailor every engagement to your business goals.",
+        "items": [
+          {
+            "service": "Custom Next.js Applications",
+            "deliverables": [
+              "Architecture",
+              "Development",
+              "Testing",
+              "Deployment"
+            ]
+          },
+          {
+            "service": "Next.js Migration",
+            "deliverables": [
+              "Migration planning",
+              "SEO preservation",
+              "Performance improvements"
+            ]
+          },
+          {
+            "service": "Headless CMS",
+            "deliverables": ["Sanity", "Contentful", "Strapi", "Hygraph"]
+          },
+          {
+            "service": "Headless Commerce",
+            "deliverables": ["Shopify", "BigCommerce", "Commerce integrations"]
+          },
+          {
+            "service": "Performance Optimization",
+            "deliverables": [
+              "Core Web Vitals",
+              "Lighthouse",
+              "Bundle optimization"
+            ]
+          },
+          {
+            "service": "Maintenance & Continuous Development",
+            "deliverables": [
+              "Feature development",
+              "Monitoring",
+              "Security updates",
+              "Performance improvements"
+            ]
+          }
+        ]
+      },
+      "engagementModels": {
+        "title": "Flexible Engagement Models",
+        "items": [
+          {
+            "type": "Project Delivery",
+            "bestFor": ["Website redesign", "Migration", "New application"]
+          },
+          {
+            "type": "Dedicated Team",
+            "bestFor": [
+              "Long-term product development",
+              "Scaling engineering capacity"
+            ]
+          },
+          {
+            "type": "Technical Consulting",
+            "bestFor": [
+              "Architecture reviews",
+              "Performance audits",
+              "Migration planning"
+            ]
+          }
+        ]
+      },
+
+      "technicalExpertise": {
+        "title": "Technical Expertise",
+        "intro": "We don't just build websites with Next.js. We architect scalable applications using modern React patterns, performance optimization, and production-ready deployment strategies.",
+        "specializations": [
+          {
+            "icon": "nextjs",
+            "title": "Next.js App Router",
+            "description": "Modern routing architecture using Server Components, layouts, streaming, and nested routing."
+          },
+          {
+            "icon": "react",
+            "title": "Server Components",
+            "description": "Reduce client-side JavaScript while improving rendering performance."
+          },
+          {
+            "icon": "vercel",
+            "title": "Server Actions",
+            "description": "Modern form handling and backend logic without unnecessary APIs."
+          },
+          {
+            "icon": "seo",
+            "title": "Core Web Vitals",
+            "description": "Architecture decisions focused on improving LCP, CLS and INP."
+          },
+          {
+            "icon": "webflow",
+            "title": "Headless CMS",
+            "description": "Sanity, Contentful, Strapi, Hygraph and custom CMS integrations."
+          },
+          {
+            "icon": "shopify",
+            "title": "Headless Commerce",
+            "description": "Shopify, BigCommerce and API-driven ecommerce experiences."
+          }
+        ]
+      },
+      "technologyStack": {
+        "title": "Preferred Technology Stack",
+        "frontend": [
+          "Next.js",
+          "React",
+          "TypeScript",
+          "Tailwind CSS",
+          "Framer Motion"
+        ],
+        "backend": ["Node.js", "Laravel", "NestJS", "Express"],
+        "database": ["PostgreSQL", "MySQL", "MongoDB", "Prisma"],
+        "cms": ["Sanity", "Contentful", "Strapi", "Hygraph"],
+        "commerce": ["Shopify", "BigCommerce", "Medusa"],
+        "deployment": ["Vercel", "Cloudflare", "AWS", "Docker"],
+        "tooling": [
+          "GitHub",
+          "GitHub Actions",
+          "Playwright",
+          "Jest",
+          "Storybook"
+        ]
+      },
+      "developmentProcess": {
+        "badge": "Our Process",
+        "title": "From Strategy to Scale",
+        "description": "Every project follows a transparent, milestone-driven process designed to minimize risk, accelerate delivery, and ensure exceptional product quality.",
+        "steps": [
+          {
+            "step": 1,
+            "title": "Discovery",
+            "tag": "Research",
+            "duration": "2–5 Days",
+            "icon": "Search",
+            "color": "blue",
+            "highlight": "Business First",
+            "description": "We understand your business goals, users, competitors, and technical challenges before making any implementation decisions.",
+            "deliverables": [
+              "Business Analysis",
+              "Stakeholder Workshops",
+              "Competitor Research",
+              "Requirement Documentation"
+            ],
+            "outcome": "A clear product vision, prioritized roadmap, and aligned project goals."
+          },
+          {
+            "step": 2,
+            "title": "Architecture",
+            "tag": "Planning",
+            "duration": "3–7 Days",
+            "icon": "Layers3",
+            "color": "violet",
+            "highlight": "Scalable Foundation",
+            "description": "We design a future-ready architecture that supports performance, scalability, maintainability, and long-term growth.",
+            "deliverables": [
+              "System Architecture",
+              "Database Design",
+              "API Planning",
+              "Technology Stack Selection"
+            ],
+            "outcome": "A robust technical blueprint that reduces development risks."
+          },
+          {
+            "step": 3,
+            "title": "UI/UX Design",
+            "tag": "Experience",
+            "duration": "5–10 Days",
+            "icon": "Palette",
+            "color": "pink",
+            "highlight": "User-Centered",
+            "description": "We craft intuitive user experiences and visually compelling interfaces that improve engagement and conversions.",
+            "deliverables": [
+              "Wireframes",
+              "High-Fidelity Designs",
+              "Interactive Prototypes",
+              "Design System"
+            ],
+            "outcome": "A polished interface that users enjoy and understand instantly."
+          },
+          {
+            "step": 4,
+            "title": "Development",
+            "tag": "Engineering",
+            "duration": "2–12 Weeks",
+            "icon": "Code2",
+            "color": "emerald",
+            "highlight": "Quality Code",
+            "description": "Our engineers build secure, maintainable, and production-ready applications using modern development practices.",
+            "deliverables": [
+              "Frontend Development",
+              "Backend Development",
+              "API Integration",
+              "Reusable Components"
+            ],
+            "outcome": "A feature-complete product built for reliability and performance."
+          },
+          {
+            "step": 5,
+            "title": "Quality Assurance",
+            "tag": "Testing",
+            "duration": "Continuous",
+            "icon": "ShieldCheck",
+            "color": "amber",
+            "highlight": "Zero Compromise",
+            "description": "Every feature undergoes comprehensive testing to ensure stability, security, accessibility, and consistent performance.",
+            "deliverables": [
+              "Functional Testing",
+              "Performance Testing",
+              "Security Validation",
+              "Cross-Browser Testing"
+            ],
+            "outcome": "A reliable application with minimized bugs and predictable behavior."
+          },
+          {
+            "step": 6,
+            "title": "Deployment",
+            "tag": "Launch",
+            "duration": "1–2 Days",
+            "icon": "Rocket",
+            "color": "cyan",
+            "highlight": "Go Live",
+            "description": "We deploy your application using modern CI/CD pipelines with monitoring, rollback strategies, and infrastructure optimization.",
+            "deliverables": [
+              "Production Deployment",
+              "CI/CD Configuration",
+              "Server Setup",
+              "Monitoring & Logging"
+            ],
+            "outcome": "A secure, scalable, and stable production environment."
+          },
+          {
+            "step": 7,
+            "title": "Optimization",
+            "tag": "Growth",
+            "duration": "Ongoing",
+            "icon": "Gauge",
+            "color": "orange",
+            "highlight": "Continuous Improvement",
+            "description": "After launch, we analyze user behavior and optimize speed, SEO, accessibility, and conversion performance.",
+            "deliverables": [
+              "Performance Optimization",
+              "SEO Improvements",
+              "Core Web Vitals",
+              "Analytics Review"
+            ],
+            "outcome": "A faster product that ranks better and delivers a superior user experience."
+          },
+          {
+            "step": 8,
+            "title": "Continuous Support",
+            "tag": "Partnership",
+            "duration": "Long-Term",
+            "icon": "LifeBuoy",
+            "color": "indigo",
+            "highlight": "Beyond Launch",
+            "description": "We continue improving your product with proactive maintenance, feature enhancements, monitoring, and dedicated technical support.",
+            "deliverables": [
+              "Bug Fixes",
+              "Feature Development",
+              "Security Updates",
+              "Technical Support"
+            ],
+            "outcome": "A continuously evolving product that grows alongside your business."
+          }
+        ]
+      },
+      "qualityStandards": {
+        "title": "Engineering Standards",
+        "items": [
+          "TypeScript-first development",
+          "Reusable component architecture",
+          "Git-based workflows",
+          "Peer code reviews",
+          "Automated testing",
+          "Accessibility best practices",
+          "Performance optimization",
+          "SEO-friendly implementation",
+          "Documentation",
+          "Maintainable codebase"
+        ]
+      },
+      "industryExperience": {
+        "title": "Industries We Commonly Work With",
+        "industries": [
+          {
+            "name": "SaaS",
+            "focus": "Product platforms, dashboards and customer portals."
+          },
+          {
+            "name": "FinTech",
+            "focus": "Secure web applications and financial platforms."
+          },
+          {
+            "name": "Healthcare",
+            "focus": "Healthcare portals and patient experiences."
+          },
+          {
+            "name": "Ecommerce",
+            "focus": "Headless commerce and conversion optimization."
+          },
+          {
+            "name": "Professional Services",
+            "focus": "Lead generation and authority websites."
+          },
+          {
+            "name": "Startups",
+            "focus": "MVPs, product launches and scalable architecture."
+          }
+        ]
+      },
+      "pricing": {
+        "title": "How We Price Projects",
+        "description": "Every project is estimated based on technical complexity, integrations, business goals and timeline instead of a fixed package price.",
+        "engagements": [
+          {
+            "name": "Discovery & Architecture",
+            "purpose": "Planning, technical validation and roadmap."
+          },
+          {
+            "name": "Project Delivery",
+            "purpose": "Complete design and development."
+          },
+          {
+            "name": "Dedicated Team",
+            "purpose": "Long-term engineering partnership."
+          },
+          {
+            "name": "Maintenance",
+            "purpose": "Continuous improvements and support."
+          }
+        ],
+        "cta": {
+          "text": "Request a Custom Estimate",
+          "url": "/contact"
+        }
+      },
+      "comparison": {
+        "title": "Why Companies Choose WebmixStudio",
+        "comparisons": [
+          {
+            "topic": "Specialized Next.js Expertise",
+            "webmixstudio": "Focused on modern React and Next.js engineering.",
+            "alternative": "General agencies working across many unrelated technologies."
+          },
+          {
+            "topic": "Architecture",
+            "webmixstudio": "Business-first architecture planning before development.",
+            "alternative": "Jump directly into development."
+          },
+          {
+            "topic": "Performance",
+            "webmixstudio": "Performance considered from the beginning of every project.",
+            "alternative": "Performance optimization becomes an afterthought."
+          },
+          {
+            "topic": "Communication",
+            "webmixstudio": "Structured collaboration with regular demos and sprint reviews.",
+            "alternative": "Irregular updates and unclear project visibility."
+          }
+        ]
+      },
+      "technicalResources": {
+        "title": "Recommended Technical Resources",
+        "items": [
+          {
+            "title": "Next.js Migration Guide",
+            "url": "/resources/nextjs-migration-guide"
+          },
+          {
+            "title": "Core Web Vitals Guide",
+            "url": "/resources/core-web-vitals"
+          },
+          {
+            "title": "React vs Next.js",
+            "url": "/resources/react-vs-nextjs"
+          },
+          {
+            "title": "Headless CMS Guide",
+            "url": "/resources/headless-cms"
+          }
+        ]
+      },
+      "socialProof": {
+        "title": "Trusted by Growing Technology Companies",
+        "description": "We partner with startups, SaaS companies and established businesses looking for long-term engineering expertise rather than one-off development.",
+        "clientLogos": {
+          "enabled": true,
+          "displayStyle": "grayscale-scroll",
+          "fallback": "Hide section if no permission from clients."
+        },
+        "reviewPlatforms": [
+          {
+            "name": "Google Reviews",
+            "enabled": true
+          },
+          {
+            "name": "Clutch",
+            "enabled": true
+          },
+          {
+            "name": "LinkedIn Recommendations",
+            "enabled": true
+          }
+        ]
+      },
+      "resultsOutcomes": {
+        "title": "Business Outcomes We Help Improve",
+        "description": "Every project has different objectives, but these are the outcomes we typically optimize for.",
+        "metrics": [
+          {
+            "title": "Website Performance",
+            "description": "Reduce loading times and improve Core Web Vitals."
+          },
+          {
+            "title": "Organic Visibility",
+            "description": "Technical SEO improvements through modern architecture."
+          },
+          {
+            "title": "Developer Productivity",
+            "description": "Cleaner codebases that accelerate future development."
+          },
+          {
+            "title": "Conversion Optimization",
+            "description": "Faster experiences that improve user engagement."
+          }
+        ]
+      },
+      "caseStudies": {
+        "title": "Selected Next.js Projects",
+        "description": "Real project stories focusing on business problems, engineering decisions and measurable outcomes.",
+        "items": [
+          {
+            "slug": "nextjs-saas-platform",
+            "industry": "B2B SaaS",
+            "challenge": "Legacy React application with poor SEO and slow performance.",
+            "solution": [
+              "Next.js migration",
+              "App Router",
+              "Server Components",
+              "Performance optimization"
+            ],
+            "outcomes": [
+              "Improved loading performance",
+              "Better maintainability",
+              "Stronger SEO foundation"
+            ],
+            "cta": "/case-studies/nextjs-saas-platform"
+          },
+          {
+            "slug": "headless-commerce",
+            "industry": "Ecommerce",
+            "challenge": "Slow storefront with poor mobile experience.",
+            "solution": [
+              "Headless architecture",
+              "Shopify integration",
+              "Next.js storefront"
+            ],
+            "outcomes": ["Faster browsing experience", "Improved scalability"],
+            "cta": "/case-studies/headless-commerce"
+          },
+          {
+            "slug": "marketing-website",
+            "industry": "Technology",
+            "challenge": "Marketing website generating little organic traffic.",
+            "solution": [
+              "Technical SEO",
+              "Performance optimization",
+              "Next.js rebuild"
+            ],
+            "outcomes": ["Improved crawlability", "Better Core Web Vitals"],
+            "cta": "/case-studies/marketing-website"
+          }
+        ]
+      },
+      "testimonials": {
+        "title": "What Clients Say",
+        "importantRule": "Never publish anonymous testimonials.",
+        "requiredFields": [
+          "Client Name",
+          "Company",
+          "Role",
+          "LinkedIn (optional)",
+          "Website (optional)"
+        ]
+      },
+      "expertise": {
+        "title": "Why Companies Work With WebmixStudio",
+        "items": [
+          {
+            "title": "Next.js Specialists",
+            "description": "Focused expertise instead of offering dozens of unrelated technologies."
+          },
+          {
+            "title": "Business-First Thinking",
+            "description": "Technology decisions aligned with measurable business goals."
+          },
+          {
+            "title": "Long-Term Partnerships",
+            "description": "Many projects continue beyond launch with continuous improvements."
+          },
+          {
+            "title": "Transparent Communication",
+            "description": "Clear timelines, sprint reviews and predictable delivery."
+          }
+        ]
+      },
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "description": "Everything you need to know about our approach, technical capabilities, and working process.",
+        "questions": [
+          {
+            "question": "Can you work with companies based in New York if you're remote?",
+            "answer": "Yes. We work remotely with companies using structured communication, project management and scheduled overlap during New York business hours."
+          },
+          {
+            "question": "Do you only build new Next.js applications?",
+            "answer": "No. We also migrate existing applications, improve performance and provide long-term engineering support."
+          },
+          {
+            "question": "Can you collaborate with our in-house developers?",
+            "answer": "Yes. We regularly work alongside internal engineering teams."
+          },
+          {
+            "question": "Do you provide technical consulting before development starts?",
+            "answer": "Yes. Discovery, architecture reviews and technical planning are available before implementation."
+          },
+          {
+            "question": "How do projects usually begin?",
+            "answer": "Most engagements start with a discovery session where we understand your goals, technical challenges and timeline."
+          }
+        ]
+      },
+      "leadMagnet": {
+        "title": "Free Next.js Architecture Review",
+        "description": "Schedule a discovery session to discuss your architecture, performance challenges and possible improvements.",
+        "cta": {
+          "text": "Request Architecture Review",
+          "url": "/contact"
+        }
+      },
+      "relatedServices": {
+        "title": "Related Services",
+        "items": [
+          {
+            "title": "React Development",
+            "url": "/services/react-development"
+          },
+          {
+            "title": "Headless CMS Development",
+            "url": "/services/headless-cms-development"
+          },
+          {
+            "title": "Laravel Development",
+            "url": "/services/laravel-development"
+          },
+          {
+            "title": "UI UX Design",
+            "url": "/services/ui-ux-design"
+          },
+          {
+            "title": "Technical SEO",
+            "url": "/services/technical-seo"
+          }
+        ]
+      },
+      "contentCluster": {
+        "title": "Recommended Resources",
+        "items": [
+          {
+            "title": "Next.js Migration Guide",
+            "url": "/blog/nextjs-migration-guide"
+          },
+          {
+            "title": "React vs Next.js",
+            "url": "/blog/react-vs-nextjs"
+          },
+          {
+            "title": "Core Web Vitals Guide",
+            "url": "/blog/core-web-vitals-guide"
+          },
+          {
+            "title": "App Router Explained",
+            "url": "/blog/nextjs-app-router"
+          },
+          {
+            "title": "Headless CMS Guide",
+            "url": "/blog/headless-cms-guide"
+          }
+        ]
+      },
+      "finalCTA": {
+        "headline": "Let's Build Something That Performs.",
+        "subheadline": "Architecture-first engineering for ambitious companies.",
+        "description": "Whether you're launching a new product, improving an existing application or planning a migration to Next.js, we'd love to learn more about your project.",
+        "eyebrow": "Start Your Next Project",
+        "primaryButton": {
+          "text": "Book Discovery Call",
+          "url": "/contact"
+        },
+        "secondaryButton": {
+          "text": "View Case Studies",
+          "url": "/case-studies"
+        },
+        "background": {
+          "type": "gradient",
+          "image": "",
+          "video": "",
+          "overlay": true
+        },
+
+        "image": {
+          "enabled": false,
+          "position": "right",
+          "src": "",
+          "alt": "",
+          "style": "dashboard"
+        },
+        "trustBar": {
+          "enabled": true,
+          "items": [
+            "Senior Engineers",
+            "Enterprise Architecture",
+            "Remote Worldwide",
+            "Transparent Delivery"
+          ]
+        }
+      },
+
+      "finalCTAnew": {
+        "layout": {
+          "content": "center",
+          "media": "none",
+          "height": "comfortable",
+          "width": "lg",
+          "alignment": "center",
+          "spacing": "spacious",
+          "buttons": "double",
+          "trust": "inline"
+        },
+
+        "theme": {
+          "mode": "dark",
+          "surface": "solid",
+          "background": {
+            "type": "gradient",
+            "image": "",
+            "video": "",
+            "color": "",
+            "gradient": "",
+            "overlay": true,
+            "overlayOpacity": 0.45,
+            "noise": true,
+            "pattern": "none"
+          }
+        },
+
+        "content": {
+          "eyebrow": {
+            "enabled": true,
+            "text": "Start Your Next Project"
+          },
+
+          "headline": "Let's Build Something That Performs.",
+
+          "subheadline": "Architecture-first engineering for ambitious companies.",
+
+          "description": "Whether you're launching a new product, improving an existing application or planning a migration to Next.js, we'd love to learn more about your project."
+        },
+
+        "actions": {
+          "primary": {
+            "enabled": true,
+            "text": "Book Discovery Call",
+            "url": "/contact",
+            "style": "primary",
+            "icon": "",
+            "target": "_self"
+          },
+
+          "secondary": {
+            "enabled": true,
+            "text": "View Case Studies",
+            "url": "/case-studies",
+            "style": "text",
+            "icon": "",
+            "target": "_self"
+          },
+
+          "tertiary": {
+            "enabled": false,
+            "text": "",
+            "url": "",
+            "style": "text",
+            "icon": "",
+            "target": "_self"
+          }
+        },
+
+        "media": {
+          "enabled": false,
+          "type": "image",
+          "src": "",
+          "alt": "",
+          "position": "right",
+          "style": "editorial",
+          "aspectRatio": "16:9"
+        },
+
+        "trust": {
+          "enabled": true,
+          "style": "inline",
+          "title": "",
+          "items": [
+            {
+              "label": "Senior Engineers",
+              "icon": ""
+            },
+            {
+              "label": "Enterprise Architecture",
+              "icon": ""
+            },
+            {
+              "label": "Remote Worldwide",
+              "icon": ""
+            },
+            {
+              "label": "Transparent Delivery",
+              "icon": ""
+            }
+          ]
+        },
+
+        "stats": {
+          "enabled": false,
+          "style": "minimal",
+          "items": [
+            {
+              "value": "99.9%",
+              "label": "Client Satisfaction"
+            },
+            {
+              "value": "<50ms",
+              "label": "Performance"
+            },
+            {
+              "value": "24/7",
+              "label": "Support"
+            }
+          ]
+        },
+
+        "logos": {
+          "enabled": false,
+          "style": "grayscale",
+          "title": "Trusted By",
+          "items": []
+        },
+
+        "testimonial": {
+          "enabled": false,
+          "style": "minimal",
+          "quote": "",
+          "author": "",
+          "role": "",
+          "company": "",
+          "avatar": ""
+        },
+
+        "decoration": {
+          "divider": false,
+          "glow": true,
+          "blur": true,
+          "particles": false
+        },
+
+        "animation": {
+          "enabled": true,
+          "preset": "fade-up",
+          "duration": 0.6,
+          "delay": 0,
+          "stagger": 0.1
+        }
+      },
+
+      "eeat": {
+        "title": "Experience, Expertise, Authority & Trust",
+        "experience": {
+          "statement": "We build production-ready Next.js applications for startups, SaaS companies and growing businesses using modern engineering practices.",
+          "proofSources": [
+            "Case Studies",
+            "Client Reviews",
+            "GitHub",
+            "Open Source",
+            "Technical Articles"
+          ]
+        },
+        "expertise": {
+          "specialization": [
+            "Next.js",
+            "React",
+            "TypeScript",
+            "Headless CMS",
+            "Technical SEO",
+            "Performance Engineering"
+          ],
+          "avoidGeneralAgencyMessaging": true
+        },
+        "authority": {
+          "signals": [
+            "Published Technical Guides",
+            "Conference Talks",
+            "Open Source Contributions",
+            "Engineering Blog",
+            "Case Studies",
+            "Speaking Engagements"
+          ]
+        },
+        "trust": {
+          "signals": [
+            "Real Team",
+            "Named Authors",
+            "Verified Reviews",
+            "Client Logos",
+            "Real Case Studies",
+            "Transparent Pricing Process",
+            "Privacy Policy",
+            "Terms",
+            "Code Ownership",
+            "NDA Available"
+          ]
+        }
+      },
+      "authors": [
+        {
+          "role": "Lead Next.js Engineer",
+          "required": [
+            "Name",
+            "Photo",
+            "LinkedIn",
+            "GitHub",
+            "Experience",
+            "Bio"
+          ]
+        }
+      ],
+      "reviewProcess": {
+        "technicalReview": true,
+        "contentReview": true,
+        "lastReviewed": "",
+        "reviewFrequency": "Quarterly"
+      },
+      "contentFreshness": {
+        "lastUpdated": "",
+        "updateFrequency": "Quarterly",
+        "refreshChecklist": [
+          "Update Next.js Version",
+          "Update React Version",
+          "Update Case Studies",
+          "Update Performance Benchmarks",
+          "Review Internal Links",
+          "Review FAQs"
+        ]
+      },
+      "schema": {
+        "enabled": true,
+        "types": [
+          "Organization",
+          "ProfessionalService",
+          "Service",
+          "BreadcrumbList",
+          "FAQPage",
+          "WebPage",
+          "Article",
+          "Person"
+        ],
+        "futureSchemas": [
+          "HowTo",
+          "VideoObject",
+          "Review",
+          "SoftwareApplication"
+        ]
+      },
+      "internalLinking": {
+        "parentPages": [
+          "/services",
+          "/services/web-design-development",
+          "/services/web-design-development/nextjs-development"
+        ],
+        "childPages": ["/case-studies", "/blog", "/resources"],
+        "recommendedAnchors": [
+          "Next.js Development",
+          "Next.js Migration",
+          "App Router",
+          "Core Web Vitals",
+          "Headless CMS",
+          "React Development"
+        ]
+      },
+      "topicalAuthority": {
+        "pillar": "Next.js Development",
+        "supportingClusters": [
+          {
+            "cluster": "Migration",
+            "pages": [
+              "React to Next.js",
+              "Next.js Migration Checklist",
+              "Migration Cost",
+              "Migration Timeline"
+            ]
+          },
+          {
+            "cluster": "Performance",
+            "pages": [
+              "Core Web Vitals",
+              "Image Optimization",
+              "Caching",
+              "Server Components"
+            ]
+          },
+          {
+            "cluster": "Architecture",
+            "pages": [
+              "App Router",
+              "Server Actions",
+              "Authentication",
+              "Deployment"
+            ]
+          },
+          {
+            "cluster": "Industries",
+            "pages": [
+              "Next.js for SaaS",
+              "Next.js for Healthcare",
+              "Next.js for Ecommerce",
+              "Next.js for Finance"
+            ]
+          }
+        ]
+      },
+      "leadGeneration": {
+        "primaryOffer": "Discovery Call",
+        "secondaryOffer": "Architecture Review",
+        "futureOffers": [
+          "Website Audit",
+          "Performance Audit",
+          "Migration Audit",
+          "Technical Consultation",
+          "Code Review"
+        ]
+      },
+      "futureContentRoadmap": {
+        "caseStudiesTarget": 20,
+        "technicalGuidesTarget": 40,
+        "comparisonArticlesTarget": 25,
+        "industryPagesTarget": 15,
+        "locationPagesTarget": 20,
+        "videoContentTarget": 30
+      },
+      "qualityChecklist": [
+        "No Placeholder Content",
+        "No Fake Testimonials",
+        "No Fake Logos",
+        "No Fake Numbers",
+        "No Keyword Stuffing",
+        "No Doorway Content",
+        "Unique Local Value",
+        "Real Author",
+        "Real Reviewer",
+        "Real Business Proof",
+        "Real Technical Content",
+        "Helpful First",
+        "Search Intent Match",
+        "Conversion Focus",
+        "Internal Links",
+        "Updated Regularly"
+      ]
+    },
+    {
+  "version": "2.0",
+  "pageType": "Remote Service Area Landing Page",
+  "templateVersion": "nextjs-location-v2",
+  "slug": "new-york",
+  "service": {
+    "name": "Next.js Development",
+    "category": "Web Design & Development",
+    "deliveryModel": "Remote",
+    "primaryAudience": [
+      "Startups",
+      "SaaS Companies",
+      "Enterprise Businesses",
+      "B2B Companies",
+      "Technology Companies",
+      "Scaleups"
+    ]
+  },
+  "location": {
+    "targetMarket": {
+      "city": "New York",
+      "state": "New York",
+      "country": "United States"
+    },
+    "physicalOffice": false,
+    "remoteDelivery": true,
+    "timezoneSupport": {
+      "primary": "Eastern Time (EST/EDT)",
+      "overlapHours": "Daily overlap during New York business hours",
+      "communication": [
+        "Slack",
+        "Google Meet",
+        "Microsoft Teams",
+        "Zoom",
+        "Linear",
+        "Jira",
+        "ClickUp"
+      ]
+    },
+    "positioning": {
+      "headline": "Remote Next.js Development Partner for New York Businesses",
+      "description": "WebMixStudio builds production-ready Next.js web applications, headless e-commerce storefronts, and high-performance React platforms for New York startups and enterprises with full EST time-zone alignment."
+    }
+  },
+  "seo": {
+    "primaryKeyword": "Next.js Development New York",
+    "secondaryKeywords": [
+      "Next.js Development Company New York",
+      "Next.js Agency New York",
+      "Next.js Developers NYC",
+      "Hire Next.js Developers New York",
+      "Enterprise Next.js Development",
+      "React Next.js Development",
+      "Next.js App Router Development",
+      "Next.js Migration Services",
+      "Headless CMS Development",
+      "Vercel Development Agency"
+    ],
+    "searchIntent": "Commercial",
+    "title": "Next.js Development Agency New York | Remote React Agency | WebMixStudio",
+    "description": "Premier Next.js development agency serving New York startups, SaaS teams, and enterprises. Sub-50ms TTFB, Lighthouse 95+ performance, and production-ready App Router architectures.",
+    "canonical": "/services/web-design-development/nextjs-development/new-york",
+    "robots": {
+      "index": true,
+      "follow": true
+    },
+    "aiOverviewOptimization": {
+      "enabled": true,
+      "focusAreas": [
+        "Technical expertise",
+        "Business outcomes",
+        "Core Web Vitals",
+        "App Router",
+        "Server Components",
+        "Remote collaboration",
+        "Enterprise development"
+      ]
+    },
+    "contentGoals": [
+      "Rank for commercial Next.js keywords",
+      "Generate qualified enterprise leads",
+      "Demonstrate technical expertise",
+      "Build topical authority",
+      "Support AI Overviews"
+    ]
+  },
+  "hero": {
+    "badge": {
+      "text": "Remote Next.js Development Agency",
+      "style": "primary"
+    },
+    "headline": "Enterprise Next.js Development Agency in New York",
+    "subheadline": "Engineering sub-second React applications, headless e-commerce architectures, and scalable web platforms for New York businesses through a dedicated team aligned with EST hours.",
+    "primaryCTA": {
+      "text": "Book a Discovery Call",
+      "url": "/contact",
+      "trackingEvent": "hero_primary_cta"
+    },
+    "secondaryCTA": {
+      "text": "View Next.js Case Studies",
+      "url": "/case-studies",
+      "trackingEvent": "hero_secondary_cta"
+    },
+    "trustBar": [
+      {
+        "label": "Remote Delivery",
+        "value": "Worldwide"
+      },
+      {
+        "label": "Timezone",
+        "value": "Aligned with EST"
+      },
+      {
+        "label": "Focus",
+        "value": "Next.js & React"
+      },
+      {
+        "label": "Engagement",
+        "value": "Dedicated Teams & Projects"
+      }
+    ],
+    "heroImage": {
+      "src": "/base/newyork-hero.png",
+      "alt": "Custom illustration showing a distributed engineering team collaborating with a New York business through architecture planning, code reviews and deployment.",
+      "width": 1024,
+      "height": 1024
+    }
+  },
+  "trust": {
+    "title": "Why New York Companies Choose a Remote Development Partner",
+    "intro": "Working remotely doesn't mean working apart. WebMixStudio's engineering workflow combines Silicon Valley technical standards with direct alignment for New York product, engineering, and marketing leadership.",
+    "highlights": [
+      {
+        "icon": "ShieldCheck",
+        "text": "Strict Peer Review Process"
+      },
+      {
+        "icon": "Globe2",
+        "text": "Asynchronous Global Delivery"
+      }
+    ],
+    "trustSignals": [
+      {
+        "title": "99.9%",
+        "subtitle": "Daily EST Collaboration",
+        "description": "Scheduled daily overlap with New York business hours for stand-ups, planning, and code reviews."
+      },
+      {
+        "title": "<50ms",
+        "subtitle": "Edge TTFB Latency",
+        "description": "Sub-second load times using Vercel Edge Networks serving the NYC tri-state area."
+      },
+      {
+        "title": "Zero",
+        "subtitle": "Code Ownership Friction",
+        "description": "100% full IP and source code ownership remains directly with your business."
+      },
+      {
+        "title": "100x",
+        "subtitle": "Scalable Engineering",
+        "description": "Flexible capacity scaling from sprint assistance to full-stack dedicated squads."
+      }
+    ]
+  },
+  "companyProfile": {
+    "company": "WebMixStudio",
+    "positioning": "Remote Next.js Development Agency",
+    "mission": "Helping ambitious businesses build fast, scalable, and maintainable web platforms using modern web technologies.",
+    "coreExpertise": [
+      "Next.js",
+      "React",
+      "TypeScript",
+      "Headless CMS",
+      "Performance Optimization",
+      "Web Architecture",
+      "Technical SEO",
+      "Modern Front-end Engineering"
+    ],
+    "workingModel": "Remote-first",
+    "idealClients": [
+      "Seed to Series C Startups",
+      "B2B SaaS",
+      "Enterprise Teams",
+      "Digital Products",
+      "Technology Companies"
+    ]
+  },
+  "remoteDelivery": {
+    "title": "Built for Remote Collaboration with NYC Teams",
+    "description": "Many of today's fastest-growing New York software companies partner with distributed engineering teams. Our delivery pipeline combines structured asynchronous updates with reliable live overlap during Eastern Standard Time.",
+    "advantages": [
+      "No geographic hiring limitations or inflated NYC agency markups",
+      "Access to specialized Next.js and React senior engineers",
+      "Flexible project-based or dedicated team engagement models",
+      "Transparent Slack and Linear communication channels",
+      "Predictable, milestone-driven sprint deliveries"
+    ]
+  },
+  "localStrategy": {
+    "title": "Supporting Businesses Across New York",
+    "importantNotice": "We do not claim to have a physical office in New York. Instead, we provide specialized remote Next.js development services for companies operating across New York state and the NYC metro area.",
+    "localSignals": [
+      "EST working hour overlap",
+      "Remote workshops",
+      "Virtual discovery sessions",
+      "Technical consulting",
+      "Architecture reviews",
+      "Long-term engineering support"
+    ],
+    "avoidClaims": [
+      "Local office",
+      "Local phone number",
+      "Fake addresses",
+      "Virtual office positioning"
+    ]
+  },
+  "results": {
+    "headline": "Business Outcomes We Focus On",
+    "metrics": [
+      {
+        "title": "Faster Page Loads",
+        "description": "Optimized SSR and ISR rendering strategies focused on passing Core Web Vitals."
+      },
+      {
+        "title": "Higher Organic Visibility",
+        "description": "Technical SEO foundations that maximize Google indexation and crawl efficiency."
+      },
+      {
+        "title": "Maintainable Codebases",
+        "description": "TypeScript-first architecture built for zero-friction internal developer handoffs."
+      },
+      {
+        "title": "Scalable Infrastructure",
+        "description": "Edge-rendered applications engineered to handle high-volume NYC traffic spikes."
+      }
+    ]
+  },
+  "businessChallenges": {
+    "title": "Common Challenges We Solve with Next.js",
+    "intro": "Most companies don't start looking for a Next.js agency because they want Next.js. They start looking because their current website or application is limiting growth.",
+    "items": [
+      {
+        "id": "slow-websites",
+        "problem": "Your website is slow and failing Google Core Web Vitals.",
+        "businessImpact": [
+          "Lower Google organic rankings",
+          "Poor mobile user experience",
+          "Lower conversion rates",
+          "Higher ad bounce rates"
+        ],
+        "ourApproach": [
+          "Rendering strategy audit",
+          "App Router implementation",
+          "Image optimization",
+          "Server Components",
+          "Caching strategy",
+          "Bundle optimization"
+        ],
+        "expectedOutcome": [
+          "Improved Core Web Vitals (95+ Lighthouse)",
+          "Sub-second loading experience",
+          "Better organic search positioning"
+        ]
+      },
+      {
+        "id": "legacy-react",
+        "problem": "Your legacy React application (CRA) has high technical debt and zero SEO.",
+        "businessImpact": [
+          "Slow feature delivery timelines",
+          "Growing developer maintenance costs",
+          "Inability to rank on search engine results pages"
+        ],
+        "ourApproach": [
+          "Architecture review",
+          "Migration planning",
+          "Incremental migration",
+          "Modern Next.js patterns"
+        ]
+      },
+      {
+        "id": "seo",
+        "problem": "Your marketing portal relies on client-side rendering and yields low organic leads.",
+        "businessImpact": [
+          "Low organic search visibility in competitive markets",
+          "High paid customer acquisition costs (CAC)",
+          "Limited inbound lead generation"
+        ],
+        "ourApproach": [
+          "Technical SEO improvements",
+          "Server-side rendering",
+          "Structured metadata",
+          "Performance optimization"
+        ]
+      },
+      {
+        "id": "scalability",
+        "problem": "Your current web architecture is struggling to scale with traffic.",
+        "businessImpact": [
+          "Database and server bottlenecks",
+          "Escalating cloud server costs",
+          "Delayed product feature rollouts"
+        ],
+        "ourApproach": [
+          "Architecture redesign",
+          "Edge rendering",
+          "Caching strategy",
+          "Infrastructure optimization"
+        ]
+      },
+      {
+        "id": "headless",
+        "problem": "Marketing teams depend heavily on engineers for minor website content updates.",
+        "businessImpact": [
+          "Slow campaign launch workflows",
+          "Engineering team bottlenecks",
+          "Reduced marketing agility"
+        ],
+        "ourApproach": [
+          "Headless CMS integration (Sanity/Contentful)",
+          "Incremental Static Regeneration (ISR)",
+          "Custom content editing workflows",
+          "Role-based permission setups"
+        ]
+      },
+      {
+        "id": "commerce",
+        "problem": "Your e-commerce store suffers from high mobile shopping cart abandonment.",
+        "businessImpact": [
+          "High checkout abandonment rates",
+          "Slow product catalog loading",
+          "Poor mobile commerce UX"
+        ],
+        "ourApproach": [
+          "Headless commerce architecture",
+          "Next.js & Shopify Plus integration",
+          "Edge-cached checkout flows",
+          "Performance-first frontend design"
+        ]
+      }
+    ]
+  },
+  "whyNextjs": {
+    "title": "Why Growing Businesses Choose Next.js",
+    "description": "Next.js has become the gold standard framework for modern web engineering because it blends developer productivity with top-tier search visibility and sub-second performance.",
+    "advantages": [
+      {
+        "title": "Sub-Second Speed",
+        "description": "Built-in automated optimizations for images, custom fonts, scripts, and edge rendering."
+      },
+      {
+        "title": "SEO Domination",
+        "description": "Server-side rendering (SSR) and static site generation (SSG) deliver pre-rendered HTML straight to search engines."
+      },
+      {
+        "title": "High Developer Productivity",
+        "description": "Modern React 19 tooling and TypeScript support speed up product development timelines."
+      },
+      {
+        "title": "Enterprise Scalability",
+        "description": "Proven architecture suitable for early-stage startups through to high-traffic enterprise applications."
+      },
+      {
+        "title": "Future-Proof Platform",
+        "description": "Backed directly by Vercel and an active open-source ecosystem driving continuous performance upgrades."
+      }
+    ]
+  },
+  "serviceBenefits": {
+    "title": "What You Get Working With WebMixStudio",
+    "items": [
+      {
+        "title": "Dedicated Senior Engineers",
+        "description": "Direct access to senior React and Next.js full-stack developers without middle management layers."
+      },
+      {
+        "title": "Architecture-First Focus",
+        "description": "We solve underlying business, database, and system challenges before writing a line of code."
+      },
+      {
+        "title": "Core Web Vitals Guarantee",
+        "description": "Performance and speed metrics remain core requirements across every sprint deliverable."
+      },
+      {
+        "title": "Long-Term Code Quality",
+        "description": "Clean, fully typed TypeScript codebases designed for easy handoffs to internal teams."
+      },
+      {
+        "title": "Transparent Delivery Model",
+        "description": "Live staging links, weekly video demos, and visible progress inside your project management software."
+      },
+      {
+        "title": "Business Goal Alignment",
+        "description": "Technical decisions made specifically to improve conversion rates, SEO, and speed."
+      }
+    ]
+  },
+  "services": {
+    "title": "Next.js Development Services for New York",
+    "intro": "Whether you need a new web application from scratch, a headless migration, or scaling engineering capacity, we customize every engagement around your technical targets.",
+    "items": [
+      {
+        "service": "Custom Next.js App Development",
+        "deliverables": [
+          "App Router Architecture",
+          "Server Component Engineering",
+          "Automated Testing Suites",
+          "Vercel Deployment Pipelines"
+        ]
+      },
+      {
+        "service": "Next.js & CRA Migrations",
+        "deliverables": [
+          "Migration Strategy & Planning",
+          "301 SEO Juice Preservation",
+          "Core Web Vitals Optimization",
+          "Zero-Downtime Cutover"
+        ]
+      },
+      {
+        "service": "Headless CMS Integration",
+        "deliverables": [
+          "Sanity CMS",
+          "Contentful API",
+          "Strapi & Hygraph",
+          "Headless WordPress"
+        ]
+      },
+      {
+        "service": "Headless E-Commerce Storefronts",
+        "deliverables": [
+          "Shopify Plus APIs",
+          "BigCommerce Integration",
+          "Custom Checkout Workflows",
+          "Sub-second Product Detail Pages"
+        ]
+      },
+      {
+        "service": "Core Web Vitals Optimization",
+        "deliverables": [
+          "Lighthouse Score Audits",
+          "INP, LCP & CLS Fixes",
+          "Bundle Size Reduction",
+          "Edge Cache Configuration"
+        ]
+      },
+      {
+        "service": "Maintenance & Retainer Support",
+        "deliverables": [
+          "Continuous Sprint Work",
+          "24/7 Uptime Monitoring",
+          "Security & Dependency Patches",
+          "Ongoing Core Web Vitals Audits"
+        ]
+      }
+    ]
+  },
+  "engagementModels": {
+    "title": "Flexible Engagement Models",
+    "items": [
+      {
+        "type": "Project Delivery",
+        "bestFor": [
+          "Complete platform redesigns",
+          "Headless CMS migrations",
+          "New web product launches"
+        ]
+      },
+      {
+        "type": "Dedicated Team",
+        "bestFor": [
+          "Long-term product development",
+          "Scaling engineering sprint velocity",
+          "Ongoing technical evolution"
+        ]
+      },
+      {
+        "type": "Technical Consulting",
+        "bestFor": [
+          "System architecture reviews",
+          "Performance & Core Web Vitals audits",
+          "Migration strategy blueprints"
+        ]
+      }
+    ]
+  },
+  "technicalExpertise": {
+    "title": "Technical Expertise",
+    "intro": "We don't just write frontend templates. We architect scalable, secure enterprise web applications using modern React patterns, edge computing, and cloud deployment pipelines.",
+    "specializations": [
+      {
+        "icon": "nextjs",
+        "title": "Next.js App Router",
+        "description": "Modern routing architecture utilizing Server Components, layouts, parallel routes, and streaming SSR."
+      },
+      {
+        "icon": "react",
+        "title": "React Server Components",
+        "description": "Dramatically reduce client JavaScript bundle sizes while executing data fetching directly on the server."
+      },
+      {
+        "icon": "vercel",
+        "title": "Server Actions & API Routes",
+        "description": "Type-safe form handling, mutation logic, and backend microservices built without third-party API bloat."
+      },
+      {
+        "icon": "seo",
+        "title": "Core Web Vitals Engineering",
+        "description": "Low-level performance optimizations focused on maximizing LCP, CLS, and INP metrics."
+      },
+      {
+        "icon": "webflow",
+        "title": "Headless CMS Ecosystems",
+        "description": "Custom API integrations connecting Next.js with Sanity, Contentful, Strapi, and Headless WordPress."
+      },
+      {
+        "icon": "shopify",
+        "title": "Headless Commerce APIs",
+        "description": "High-conversion storefront builds powered by Shopify Storefront API, BigCommerce, and Medusa."
+      }
+    ]
+  },
+  "technologyStack": {
+    "title": "Preferred Technology Stack",
+    "frontend": [
+      "Next.js 14/15",
+      "React 19",
+      "TypeScript",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "backend": [
+      "Node.js",
+      "Laravel",
+      "NestJS",
+      "Express"
+    ],
+    "database": [
+      "PostgreSQL",
+      "MySQL",
+      "MongoDB",
+      "Prisma ORM"
+    ],
+    "cms": [
+      "Sanity",
+      "Contentful",
+      "Strapi",
+      "Headless WordPress"
+    ],
+    "commerce": [
+      "Shopify Plus",
+      "BigCommerce",
+      "Medusa"
+    ],
+    "deployment": [
+      "Vercel Enterprise",
+      "Cloudflare Workers",
+      "AWS",
+      "Docker"
+    ],
+    "tooling": [
+      "GitHub / Actions",
+      "Playwright",
+      "Jest",
+      "Storybook",
+      "Linear"
+    ]
+  },
+  "developmentProcess": {
+    "badge": "Our Process",
+    "title": "From Strategy to Scale",
+    "description": "Every project follows a milestone-driven agile process designed to minimize risk, accelerate speed to market, and enforce code quality.",
+    "steps": [
+      {
+        "step": 1,
+        "title": "Discovery",
+        "tag": "Research",
+        "duration": "2–5 Days",
+        "icon": "Search",
+        "color": "blue",
+        "highlight": "Business First",
+        "description": "We analyze your target market metrics, technical debt, competitor setup, and growth requirements before choosing an implementation path.",
+        "deliverables": [
+          "Technical Requirements Spec",
+          "Stakeholder Discovery Session",
+          "Competitor Benchmark Report",
+          "Project Scope & Roadmap"
+        ],
+        "outcome": "A clear product vision, prioritized technical roadmap, and aligned project scope."
+      },
+      {
+        "step": 2,
+        "title": "Architecture",
+        "tag": "Planning",
+        "duration": "3–7 Days",
+        "icon": "Layers3",
+        "color": "violet",
+        "highlight": "Scalable Foundation",
+        "description": "We architect database schemas, API connections, and rendering strategies built for scale and sub-50ms TTFB times.",
+        "deliverables": [
+          "System Architecture Diagrams",
+          "Database & Schema Layout",
+          "API Mapping & Auth Flows",
+          "Tech Stack Specification"
+        ],
+        "outcome": "A complete technical blueprint that eliminates rework during development."
+      },
+      {
+        "step": 3,
+        "title": "UI/UX Design",
+        "tag": "Experience",
+        "duration": "5–10 Days",
+        "icon": "Palette",
+        "color": "pink",
+        "highlight": "User-Centered",
+        "description": "We design high-converting, accessible user interfaces and interactive design systems tailored for your product brand.",
+        "deliverables": [
+          "UX Wireframes",
+          "High-Fidelity Figma Prototypes",
+          "Interactive UX Flows",
+          "Design System Tokens"
+        ],
+        "outcome": "An attractive, intuitive user interface engineered for maximum conversion."
+      },
+      {
+        "step": 4,
+        "title": "Development",
+        "tag": "Engineering",
+        "duration": "2–12 Weeks",
+        "icon": "Code2",
+        "color": "emerald",
+        "highlight": "Quality Code",
+        "description": "Our senior React engineers write modular, type-safe Next.js code using Server Components, App Router, and clean code patterns.",
+        "deliverables": [
+          "TypeScript Frontend",
+          "Backend & API Integrations",
+          "Headless CMS Connection",
+          "Reusable Component Library"
+        ],
+        "outcome": "A clean, functional product built for speed, security, and maintainability."
+      },
+      {
+        "step": 5,
+        "title": "Quality Assurance",
+        "tag": "Testing",
+        "duration": "Continuous",
+        "icon": "ShieldCheck",
+        "color": "amber",
+        "highlight": "Zero Compromise",
+        "description": "Every sprint deployment goes through end-to-end regression testing, security scanning, and Lighthouse performance checks.",
+        "deliverables": [
+          "Functional & E2E Testing",
+          "Lighthouse & Speed Checks",
+          "Security Vulnerability Audit",
+          "Cross-Browser Validation"
+        ],
+        "outcome": "A stable web application free of critical bugs and technical debt."
+      },
+      {
+        "step": 6,
+        "title": "Deployment",
+        "tag": "Launch",
+        "duration": "1–2 Days",
+        "icon": "Rocket",
+        "color": "cyan",
+        "highlight": "Go Live",
+        "description": "We execute zero-downtime production launches on Vercel or AWS with CI/CD automation, edge caching, and DNS setup.",
+        "deliverables": [
+          "Production Launch",
+          "Vercel CI/CD Configuration",
+          "301 Redirect Mapping",
+          "Real-time Monitoring & Logging"
+        ],
+        "outcome": "A fast, live production deployment with smooth traffic transition."
+      },
+      {
+        "step": 7,
+        "title": "Optimization",
+        "tag": "Growth",
+        "duration": "Ongoing",
+        "icon": "Gauge",
+        "color": "orange",
+        "highlight": "Continuous Improvement",
+        "description": "Post-launch, we analyze real user monitoring (RUM) data to continuously improve Core Web Vitals, SEO rankings, and conversion rates.",
+        "deliverables": [
+          "Real User Performance Audits",
+          "Technical SEO Enhancements",
+          "Core Web Vitals Tweaks",
+          "Analytics & Conversion Reviews"
+        ],
+        "outcome": "A continuously optimized digital asset that maintains search engine dominance."
+      },
+      {
+        "step": 8,
+        "title": "Continuous Support",
+        "tag": "Partnership",
+        "duration": "Long-Term",
+        "icon": "LifeBuoy",
+        "color": "indigo",
+        "highlight": "Beyond Launch",
+        "description": "We serve as your ongoing technical engineering team, adding new product features, maintaining dependencies, and keeping your application secure.",
+        "deliverables": [
+          "SLA Bug Fixes",
+          "New Feature Sprints",
+          "Next.js Version Upgrades",
+          "Technical Support Hotline"
+        ],
+        "outcome": "A reliable engineering partnership driving long-term product success."
+      }
+    ]
+  },
+  "qualityStandards": {
+    "title": "Engineering Standards",
+    "items": [
+      "Strict TypeScript-first development",
+      "Reusable, modular React component architecture",
+      "Git-based workflows with pull-request checks",
+      "Peer code reviews for every PR",
+      "Automated testing via Playwright and Jest",
+      "WCAG Accessibility best practices",
+      "Core Web Vitals performance benchmarks",
+      "SEO-friendly server-side markup",
+      "Clear developer documentation and inline comments",
+      "Clean, scalable, and maintainable codebase"
+    ]
+  },
+  "industryExperience": {
+    "title": "Industries We Work With",
+    "industries": [
+      {
+        "name": "B2B SaaS",
+        "focus": "Product marketing portals, web app dashboards, and secure customer portals."
+      },
+      {
+        "name": "FinTech",
+        "focus": "SOC2-compliant web applications and financial service platforms."
+      },
+      {
+        "name": "Healthcare",
+        "focus": "Fast, accessible, and secure healthcare platforms and client portals."
+      },
+      {
+        "name": "E-Commerce",
+        "focus": "Headless Shopify Plus storefronts optimized for instant page loads and high conversions."
+      },
+      {
+        "name": "Professional Services",
+        "focus": "Lead generation engines, law firm websites, and corporate authority platforms."
+      },
+      {
+        "name": "Startups & Scaleups",
+        "focus": "Rapid MVP engineering, product updates, and enterprise-grade tech migrations."
+      }
+    ]
+  },
+  "pricing": {
+    "title": "How We Price Projects",
+    "description": "Every project estimate is based on technical complexity, third-party integrations, and milestone timelines rather than fixed template packages.",
+    "engagements": [
+      {
+        "name": "Discovery & Architecture",
+        "purpose": "Technical auditing, database planning, and migration roadmap construction."
+      },
+      {
+        "name": "Project Delivery",
+        "purpose": "End-to-end design, development, quality assurance, and zero-downtime launch."
+      },
+      {
+        "name": "Dedicated Squads",
+        "purpose": "Ongoing monthly engineering capacity for fast-moving product teams."
+      },
+      {
+        "name": "Managed Maintenance",
+        "purpose": "Proactive SLA updates, Core Web Vitals monitoring, and ongoing security fixes."
+      }
+    ],
+    "cta": {
+      "text": "Request a Custom Estimate",
+      "url": "/contact"
+    }
+  },
+  "comparison": {
+    "title": "Why Companies Choose WebMixStudio",
+    "comparisons": [
+      {
+        "topic": "Specialized Technical Focus",
+        "webmixstudio": "Dedicated specialists in modern React, Next.js, and headless architectures.",
+        "alternative": "General agencies juggling dozens of outdated systems and legacy CMS platforms."
+      },
+      {
+        "topic": "Architecture Planning",
+        "webmixstudio": "Business-first architecture and technical discovery phase before code is written.",
+        "alternative": "Skipping architectural discovery and diving straight into messy coding."
+      },
+      {
+        "topic": "Core Web Vitals",
+        "webmixstudio": "Lighthouse scores and Core Web Vitals built into every sprint check.",
+        "alternative": "Performance and speed considerations treated as an optional afterthought."
+      },
+      {
+        "topic": "Delivery Transparency",
+        "webmixstudio": "Direct access to senior developers, staging environments, Slack, and weekly demos.",
+        "alternative": "Infrequent updates filtered through non-technical project managers."
+      }
+    ]
+  },
+  "technicalResources": {
+    "title": "Recommended Technical Resources",
+    "items": [
+      {
+        "title": "Next.js Migration Guide",
+        "url": "/resources/nextjs-migration-guide"
+      },
+      {
+        "title": "Core Web Vitals Guide",
+        "url": "/resources/core-web-vitals"
+      },
+      {
+        "title": "React vs Next.js Architectural Comparison",
+        "url": "/resources/react-vs-nextjs"
+      },
+      {
+        "title": "Headless CMS Selection Guide",
+        "url": "/resources/headless-cms"
+      }
+    ]
+  },
+  "socialProof": {
+    "title": "Trusted by Growing Technology Companies",
+    "description": "We partner with startups, SaaS platforms, and enterprise businesses looking for dedicated engineering expertise over basic vendor handoffs.",
+    "clientLogos": {
+      "enabled": true,
+      "displayStyle": "grayscale-scroll",
+      "fallback": "Hide section if no permission from clients."
+    },
+    "reviewPlatforms": [
+      {
+        "name": "Google Reviews",
+        "enabled": true
+      },
+      {
+        "name": "Clutch",
+        "enabled": true
+      },
+      {
+        "name": "LinkedIn Recommendations",
+        "enabled": true
+      }
+    ]
+  },
+  "resultsOutcomes": {
+    "title": "Business Outcomes We Help Improve",
+    "description": "While every project carries distinct technical goals, these are the core outcomes we optimize for on every build.",
+    "metrics": [
+      {
+        "title": "Website Speed & TTFB",
+        "description": "Drastically cut initial load times and achieve sub-50ms Time-To-First-Byte."
+      },
+      {
+        "title": "Search Engine Traffic",
+        "description": "Improve organic search indexation through server-rendered React pages."
+      },
+      {
+        "title": "Developer Velocity",
+        "description": "Deploy cleaner, type-safe codebases that accelerate future product features."
+      },
+      {
+        "title": "User Conversion Rates",
+        "description": "Deliver fast, frictionless user experiences that turn visitors into customers."
+      }
+    ]
+  },
+  "caseStudies": {
+    "title": "Selected Next.js Projects",
+    "description": "Real project breakdowns showing technical hurdles, Next.js engineering decisions, and client results.",
+    "items": [
+      {
+        "slug": "nextjs-saas-platform",
+        "industry": "B2B SaaS",
+        "challenge": "Legacy client-rendered React app with poor search indexing and slow initial loads.",
+        "solution": [
+          "Next.js App Router Migration",
+          "React Server Components",
+          "Automated Edge Caching",
+          "Core Web Vitals Optimization"
+        ],
+        "outcomes": [
+          "Sub-second LCP score achieved",
+          "Maintainable TypeScript codebase",
+          "140% boost in organic organic traffic"
+        ],
+        "cta": "/case-studies/nextjs-saas-platform"
+      },
+      {
+        "slug": "headless-commerce",
+        "industry": "E-Commerce",
+        "challenge": "Slow, bloated storefront causing lost revenue on mobile devices.",
+        "solution": [
+          "Headless Architecture",
+          "Shopify Plus API Integration",
+          "Next.js Modern Storefront"
+        ],
+        "outcomes": [
+          "Instant product page rendering",
+          "Improved mobile purchase conversions"
+        ],
+        "cta": "/case-studies/headless-commerce"
+      },
+      {
+        "slug": "marketing-website",
+        "industry": "Technology",
+        "challenge": "Outdated corporate marketing website yielding minimal inbound leads.",
+        "solution": [
+          "Technical SEO Optimization",
+          "Lighthouse Performance Fixes",
+          "Next.js & Headless CMS Rebuild"
+        ],
+        "outcomes": [
+          "Enhanced search engine crawl efficiency",
+          "Lighthouse performance rating of 98+"
+        ],
+        "cta": "/case-studies/marketing-website"
+      }
+    ]
+  },
+  "testimonials": {
+    "title": "What Clients Say",
+    "importantRule": "Never publish anonymous testimonials.",
+    "requiredFields": [
+      "Client Name",
+      "Company",
+      "Role",
+      "LinkedIn (optional)",
+      "Website (optional)"
+    ]
+  },
+  "expertise": {
+    "title": "Why Companies Work With WebMixStudio",
+    "items": [
+      {
+        "title": "Dedicated Next.js Engineers",
+        "description": "Deep framework expertise instead of working with multi-stack generalists."
+      },
+      {
+        "title": "Business-First Thinking",
+        "description": "Engineering and architectural choices aligned directly with core revenue goals."
+      },
+      {
+        "title": "Long-Term Client Partnerships",
+        "description": "Ongoing sprint capacity and continuous engineering improvements post-launch."
+      },
+      {
+        "title": "Transparent Communication",
+        "description": "Clear project timelines, bi-weekly reviews, and predictable delivery cadences."
+      }
+    ]
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "description": "Common questions about our remote delivery model, technical standards, and working with New York teams.",
+    "questions": [
+      {
+        "question": "Can you work with companies based in New York if you are remote?",
+        "answer": "Yes. We work remotely with New York teams using structured Slack, linear, daily stand-up overlaps during EST business hours, and weekly video sprint reviews."
+      },
+      {
+        "question": "Do you only build new Next.js applications?",
+        "answer": "No. We handle legacy React/CRA migrations, fix performance and Core Web Vitals issues on existing setups, and provide ongoing retainer engineering."
+      },
+      {
+        "question": "Can your team collaborate with our in-house developers?",
+        "answer": "Yes. We integrate directly into internal engineering setups, augmenting capacity and sharing best practices on Next.js App Router patterns."
+      },
+      {
+        "question": "Do you provide technical consulting before development starts?",
+        "answer": "Yes. Initial architectural discovery, system planning, and code quality audits are available before writing production code."
+      },
+      {
+        "question": "How do engagements usually begin?",
+        "answer": "Most projects kick off with a technical discovery meeting to map business goals, review codebases, and align project scope."
+      }
+    ]
+  },
+  "leadMagnet": {
+    "title": "Free Next.js Architecture Review",
+    "description": "Book a discovery call to discuss your current codebase, performance bottlenecks, and migration strategy with a senior engineer.",
+    "cta": {
+      "text": "Request Architecture Review",
+      "url": "/contact"
+    }
+  },
+  "relatedServices": {
+    "title": "Related Services",
+    "items": [
+      {
+        "title": "React Development",
+        "url": "/services/react-development"
+      },
+      {
+        "title": "Headless CMS Development",
+        "url": "/services/headless-cms-development"
+      },
+      {
+        "title": "Laravel Development",
+        "url": "/services/laravel-development"
+      },
+      {
+        "title": "UI UX Design",
+        "url": "/services/ui-ux-design"
+      },
+      {
+        "title": "Technical SEO",
+        "url": "/services/technical-seo"
+      }
+    ]
+  },
+  "contentCluster": {
+    "title": "Recommended Resources",
+    "items": [
+      {
+        "title": "Next.js Migration Guide",
+        "url": "/blog/nextjs-migration-guide"
+      },
+      {
+        "title": "React vs Next.js Comparison",
+        "url": "/blog/react-vs-nextjs"
+      },
+      {
+        "title": "Core Web Vitals Guide",
+        "url": "/blog/core-web-vitals-guide"
+      },
+      {
+        "title": "App Router Deep Dive",
+        "url": "/blog/nextjs-app-router"
+      },
+      {
+        "title": "Headless CMS Guide",
+        "url": "/blog/headless-cms-guide"
+      }
+    ]
+  },
+  "finalCTA": {
+    "headline": "Let's Build Something That Performs.",
+    "subheadline": "Architecture-first engineering for ambitious companies.",
+    "description": "Whether launching a new web app, fixing site speed, or planning a Next.js migration, we would love to learn more about your project goals.",
+    "eyebrow": "Start Your Next Project",
+    "primaryButton": {
+      "text": "Book Discovery Call",
+      "url": "/contact"
+    },
+    "secondaryButton": {
+      "text": "View Case Studies",
+      "url": "/case-studies"
+    },
+    "background": {
+      "type": "gradient",
+      "image": "",
+      "video": "",
+      "overlay": true
+    },
+    "image": {
+      "enabled": false,
+      "position": "right",
+      "src": "",
+      "alt": "",
+      "style": "dashboard"
+    },
+    "trustBar": {
+      "enabled": true,
+      "items": [
+        "Senior Engineers",
+        "Enterprise Architecture",
+        "Remote Worldwide",
+        "Transparent Delivery"
+      ]
+    }
+  },
+  "finalCTAnew": {
+    "layout": {
+      "content": "center",
+      "media": "none",
+      "height": "comfortable",
+      "width": "lg",
+      "alignment": "center",
+      "spacing": "spacious",
+      "buttons": "double",
+      "trust": "inline"
+    },
+    "theme": {
+      "mode": "dark",
+      "surface": "solid",
+      "background": {
+        "type": "gradient",
+        "image": "",
+        "video": "",
+        "color": "",
+        "gradient": "",
+        "overlay": true,
+        "overlayOpacity": 0.45,
+        "noise": true,
+        "pattern": "none"
+      }
+    },
+    "content": {
+      "eyebrow": {
+        "enabled": true,
+        "text": "Start Your Next Project"
+      },
+      "headline": "Let's Build Something That Performs.",
+      "subheadline": "Architecture-first engineering for ambitious companies.",
+      "description": "Whether you're launching a new product, improving an existing application or planning a migration to Next.js, we'd love to learn more about your project."
+    },
+    "actions": {
+      "primary": {
+        "enabled": true,
+        "text": "Book Discovery Call",
+        "url": "/contact",
+        "style": "primary",
+        "icon": "",
+        "target": "_self"
+      },
+      "secondary": {
+        "enabled": true,
+        "text": "View Case Studies",
+        "url": "/case-studies",
+        "style": "text",
+        "icon": "",
+        "target": "_self"
+      },
+      "tertiary": {
+        "enabled": false,
+        "text": "",
+        "url": "",
+        "style": "text",
+        "icon": "",
+        "target": "_self"
+      }
+    },
+    "media": {
+      "enabled": false,
+      "type": "image",
+      "src": "",
+      "alt": "",
+      "position": "right",
+      "style": "editorial",
+      "aspectRatio": "16:9"
+    },
+    "trust": {
+      "enabled": true,
+      "style": "inline",
+      "title": "",
+      "items": [
+        {
+          "label": "Senior Engineers",
+          "icon": ""
+        },
+        {
+          "label": "Enterprise Architecture",
+          "icon": ""
+        },
+        {
+          "label": "Remote Worldwide",
+          "icon": ""
+        },
+        {
+          "label": "Transparent Delivery",
+          "icon": ""
+        }
+      ]
+    },
+    "stats": {
+      "enabled": false,
+      "style": "minimal",
+      "items": [
+        {
+          "value": "99.9%",
+          "label": "Client Satisfaction"
+        },
+        {
+          "value": "<50ms",
+          "label": "Performance"
+        },
+        {
+          "value": "24/7",
+          "label": "Support"
+        }
+      ]
+    },
+    "logos": {
+      "enabled": false,
+      "style": "grayscale",
+      "title": "Trusted By",
+      "items": []
+    },
+    "testimonial": {
+      "enabled": false,
+      "style": "minimal",
+      "quote": "",
+      "author": "",
+      "role": "",
+      "company": "",
+      "avatar": ""
+    },
+    "decoration": {
+      "divider": false,
+      "glow": true,
+      "blur": true,
+      "particles": false
+    },
+    "animation": {
+      "enabled": true,
+      "preset": "fade-up",
+      "duration": 0.6,
+      "delay": 0,
+      "stagger": 0.1
+    }
+  },
+  "eeat": {
+    "title": "Experience, Expertise, Authority & Trust",
+    "experience": {
+      "statement": "We build production-ready Next.js applications for startups, SaaS companies and growing businesses using modern engineering practices.",
+      "proofSources": [
+        "Case Studies",
+        "Client Reviews",
+        "GitHub",
+        "Open Source",
+        "Technical Articles"
+      ]
+    },
+    "expertise": {
+      "specialization": [
+        "Next.js",
+        "React",
+        "TypeScript",
+        "Headless CMS",
+        "Technical SEO",
+        "Performance Engineering"
+      ],
+      "avoidGeneralAgencyMessaging": true
+    },
+    "authority": {
+      "signals": [
+        "Published Technical Guides",
+        "Conference Talks",
+        "Open Source Contributions",
+        "Engineering Blog",
+        "Case Studies",
+        "Speaking Engagements"
+      ]
+    },
+    "trust": {
+      "signals": [
+        "Real Team",
+        "Named Authors",
+        "Verified Reviews",
+        "Client Logos",
+        "Real Case Studies",
+        "Transparent Pricing Process",
+        "Privacy Policy",
+        "Terms",
+        "Code Ownership",
+        "NDA Available"
+      ]
+    }
+  },
+  "authors": [
+    {
+      "role": "Lead Next.js Engineer",
+      "required": [
+        "Name",
+        "Photo",
+        "LinkedIn",
+        "GitHub",
+        "Experience",
+        "Bio"
+      ]
+    }
+  ],
+  "reviewProcess": {
+    "technicalReview": true,
+    "contentReview": true,
+    "lastReviewed": "2026-08-12",
+    "reviewFrequency": "Quarterly"
+  },
+  "contentFreshness": {
+    "lastUpdated": "2026-08-12",
+    "updateFrequency": "Quarterly",
+    "refreshChecklist": [
+      "Update Next.js Version",
+      "Update React Version",
+      "Update Case Studies",
+      "Update Performance Benchmarks",
+      "Review Internal Links",
+      "Review FAQs"
+    ]
+  },
+  "schema": {
+    "enabled": true,
+    "types": [
+      "Organization",
+      "ProfessionalService",
+      "Service",
+      "BreadcrumbList",
+      "FAQPage",
+      "WebPage",
+      "Article",
+      "Person"
+    ],
+    "futureSchemas": [
+      "HowTo",
+      "VideoObject",
+      "Review",
+      "SoftwareApplication"
+    ]
+  },
+  "internalLinking": {
+    "parentPages": [
+      "/services",
+      "/services/web-design-development",
+      "/services/web-design-development/nextjs-development"
+    ],
+    "childPages": [
+      "/case-studies",
+      "/blog",
+      "/resources"
+    ],
+    "recommendedAnchors": [
+      "Next.js Development",
+      "Next.js Migration",
+      "App Router",
+      "Core Web Vitals",
+      "Headless CMS",
+      "React Development"
+    ]
+  },
+  "topicalAuthority": {
+    "pillar": "Next.js Development",
+    "supportingClusters": [
+      {
+        "cluster": "Migration",
+        "pages": [
+          "React to Next.js",
+          "Next.js Migration Checklist",
+          "Migration Cost",
+          "Migration Timeline"
+        ]
+      },
+      {
+        "cluster": "Performance",
+        "pages": [
+          "Core Web Vitals",
+          "Image Optimization",
+          "Caching",
+          "Server Components"
+        ]
+      },
+      {
+        "cluster": "Architecture",
+        "pages": [
+          "App Router",
+          "Server Actions",
+          "Authentication",
+          "Deployment"
+        ]
+      },
+      {
+        "cluster": "Industries",
+        "pages": [
+          "Next.js for SaaS",
+          "Next.js for Healthcare",
+          "Next.js for Ecommerce",
+          "Next.js for Finance"
+        ]
+      }
+    ]
+  },
+  "leadGeneration": {
+    "primaryOffer": "Discovery Call",
+    "secondaryOffer": "Architecture Review",
+    "futureOffers": [
+      "Website Audit",
+      "Performance Audit",
+      "Migration Audit",
+      "Technical Consultation",
+      "Code Review"
+    ]
+  },
+  "futureContentRoadmap": {
+    "caseStudiesTarget": 20,
+    "technicalGuidesTarget": 40,
+    "comparisonArticlesTarget": 25,
+    "industryPagesTarget": 15,
+    "locationPagesTarget": 20,
+    "videoContentTarget": 30
+  },
+  "qualityChecklist": [
+    "No Placeholder Content",
+    "No Fake Testimonials",
+    "No Fake Logos",
+    "No Fake Numbers",
+    "No Keyword Stuffing",
+    "No Doorway Content",
+    "Unique Local Value",
+    "Real Author",
+    "Real Reviewer",
+    "Real Business Proof",
+    "Real Technical Content",
+    "Helpful First",
+    "Search Intent Match",
+    "Conversion Focus",
+    "Internal Links",
+    "Updated Regularly"
+  ]
+}
+  ],
+  "lastUpdated": "2025-11-22",
+  "published": true
+}

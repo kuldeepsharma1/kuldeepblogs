@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 
 export interface NavLink {
@@ -57,7 +57,7 @@ export function DesktopNav({ items }: DesktopNavProps) {
             {isActive && (
               <motion.div
                 layoutId="nav-active"
-                className="absolute -bottom-1 left-4 right-4 h-[2px] rounded-full bg-neutral-900 dark:bg-white"
+                className="absolute -bottom-1 left-4 right-4 h-0.5 rounded-full bg-neutral-900 dark:bg-white"
                 transition={{ type: "spring", stiffness: 350, damping: 30 }}
               />
             )}

@@ -2,6 +2,15 @@
 @plugin "@tailwindcss/typography";
 @custom-variant dark (&:where(.dark, .dark *));
 
+
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+ 
+
 /* ─────────────────────────────────────────────
    Design Tokens — Light Mode
    ───────────────────────────────────────────── */
@@ -169,7 +178,10 @@ html {
 html.dark {
   color-scheme: dark;
 }
-
+/* Scoped to AnimatedThemeToggler — the toggler sets the data-attribute and the variable only during a theme toggle. */
+html[data-magicui-theme-vt="active"]::view-transition-group(root) {
+  animation-duration: var(--magicui-theme-toggle-vt-duration);
+}
 * {
   box-sizing: border-box;
 }
