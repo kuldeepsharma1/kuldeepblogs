@@ -1,0 +1,87 @@
+---
+title: "Flexbox Mastery"
+description: "Everything you need to know about CSS Flexbox for building flexible, responsive layouts."
+slug: "01-flexbox-mastery"
+courseSlug: "css-architecture"
+moduleSlug: "01-modern-layout"
+publishedAt: "2024-03-01"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "15 min"
+tags: ["css", "flexbox", "layout"]
+quiz:
+  - type: "multiple-choice"
+    question: "What is the default flex-direction?"
+    options: ["column", "row", "row-reverse", "column-reverse"]
+    correctAnswer: 1
+    explanation: "The default flex-direction is `row`, which lays out items horizontally from left to right (in LTR languages)."
+    points: 1
+---
+
+# Flexbox Mastery
+
+Flexbox is a one-dimensional layout system that distributes space among items in a container.
+
+## The Flex Container
+
+```css
+.container {
+  display: flex;
+  flex-direction: row;     /* row | column | row-reverse | column-reverse */
+  justify-content: center; /* Main axis alignment */
+  align-items: center;     /* Cross axis alignment */
+  gap: 1rem;               /* Spacing between items */
+}
+```
+
+## Common Patterns
+
+### Centering (the holy grail)
+
+```css
+.center-everything {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+```
+
+### Sticky Footer
+
+```css
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page main {
+  flex: 1; /* Takes remaining space */
+}
+```
+
+### Equal-Width Cards
+
+```css
+.card-grid {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.card {
+  flex: 1; /* Each card takes equal space */
+}
+```
+
+<Callout type="tip">
+  The `gap` property works in Flexbox and is supported in all modern browsers. No more margin hacks!
+</Callout>
+
+## Key Takeaways
+
+- Flexbox is one-dimensional (row OR column)
+- `justify-content` controls the main axis
+- `align-items` controls the cross axis
+- `flex: 1` distributes remaining space equally
+- `gap` replaces margin-based spacing

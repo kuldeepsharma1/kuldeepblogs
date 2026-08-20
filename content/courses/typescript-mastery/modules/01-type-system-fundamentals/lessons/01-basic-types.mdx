@@ -1,0 +1,90 @@
+---
+title: "Basic Types"
+description: "Learn TypeScript's primitive types, arrays, tuples, enums, and special types like any, unknown, and never."
+slug: "01-basic-types"
+courseSlug: "typescript-mastery"
+moduleSlug: "01-type-system-fundamentals"
+publishedAt: "2024-02-01"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "12 min"
+tags: ["typescript", "types", "primitives"]
+quiz:
+  - type: "multiple-choice"
+    question: "What is the difference between `any` and `unknown`?"
+    options:
+      - "They are the same"
+      - "`unknown` is type-safe — you must narrow it before using it"
+      - "`any` is more restrictive than `unknown`"
+      - "`unknown` allows any operation without checks"
+    correctAnswer: 1
+    explanation: "Unlike `any`, `unknown` requires type narrowing (type guards) before you can perform operations on it. This makes `unknown` the type-safe alternative to `any`."
+    points: 1
+---
+
+# Basic Types
+
+TypeScript provides static types on top of JavaScript. Let's explore every type you'll use daily.
+
+## Primitive Types
+
+```typescript
+const name: string = "Alice";
+const age: number = 30;
+const isActive: boolean = true;
+const id: bigint = 100n;
+const sym: symbol = Symbol("unique");
+```
+
+## Arrays and Tuples
+
+```typescript
+// Arrays — two equivalent syntaxes
+const numbers: number[] = [1, 2, 3];
+const names: Array<string> = ["Alice", "Bob"];
+
+// Tuples — fixed-length arrays with specific types per position
+const pair: [string, number] = ["Alice", 30];
+const rgb: [number, number, number] = [255, 128, 0];
+```
+
+## The `any` vs `unknown` Decision
+
+<Callout type="warning">
+  Avoid `any` whenever possible. It disables type checking entirely. Use `unknown` instead and narrow the type.
+</Callout>
+
+```typescript
+// ❌ any — no type safety
+function processAny(data: any) {
+  data.foo.bar.baz(); // No error, but will crash at runtime!
+}
+
+// ✅ unknown — requires narrowing
+function processUnknown(data: unknown) {
+  if (typeof data === "string") {
+    console.log(data.toUpperCase()); // Safe!
+  }
+}
+```
+
+## Never and Void
+
+```typescript
+// void — function doesn't return a value
+function logMessage(msg: string): void {
+  console.log(msg);
+}
+
+// never — function never returns (throws or infinite loop)
+function throwError(msg: string): never {
+  throw new Error(msg);
+}
+```
+
+## Key Takeaways
+
+- TypeScript has primitive types matching JavaScript
+- Tuples are fixed-length, typed arrays
+- Prefer `unknown` over `any` for type safety
+- `never` represents unreachable code

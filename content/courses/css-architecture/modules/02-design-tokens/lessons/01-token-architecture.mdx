@@ -1,0 +1,101 @@
+---
+title: "Token Architecture"
+description: "Learn how to structure design tokens using CSS custom properties for a scalable design system."
+slug: "01-token-architecture"
+courseSlug: "css-architecture"
+moduleSlug: "02-design-tokens"
+publishedAt: "2024-03-10"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "12 min"
+tags: ["css", "design-tokens", "custom-properties", "design-systems"]
+quiz:
+  - type: "multiple-choice"
+    question: "What is a design token?"
+    options:
+      - "A CSS framework"
+      - "A named, reusable design decision (color, spacing, etc.)"
+      - "A JavaScript variable for styles"
+      - "A Figma plugin"
+    correctAnswer: 1
+    explanation: "Design tokens are the smallest pieces of a design system — named, reusable values that represent design decisions like colors, spacing, typography, and shadows."
+    points: 1
+---
+
+# Token Architecture
+
+Design tokens are the foundation of every scalable design system. They capture design decisions as data.
+
+## What are Design Tokens?
+
+Tokens are **named design decisions**. Instead of using raw values like `#3b82f6` or `16px`, you use semantic names:
+
+```css
+:root {
+  /* Primitive tokens — raw values */
+  --blue-500: #3b82f6;
+  --space-4: 1rem;
+
+  /* Semantic tokens — meaningful names */
+  --color-primary: var(--blue-500);
+  --spacing-md: var(--space-4);
+}
+```
+
+## Token Layers
+
+A well-architected system has three layers:
+
+### 1. Primitive Tokens (Global)
+
+Raw values with no semantic meaning:
+
+```css
+:root {
+  --gray-50: #fafafa;
+  --gray-100: #f4f4f5;
+  --gray-900: #18181b;
+  --gray-950: #09090b;
+}
+```
+
+### 2. Semantic Tokens (Alias)
+
+Meaningful names that reference primitives:
+
+```css
+:root {
+  --color-background: var(--gray-50);
+  --color-foreground: var(--gray-950);
+  --color-border: var(--gray-100);
+}
+
+.dark {
+  --color-background: var(--gray-950);
+  --color-foreground: var(--gray-50);
+  --color-border: var(--gray-900);
+}
+```
+
+### 3. Component Tokens
+
+Scoped to specific components:
+
+```css
+.button {
+  --button-bg: var(--color-primary);
+  --button-text: var(--color-primary-foreground);
+  --button-radius: var(--radius-md);
+}
+```
+
+<Callout type="tip">
+  This three-layer architecture is used by Figma, Radix, shadcn/ui, and most enterprise design systems. It scales from small projects to massive multi-brand systems.
+</Callout>
+
+## Key Takeaways
+
+- Tokens are named design decisions
+- Use three layers: primitive → semantic → component
+- CSS custom properties enable theming
+- Semantic tokens make dark mode trivial

@@ -1,0 +1,114 @@
+---
+title: "useState — Managing State"
+description: "Learn how to add and manage local state in functional components with the useState hook."
+slug: "01-use-state"
+courseSlug: "react-fundamentals"
+moduleSlug: "02-hooks-deep-dive"
+publishedAt: "2024-01-20"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "10 min"
+tags: ["react", "hooks", "useState", "state"]
+quiz:
+  - type: "multiple-choice"
+    question: "What does useState return?"
+    options:
+      - "A single value"
+      - "An array with the current state and a setter function"
+      - "An object with get and set methods"
+      - "A promise"
+    correctAnswer: 1
+    explanation: "useState returns an array with exactly two elements: the current state value and a function to update it."
+    points: 1
+  - type: "code-output"
+    question: "What will be logged after clicking the button once?"
+    code: |
+      function Counter() {
+        const [count, setCount] = useState(0);
+        const handleClick = () => {
+          setCount(count + 1);
+          console.log(count);
+        };
+        return <button onClick={handleClick}>Count: {count}</button>;
+      }
+    language: "jsx"
+    options: ["0", "1", "undefined", "NaN"]
+    correctAnswer: 0
+    explanation: "State updates are asynchronous. The console.log runs with the current value of count (0), not the updated value. The UI will show 1, but the log shows 0."
+    points: 2
+---
+
+# useState — Managing State
+
+The `useState` hook is the most fundamental hook in React. It lets you add state to functional components.
+
+## Basic Usage
+
+```jsx
+import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+`useState` takes an **initial value** and returns an **array** with two elements:
+1. The current state value
+2. A function to update it
+
+## Functional Updates
+
+When the next state depends on the previous state, use a **functional update**:
+
+```jsx
+// ❌ Can be stale
+setCount(count + 1);
+
+// ✅ Always uses the latest state
+setCount(prevCount => prevCount + 1);
+```
+
+<Callout type="warning">
+  State updates are asynchronous. React batches them for performance. If you read state immediately after setting it, you'll get the old value.
+</Callout>
+
+## Objects and Arrays as State
+
+For complex state, you need to create new references:
+
+```jsx
+const [user, setUser] = useState({ name: 'Alice', age: 25 });
+
+// ✅ Spread to create a new object
+setUser(prev => ({ ...prev, age: 26 }));
+
+// ❌ Mutating the existing object won't trigger a re-render
+user.age = 26;
+setUser(user);
+```
+
+## Lazy Initialization
+
+If your initial state is expensive to compute, pass a **function** to `useState`:
+
+```jsx
+// ❌ This runs on every render
+const [data, setData] = useState(expensiveComputation());
+
+// ✅ This runs only on the first render
+const [data, setData] = useState(() => expensiveComputation());
+```
+
+## Key Takeaways
+
+- `useState` returns `[value, setter]`
+- Use functional updates when depending on previous state
+- Never mutate state directly — always create new references
+- Use lazy initialization for expensive initial values

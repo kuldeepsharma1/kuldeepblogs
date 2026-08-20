@@ -1,0 +1,319 @@
+---
+title: Introduction to JavaScript
+description: A comprehensive guide to the language that powers modern web experiences, from fundamentals to advanced patterns.
+slug: introduction-to-javascript
+author: Kuldeep Singh
+tags:
+  - javascript
+  - web-development
+  - frontend
+  - react
+category: Development
+cover: https://images.unsplash.com/photo-1781819822600-e49d74e5bbf0
+publishedAt: 2026-06-18
+updatedAt: 2026-07-20
+readingTime: 14 min read
+featured: true
+draft: false
+toc: true
+imageAlt: A stylized JavaScript illustration with code on a dark background.
+---
+
+import { Callout } from "@/components/mdx/callout";
+import { ImageFigure } from "@/components/mdx/image-figure";
+import { Tip } from "@/components/mdx/tip";
+import { Warning } from "@/components/mdx/warning";
+
+# Introduction
+
+JavaScript is the language that makes the modern web feel alive. It powers interactive experiences in browsers, servers, desktop apps, and even embedded systems. If you are new to programming, JavaScript is one of the best places to begin because it is approachable, expressive, and deeply connected to the way the web works.
+
+<ImageFigure
+  src="https://images.unsplash.com/photo-1781819822600-e49d74e5bbf0"
+  alt="A developer writing JavaScript in a modern editor"
+  caption="Modern JavaScript development often begins with a small script and grows into a full product experience."
+/>
+
+## A Brief History
+
+JavaScript was created in 1995 by Brendan Eich while he was working at Netscape. Its original purpose was to add small interactions to web pages, such as validating form input and changing content dynamically. Over time, it evolved from a simple browser scripting language into a full-fledged programming language used across the stack.
+
+Today, JavaScript is the foundation of the web platform. It is the language behind many user interfaces, build tools, and application frameworks. It is also used on the server through runtimes such as Node.js.
+
+<Callout type="note">
+  JavaScript is not the same as Java. They share a similar syntax at times, but
+  they are distinct languages with different ecosystems and design goals.
+</Callout>
+
+## What JavaScript Is
+
+JavaScript is a dynamic, high-level, interpreted language. It supports object-oriented, functional, and imperative programming styles. It is designed to be flexible, which is one reason it has become so widely adopted.
+
+A JavaScript program can run inside a browser, where it can respond to user events. It can also run on the server, where it can serve APIs, process data, or build tooling.
+
+### Why Developers Love It
+
+- It is easy to start with.
+- It runs everywhere the web runs.
+- It has a huge ecosystem of libraries and tools.
+- It works well with HTML and CSS.
+- It powers frameworks like React, Vue, and Svelte.
+
+## Variables
+
+Variables store values in memory so your program can reference them later. In modern JavaScript, you typically use `let` and `const` instead of `var`.
+
+```javascript
+const name = "Ada";
+let score = 10;
+
+score = 11;
+```
+
+<Tip>
+  Prefer `const` by default and use `let` only when a value needs to change.
+</Tip>
+
+## Data Types
+
+JavaScript has a small set of primitive data types and complex data types built on top of them.
+
+```javascript
+const stringValue = "hello";
+const numberValue = 42;
+const booleanValue = true;
+const nullValue = null;
+const undefinedValue = undefined;
+const bigIntValue = 9007199254740991n;
+const symbolValue = Symbol("id");
+```
+
+### Objects and Arrays
+
+Objects let you group related data, while arrays let you store ordered collections. Both are foundational to how JavaScript programs are structured.
+
+```javascript
+const user = {
+  name: "Mina",
+  active: true,
+};
+
+const hobbies = ["reading", "coding", "hiking"];
+```
+
+## Operators
+
+Operators let you transform and compare values. Common examples include arithmetic, comparison, and logical operators.
+
+```javascript
+const sum = 5 + 3;
+const difference = 10 - 4;
+const isGreater = 8 > 5;
+const isReady = true && false;
+```
+
+## Functions
+
+Functions are reusable blocks of code. They make programs easier to organize and reason about.
+
+```javascript
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet("Ava"));
+```
+
+### Arrow Functions
+
+Arrow functions provide a shorter syntax for defining functions. They are especially common in modern React code.
+
+```javascript
+const add = (a, b) => a + b;
+const greetAgain = (name) => `Hello, ${name}`;
+```
+
+<Warning>
+  Arrow functions do not bind their own `this`, so they behave differently from
+  traditional functions in some situations.
+</Warning>
+
+## Control Flow
+
+### Conditionals
+
+Conditionals let your program make decisions.
+
+```javascript
+const age = 20;
+
+if (age >= 18) {
+  console.log("Adult");
+} else {
+  console.log("Minor");
+}
+```
+
+### Loops
+
+Loops help you repeat work without copying code manually.
+
+```javascript
+for (let index = 0; index < 3; index += 1) {
+  console.log(index);
+}
+
+const items = [1, 2, 3];
+for (const item of items) {
+  console.log(item);
+}
+```
+
+## Working with the DOM
+
+The Document Object Model, or DOM, is the browser representation of a web page. JavaScript can manipulate it to update the page dynamically.
+
+```html
+<button id="save">Save</button>
+```
+
+```javascript
+const button = document.getElementById("save");
+
+button.addEventListener("click", () => {
+  console.log("Saved");
+});
+```
+
+<ImageFigure
+  src="https://images.unsplash.com/photo-1781819822600-e49d74e5bbf0"
+  alt="A simple diagram of the DOM structure"
+  caption="The DOM is a tree of nodes that JavaScript can traverse and update."
+/>
+
+## Events
+
+Events are how browsers communicate user actions to your code. A click, a key press, a form submission, and a page load are all events.
+
+```javascript
+button.addEventListener("click", () => {
+  console.log("Clicked");
+});
+```
+
+## Promises and Async/Await
+
+JavaScript is single-threaded, but it can manage asynchronous work with promises and the `async`/`await` syntax.
+
+```javascript
+function fetchData() {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve("Done"), 1000);
+  });
+}
+
+async function loadData() {
+  const result = await fetchData();
+  console.log(result);
+}
+```
+
+## Modules
+
+Modules let you split code into reusable files. They help keep applications maintainable as they grow.
+
+```javascript
+// math.js
+export function add(a, b) {
+  return a + b;
+}
+
+// app.js
+import { add } from "./math.js";
+
+console.log(add(2, 3));
+```
+
+## ES6 Features
+
+ECMAScript 2015, often called ES6, introduced several features that shaped modern JavaScript.
+
+- `let` and `const`
+- Arrow functions
+- Template literals
+- Destructuring
+- Classes
+- Modules
+- Promises
+
+```javascript
+const [first, second] = ["one", "two"];
+const { name } = user;
+```
+
+## Best Practices
+
+Writing good JavaScript is about more than syntax. It is also about clarity, maintainability, and performance.
+
+1. Prefer readable names.
+2. Keep functions small and focused.
+3. Use `const` and `let` deliberately.
+4. Avoid deeply nested callbacks.
+5. Write tests when possible.
+6. Use modern syntax where it improves clarity.
+
+## Common Mistakes
+
+Some mistakes appear frequently in beginner code and can make applications harder to debug.
+
+- Using `==` instead of `===`
+- Mutating state without understanding the consequences
+- Forgetting to handle async errors
+- Overusing global variables
+- Writing overly long functions
+
+## Performance Tips
+
+Modern JavaScript can be fast, but performance still depends on how you write it.
+
+- Avoid unnecessary DOM operations.
+- Debounce expensive events.
+- Use efficient data structures.
+- Prefer built-in methods where they improve clarity.
+- Minimize blocking work in the main thread.
+
+## Summary
+
+JavaScript is a powerful language that helps designers and developers create engaging experiences on the web. Once you understand the basics—variables, functions, objects, arrays, and asynchronous programming—you will be well on your way to building real products.
+
+<Callout type="tip">
+  Keep practicing by building small projects. A tiny app often teaches more than
+  a long tutorial.
+</Callout>
+
+## A Small Example
+
+```tsx
+import React from "react";
+
+export function Demo() {
+  return <div>Hello from JavaScript</div>;
+}
+```
+
+## Table Example
+
+| Topic       | Why It Matters                              |
+| ----------- | ------------------------------------------- |
+| Variables   | They hold values for later use.             |
+| Functions   | They organize logic into reusable units.    |
+| Async/Await | They make asynchronous code easier to read. |
+| Modules     | They keep code maintainable.                |
+
+## Task List Example
+
+- [x] Understand variables
+- [x] Learn functions
+- [ ] Practice DOM events
+
+This article is intended to be a practical, approachable introduction for readers who want to learn modern JavaScript without sacrificing depth.

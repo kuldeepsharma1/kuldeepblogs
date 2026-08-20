@@ -1,0 +1,142 @@
+---
+title: "JSX and Components"
+description: "Understand JSX syntax, create functional components, and learn the rules that govern them."
+slug: "02-jsx-and-components"
+courseSlug: "react-fundamentals"
+moduleSlug: "01-getting-started"
+publishedAt: "2024-01-16"
+author: "Kuldeep Sharma"
+order: 2
+readingTime: "12 min"
+tags: ["react", "jsx", "components"]
+objectives:
+  - "Write valid JSX syntax"
+  - "Create and export functional components"
+  - "Understand JSX compilation and rules"
+quiz:
+  - type: "multiple-choice"
+    question: "What does JSX stand for?"
+    options:
+      - "JavaScript XML"
+      - "Java Syntax Extension"
+      - "JavaScript Extended"
+      - "JSON XML Syntax"
+    correctAnswer: 0
+    explanation: "JSX stands for JavaScript XML. It's a syntax extension that lets you write HTML-like code in your JavaScript files."
+    points: 1
+  - type: "multiple-choice"
+    question: "Which is a valid JSX component name?"
+    options:
+      - "myComponent"
+      - "my-component"
+      - "MyComponent"
+      - "my_component"
+    correctAnswer: 2
+    explanation: "React component names must start with a capital letter (PascalCase). Lowercase names are treated as HTML elements."
+    points: 1
+---
+
+# JSX and Components
+
+JSX is React's secret weapon. It lets you write UI code that looks like HTML but has the full power of JavaScript.
+
+## What is JSX?
+
+JSX stands for **JavaScript XML**. It's a syntax extension that allows you to write HTML-like structures directly in your JavaScript code.
+
+```jsx
+const element = <h1>Hello, world!</h1>;
+```
+
+Under the hood, JSX is compiled to regular JavaScript function calls:
+
+```jsx
+// This JSX:
+const element = <h1 className="greeting">Hello!</h1>;
+
+// Compiles to:
+const element = React.createElement('h1', { className: 'greeting' }, 'Hello!');
+```
+
+## JSX Rules
+
+There are a few rules to remember:
+
+### 1. Return a Single Root Element
+
+Every component must return a single root element. Use a fragment (`<>...</>`) if you don't want an extra DOM node:
+
+```jsx
+function Profile() {
+  return (
+    <>
+      <h1>Alice Johnson</h1>
+      <p>Software Engineer</p>
+    </>
+  );
+}
+```
+
+### 2. Close All Tags
+
+JSX requires all tags to be closed, including self-closing tags:
+
+```jsx
+// ✅ Correct
+<img src="photo.jpg" alt="Photo" />
+<br />
+
+// ❌ Wrong
+<img src="photo.jpg" alt="Photo">
+```
+
+### 3. Use camelCase for Attributes
+
+HTML attributes use camelCase in JSX:
+
+```jsx
+// HTML: class, onclick, tabindex
+// JSX:  className, onClick, tabIndex
+
+<button className="btn" onClick={handleClick} tabIndex={0}>
+  Click me
+</button>
+```
+
+## Creating Components
+
+A React component is just a function that returns JSX:
+
+```jsx
+function Greeting() {
+  return <h1>Hello, World!</h1>;
+}
+```
+
+<Callout type="tip">
+  Always start component names with a capital letter. React uses this convention to distinguish components from regular HTML elements.
+</Callout>
+
+## Expressions in JSX
+
+You can embed any JavaScript expression inside JSX using curly braces:
+
+```jsx
+function UserCard({ user }) {
+  return (
+    <div className="card">
+      <h2>{user.name}</h2>
+      <p>{user.bio || 'No bio provided'}</p>
+      <span>Joined {new Date(user.joinDate).toLocaleDateString()}</span>
+    </div>
+  );
+}
+```
+
+## Key Takeaways
+
+- JSX is a syntax extension that compiles to JavaScript
+- Components must return a single root element
+- Use camelCase for HTML attributes in JSX
+- Embed JavaScript expressions with curly braces `{}`
+- Component names must start with a capital letter

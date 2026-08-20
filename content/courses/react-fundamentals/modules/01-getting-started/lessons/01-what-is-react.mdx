@@ -1,0 +1,120 @@
+---
+title: "What is React?"
+description: "Learn what React is, why it was created, and the mental model behind component-based UI development."
+slug: "01-what-is-react"
+courseSlug: "react-fundamentals"
+moduleSlug: "01-getting-started"
+publishedAt: "2024-01-15"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "8 min"
+tags: ["react", "introduction", "components"]
+objectives:
+  - "Explain what React is and its core philosophy"
+  - "Understand the virtual DOM concept"
+  - "Recognize when to use React"
+quiz:
+  - type: "multiple-choice"
+    question: "What is React primarily used for?"
+    options:
+      - "Server-side database management"
+      - "Building user interfaces"
+      - "Network request handling"
+      - "Operating system development"
+    correctAnswer: 1
+    explanation: "React is a JavaScript library specifically designed for building user interfaces, particularly single-page applications with dynamic, interactive elements."
+    points: 1
+  - type: "true-false"
+    question: "React uses a Virtual DOM to optimize rendering performance."
+    options: ["True", "False"]
+    correctAnswer: 0
+    explanation: "React maintains a virtual representation of the DOM in memory. When state changes, React computes the minimal set of DOM operations needed and batches them for optimal performance."
+    points: 1
+  - type: "multiple-choice"
+    question: "Who developed React?"
+    options:
+      - "Google"
+      - "Microsoft"
+      - "Meta (Facebook)"
+      - "Apple"
+    correctAnswer: 2
+    explanation: "React was developed by Meta (formerly Facebook) and was first deployed on Facebook's News Feed in 2011, then open-sourced in 2013."
+    points: 1
+---
+
+# What is React?
+
+React is a JavaScript library for building user interfaces. It was created by Meta (formerly Facebook) and has become the most widely used frontend library in the world.
+
+## Why React Exists
+
+Before React, building dynamic user interfaces was painful. Developers had to manually track which parts of the page needed updating when data changed. This led to complex, bug-prone code.
+
+React introduced a revolutionary idea: **declarative UI**. Instead of telling the browser *how* to update the DOM, you describe *what* the UI should look like for any given state, and React figures out the rest.
+
+<Callout>
+  React's core philosophy: UI is a function of state. Given the same state, your component should always render the same output.
+</Callout>
+
+## The Component Model
+
+React applications are built from **components** — self-contained, reusable pieces of UI. Each component manages its own logic and rendering.
+
+```jsx
+function Welcome({ name }) {
+  return <h1>Hello, {name}!</h1>;
+}
+```
+
+Components can be composed together like building blocks:
+
+```jsx
+function App() {
+  return (
+    <div>
+      <Welcome name="Alice" />
+      <Welcome name="Bob" />
+      <Welcome name="Charlie" />
+    </div>
+  );
+}
+```
+
+## The Virtual DOM
+
+One of React's key innovations is the **Virtual DOM** — a lightweight JavaScript representation of the actual DOM.
+
+When your component's state changes:
+
+1. React creates a new virtual DOM tree
+2. It compares the new tree with the previous one (this is called **reconciliation**)
+3. It calculates the minimal set of changes needed
+4. It applies only those changes to the real DOM
+
+This process is called **diffing**, and it's what makes React fast.
+
+<Callout type="tip">
+  You don't need to understand the Virtual DOM internals to use React effectively. Just know that React is smart about updating only what's necessary.
+</Callout>
+
+## When to Use React
+
+React excels at:
+
+- **Interactive UIs** — dashboards, forms, data visualizations
+- **Single-page applications** — where navigation happens without page reloads
+- **Component libraries** — building reusable design systems
+- **Complex state management** — applications with lots of dynamic data
+
+React might be overkill for:
+
+- Simple static pages with no interactivity
+- SEO-critical content sites (though Next.js solves this)
+- Very small projects where vanilla JS suffices
+
+## Key Takeaways
+
+- React is a library for building UIs declaratively
+- Components are the fundamental building block
+- The Virtual DOM optimizes rendering performance
+- React was created by Meta and is open-source

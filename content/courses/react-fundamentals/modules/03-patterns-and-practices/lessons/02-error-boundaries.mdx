@@ -1,0 +1,77 @@
+---
+title: "Error Boundaries"
+description: "Learn how to catch and handle errors gracefully in React applications."
+slug: "02-error-boundaries"
+courseSlug: "react-fundamentals"
+moduleSlug: "03-patterns-and-practices"
+publishedAt: "2024-01-26"
+author: "Kuldeep Sharma"
+order: 2
+readingTime: "8 min"
+tags: ["react", "error-handling", "boundaries"]
+quiz:
+  - type: "true-false"
+    question: "Error boundaries can catch errors in event handlers."
+    options: ["True", "False"]
+    correctAnswer: 1
+    explanation: "Error boundaries only catch errors during rendering, in lifecycle methods, and in constructors. Event handler errors must be caught with regular try/catch."
+    points: 1
+---
+
+# Error Boundaries
+
+Error boundaries are React components that catch JavaScript errors anywhere in their child component tree, log those errors, and display a fallback UI.
+
+## Why Error Boundaries?
+
+Without error boundaries, a single error in one component can crash your entire application. Error boundaries provide **graceful degradation**.
+
+```jsx
+class ErrorBoundary extends React.Component {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error('Error boundary caught:', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="error-fallback">
+          <h2>Something went wrong</h2>
+          <p>{this.state.error?.message}</p>
+          <button onClick={() => this.setState({ hasError: false })}>
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+```
+
+## Usage
+
+Wrap error-prone sections of your app:
+
+```jsx
+<ErrorBoundary>
+  <UserProfile userId={userId} />
+</ErrorBoundary>
+```
+
+<Callout type="warning">
+  Error boundaries do NOT catch errors in event handlers, async code, or server-side rendering. Use try/catch for those cases.
+</Callout>
+
+## Key Takeaways
+
+- Error boundaries prevent full-app crashes
+- They catch rendering errors, not event handler errors
+- Place them strategically around independent sections
+- Always provide a meaningful fallback UI

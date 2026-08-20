@@ -1,0 +1,89 @@
+---
+title: "Unions and Intersections"
+description: "Combine types with unions and intersections to model complex data shapes."
+slug: "01-unions-and-intersections"
+courseSlug: "typescript-mastery"
+moduleSlug: "02-advanced-types"
+publishedAt: "2024-02-10"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "12 min"
+tags: ["typescript", "unions", "intersections", "advanced"]
+quiz:
+  - type: "multiple-choice"
+    question: "What does `A | B` mean in TypeScript?"
+    options:
+      - "A value that has all properties of both A and B"
+      - "A value that is either type A or type B"
+      - "A new type that overrides A with B"
+      - "An error — you can't combine types"
+    correctAnswer: 1
+    explanation: "The union operator `|` means the value can be of type A OR type B. You must narrow the type before accessing type-specific properties."
+    points: 1
+---
+
+# Unions and Intersections
+
+Union and intersection types are fundamental building blocks for modeling complex data in TypeScript.
+
+## Union Types (`|`)
+
+A union type represents a value that can be one of several types:
+
+```typescript
+type Status = "loading" | "success" | "error";
+type ID = string | number;
+
+function processId(id: ID) {
+  if (typeof id === "string") {
+    return id.toUpperCase(); // TypeScript knows it's a string here
+  }
+  return id.toFixed(2); // TypeScript knows it's a number here
+}
+```
+
+## Discriminated Unions
+
+The most powerful pattern in TypeScript:
+
+```typescript
+type Result =
+  | { status: "success"; data: string }
+  | { status: "error"; error: Error }
+  | { status: "loading" };
+
+function handleResult(result: Result) {
+  switch (result.status) {
+    case "success":
+      console.log(result.data); // TypeScript narrows to success branch
+      break;
+    case "error":
+      console.error(result.error.message); // Narrows to error branch
+      break;
+    case "loading":
+      console.log("Loading...");
+      break;
+  }
+}
+```
+
+<Callout type="tip">
+  Discriminated unions are the backbone of type-safe state management. Use them for API responses, form states, component props, and more.
+</Callout>
+
+## Intersection Types (`&`)
+
+An intersection type combines multiple types into one:
+
+```typescript
+type HasName = { name: string };
+type HasAge = { age: number };
+type Person = HasName & HasAge; // { name: string; age: number }
+```
+
+## Key Takeaways
+
+- Unions (`|`) = "either A or B"
+- Intersections (`&`) = "both A and B"
+- Discriminated unions enable exhaustive type checking
+- Type narrowing makes unions safe to use

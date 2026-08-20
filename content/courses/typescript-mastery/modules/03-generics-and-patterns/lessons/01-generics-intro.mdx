@@ -1,0 +1,93 @@
+---
+title: "Introduction to Generics"
+description: "Learn what generics are, why they exist, and how to use them to write reusable, type-safe functions and components."
+slug: "01-generics-intro"
+courseSlug: "typescript-mastery"
+moduleSlug: "03-generics-and-patterns"
+publishedAt: "2024-02-15"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "15 min"
+tags: ["typescript", "generics", "reusability"]
+quiz:
+  - type: "multiple-choice"
+    question: "What does `<T>` represent in a generic function?"
+    options:
+      - "A specific type called T"
+      - "A type parameter — a placeholder for any type"
+      - "The TypeScript type system"
+      - "A template literal type"
+    correctAnswer: 1
+    explanation: "`<T>` is a type parameter — a placeholder that gets replaced with a specific type when the function is called. It enables the function to work with many types while maintaining type safety."
+    points: 1
+---
+
+# Introduction to Generics
+
+Generics let you write functions, types, and classes that work with **any type** while preserving type information.
+
+## The Problem
+
+Without generics, you'd need to write separate functions for each type:
+
+```typescript
+function getFirstString(arr: string[]): string { return arr[0]; }
+function getFirstNumber(arr: number[]): number { return arr[0]; }
+// ...and so on for every type
+```
+
+## The Solution: Generics
+
+```typescript
+function getFirst<T>(arr: T[]): T {
+  return arr[0];
+}
+
+// TypeScript infers the type!
+const name = getFirst(["Alice", "Bob"]);   // type: string
+const num = getFirst([1, 2, 3]);            // type: number
+```
+
+## Generic Constraints
+
+Limit what types are allowed:
+
+```typescript
+function getLength<T extends { length: number }>(item: T): number {
+  return item.length;
+}
+
+getLength("hello");     // ✅ strings have length
+getLength([1, 2, 3]);   // ✅ arrays have length
+getLength(42);          // ❌ numbers don't have length
+```
+
+## Generic React Components
+
+```typescript
+interface ListProps<T> {
+  items: T[];
+  renderItem: (item: T) => React.ReactNode;
+}
+
+function List<T>({ items, renderItem }: ListProps<T>) {
+  return <ul>{items.map((item, i) => <li key={i}>{renderItem(item)}</li>)}</ul>;
+}
+
+// Usage — fully type-safe
+<List
+  items={users}
+  renderItem={(user) => <span>{user.name}</span>}
+/>
+```
+
+<Callout type="tip">
+  Think of generics as "type arguments" — just like function arguments let you pass values, generics let you pass types.
+</Callout>
+
+## Key Takeaways
+
+- Generics are type parameters (`<T>`) that act as placeholders
+- They enable code reuse without sacrificing type safety
+- Use constraints (`extends`) to limit acceptable types
+- Generic React components are one of TypeScript's killer features
