@@ -17,7 +17,7 @@ const footerLinks = {
   column3: {
     title: "Resources",
     links: [
-      { name: "Privacy Policy", href: "/privacy" },
+      { name: "Privacy Policy", href: "/privacy-policy" },
       { name: "Terms of Service", href: "/terms" },
       { name: "RSS Feed", href: "/rss.xml" },
       { name: "Sitemap", href: "/sitemap.xml" },

@@ -40,7 +40,7 @@ export function AboutSection() {
               My work lives at the intersection of product thinking, system design, and frontend craftsmanship.
             </p>
             <p>
-              I care about clarity over noise, structure over clutter, and interactions that feel both effortless and intentional. I believe that the best interfaces are the ones you don't even notice using.
+              I care about clarity over noise, structure over clutter, and interactions that feel both effortless and intentional. I believe that the best interfaces are the ones you don&apos;t even notice using.
             </p>
             <p>
               The goal is always the same: build something memorable, useful, and beautiful without making the experience feel overdesigned.
