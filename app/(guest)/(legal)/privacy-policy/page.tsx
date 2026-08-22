@@ -340,8 +340,8 @@ export default function PrivacyPolicyPage() {
                     <Mail className="h-5 w-5 text-primary" />
                     <div>
                       <div className="text-xs font-mono text-muted-foreground">DIRECT INQUIRIES</div>
-                      <a href="mailto:privacy@kuldeeplearn.com" className="text-sm font-medium text-foreground hover:underline">
-                        privacy@kuldeeplearn.com
+                      <a href="mailto:kuldeep@hytek.org.in" className="text-sm font-medium text-foreground hover:underline">
+                       kuldeep@hytek.org.in
                       </a>
                     </div>
                   </div>
@@ -350,7 +350,7 @@ export default function PrivacyPolicyPage() {
                     <div>
                       <div className="text-xs font-mono text-muted-foreground">POSTAL / REGISTERED OFFICE</div>
                       <p className="text-sm text-foreground font-medium">
-                        KuldeepLearn Education Systems [Insert Registered Address]
+                        KuldeepLearn Education Systems 
                       </p>
                     </div>
                   </div>
