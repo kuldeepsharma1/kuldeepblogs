@@ -1,0 +1,907 @@
+title: "Linux Capabilities Overview"
+description: "Understand Linux capability sets and how capabilities provide more granular privileges than unrestricted root access."
+slug: "09-linux-capabilities-overview"
+courseSlug: "linux-fundamentals"
+moduleSlug: "02-users-permissions-and-access"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 9
+readingTime: "16 min"
+tags: ["linux", "capabilities", "least-privilege", "security", "kernel"]
+toc: true
+---
+
+## **1. Introduction**
+
+So far, we have learned that Linux has a powerful administrative account:
+
+```
+root
+UID: 0
+```
+
+Traditionally, many privileged operations were associated with the root user.
+
+For example, root can perform operations such as:
+
+- Changing file ownership.
+- Modifying network configuration.
+- Loading kernel modules.
+- Managing processes belonging to other users.
+- Changing protected system settings.
+- Binding to privileged network ports.
+
+But consider this situation:
+
+You develop a web application that needs to listen on TCP port `80`.
+
+Normally, binding to a privileged port requires additional privilege.
+
+Should the entire application run as root just to listen on port `80`?
+
+No.
+
+Running the entire application as root would expose far more privileges than the application needs.
+
+Linux provides a mechanism called **Capabilities**.
+
+Capabilities divide many traditional root privileges into smaller, separately controlled permissions.
+
+An application can receive a specific capability without receiving unrestricted root privileges.
+
+This is particularly important for:
+
+- Web servers.
+- Network services.
+- Containers.
+- Security-sensitive applications.
+- Production server hardening.
+
+## **2. Conceptual Foundation**
+
+### **2.1 What are Linux capabilities?**
+
+Linux capabilities are individual privileges that the kernel can check when a process attempts to perform a privileged operation.
+
+Traditional simplified model:
+
+```
+Root process
+    │
+    └── Has broad administrative powers
+
+Normal process
+    │
+    └── Subject to ordinary permission checks
+```
+
+Capability-based model:
+
+```
+Application process
+    │
+    ├── CAP_NET_BIND_SERVICE
+    ├── CAP_NET_RAW
+    ├── CAP_CHOWN
+    └── Other permitted capabilities
+```
+
+The application receives only the capabilities required for its operation.
+
+Linux capabilities are attributes of individual threads, not simply a global property of a username.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.man7.org\&sz=32)
+
+Linux manual page+1
+
+
+
+### **2.2 Why capabilities exist**
+
+Consider a network monitoring application.
+
+It needs to create raw network sockets to inspect certain network traffic.
+
+Without capability control, an administrator might run the entire application as root.
+
+That creates unnecessary risk.
+
+A more restricted design could grant:
+
+```
+CAP_NET_RAW
+```
+
+to the appropriate executable or process.
+
+Now the application can perform the specific privileged operation without automatically receiving every traditional root privilege.
+
+The principle is:
+
+> Give a process the smallest set of privileges needed to perform its job.
+
+### **2.3 Capabilities vs sudo vs SUID**
+
+These mechanisms solve related but different problems.
+
+| Mechanism      | Purpose                                                      |
+| -------------- | ------------------------------------------------------------ |
+| `sudo`         | Authorizes a user to execute commands under another identity |
+| SUID           | Changes the effective user identity of an executing program  |
+| Capabilities   | Grant specific privileged operations                         |
+| Ordinary `rwx` | Controls basic filesystem access                             |
+
+Example:
+
+A deployment operator executes:
+
+```
+sudo systemctl restart nginx
+```
+
+This is sudo-based privilege delegation.
+
+A root-owned SUID program could execute with root as its effective user.
+
+A program with:
+
+```
+CAP_NET_BIND_SERVICE
+```
+
+can be granted the ability to bind to privileged ports without granting the entire root identity.
+
+These mechanisms are not interchangeable.
+
+## **3. Important Linux Capabilities**
+
+Linux has many capabilities. We will focus on those most relevant to server administration.
+
+| Capability             | What it permits                                                                                |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `CAP_CHOWN`            | Change file ownership                                                                          |
+| `CAP_DAC_OVERRIDE`     | Bypass many ordinary discretionary file read/write/execute permission checks                   |
+| `CAP_DAC_READ_SEARCH`  | Bypass file read and directory search permission checks                                        |
+| `CAP_FOWNER`           | Bypass certain ownership-based permission restrictions                                         |
+| `CAP_SETUID`           | Change process user IDs within permitted rules                                                 |
+| `CAP_SETGID`           | Change process group IDs within permitted rules                                                |
+| `CAP_NET_BIND_SERVICE` | Bind to privileged Internet ports, normally below 1024                                         |
+| `CAP_NET_RAW`          | Use raw and packet sockets                                                                     |
+| `CAP_NET_ADMIN`        | Perform various network administration operations                                              |
+| `CAP_KILL`             | Send signals to processes despite ordinary ownership restrictions, subject to capability rules |
+| `CAP_SYS_PTRACE`       | Perform privileged process tracing and inspection operations                                   |
+| `CAP_SYS_ADMIN`        | A broad collection of system administration operations                                         |
+| `CAP_SYS_MODULE`       | Load and unload kernel modules                                                                 |
+| `CAP_SETFCAP`          | Set file capabilities                                                                          |
+| `CAP_BPF`              | Perform certain privileged BPF operations                                                      |
+
+The exact operations associated with each capability are defined by the Linux kernel. The `capabilities(7)` manual is the authoritative reference.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.man7.org\&sz=32)
+
+Linux manual page+1
+
+
+
+### **3.1 CAP_NET_BIND_SERVICE**
+
+This is a useful example.
+
+On conventional Linux configurations, ports below `1024` are privileged.
+
+For example:
+
+```
+Port 80  → HTTP
+Port 443 → HTTPS
+Port 22  → SSH
+```
+
+A normal unprivileged process may be unable to bind to these ports.
+
+A process with:
+
+```
+CAP_NET_BIND_SERVICE
+```
+
+can perform that operation under the applicable system rules.
+
+A configuration detail matters: Linux systems can change the starting port treated as unprivileged using:
+
+```
+cat /proc/sys/net/ipv4/ip_unprivileged_port_start
+```
+
+Therefore, do not assume every Linux system treats port `80` as privileged without checking its configuration.
+
+### **3.2 CAP_NET_RAW**
+
+This permits operations involving raw and packet sockets.
+
+It can be needed by tools that perform certain network diagnostics.
+
+For example, some `ping` implementations use raw ICMP sockets, although implementations and kernel configurations can differ.
+
+Giving this capability to an application should be deliberate because it can permit network operations beyond ordinary application traffic.
+
+### **3.3 CAP_NET_ADMIN**
+
+This provides various network-administration powers.
+
+Examples include operations involving:
+
+- Network interfaces.
+- Routing configuration.
+- Firewall-related network administration.
+- Traffic-control configuration.
+
+It is a powerful capability. Do not treat it as an ordinary application permission.
+
+### **3.4 CAP_DAC_OVERRIDE**
+
+This can bypass many normal discretionary access-control checks.
+
+Consider:
+
+```
+-rw------- alice alice secret.txt
+```
+
+An ordinary user cannot read this file unless granted access through another applicable mechanism.
+
+A process holding `CAP_DAC_OVERRIDE` may bypass the ordinary file permission restriction, subject to the capability's exact rules and other security mechanisms.
+
+This capability can significantly weaken filesystem isolation.
+
+### **3.5 CAP_SYS_ADMIN**
+
+This is one of the most powerful and broad capabilities.
+
+It covers many operations historically associated with system administration.
+
+Its scope is so broad that it is sometimes informally described as a near-root capability.
+
+Do not give `CAP_SYS_ADMIN` to an application merely because it reports a permission error.
+
+The correct capability should be identified for the specific operation.
+
+## **4. Windows-to-Linux Comparison**
+
+Windows does not use the same Linux capability model.
+
+A rough conceptual comparison:
+
+| Windows concept              | Linux concept                                 |
+| ---------------------------- | --------------------------------------------- |
+| Administrator privileges     | Traditional root privileges                   |
+| User rights assignments      | Somewhat comparable privilege controls        |
+| Restricted tokens            | Somewhat comparable least-privilege execution |
+| App-specific permissions     | Not an exact equivalent to Linux capabilities |
+| Service account restrictions | Service identity plus Linux capabilities      |
+
+Windows security tokens contain privileges and access information. Linux capabilities split selected privileged kernel operations into independently controlled permissions.
+
+Do not treat Windows user rights and Linux capabilities as identical implementations.
+
+## **5. Linux Capability Sets**
+
+This is the most important internal concept.
+
+Linux capability management uses several sets associated with a thread.
+
+We will cover five.
+
+### **5.1 Permitted set —&#x20;**`CapPrm`
+
+The permitted set represents capabilities the thread is allowed to make effective.
+
+Think of it as the set of capabilities the process may use, subject to the relevant rules.
+
+### **5.2 Effective set —&#x20;**`CapEff`
+
+The effective set contains the capabilities currently used for kernel permission checks.
+
+A capability being present in the permitted set does not automatically mean it is currently effective.
+
+### **5.3 Inheritable set —&#x20;**`CapInh`
+
+The inheritable set participates in passing capabilities across executable launches.
+
+It helps control which capabilities may be preserved when a process executes another program.
+
+### **5.4 Bounding set —&#x20;**`CapBnd`
+
+The bounding set limits which capabilities can be acquired through certain execution transitions.
+
+It can be used to restrict the maximum capabilities available to a process.
+
+A thread can drop capabilities from its bounding set, but normally cannot add them back after dropping them.
+
+### **5.5 Ambient set —&#x20;**`CapAmb`
+
+Ambient capabilities allow selected capabilities to survive certain execution transitions for non-privileged executables.
+
+This is useful in some service and container configurations.
+
+### **Quick reference**
+
+| Set      | Meaning                  |
+| -------- | ------------------------ |
+| `CapPrm` | Permitted capabilities   |
+| `CapEff` | Effective capabilities   |
+| `CapInh` | Inheritable capabilities |
+| `CapBnd` | Bounding capabilities    |
+| `CapAmb` | Ambient capabilities     |
+
+These sets participate in Linux's capability inheritance and execution rules. The full rules are more detailed than a simple list of privileges; see `capabilities(7)`.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.man7.org\&sz=32)
+
+Linux manual page+1
+
+
+
+## **6. File Capabilities vs Process Capabilities**
+
+Capabilities can be applied to an executable file.
+
+This is called a **file capability**.
+
+For example:
+
+```
+/usr/local/bin/network-app
+```
+
+An administrator might grant:
+
+```
+CAP_NET_BIND_SERVICE
+```
+
+to this executable.
+
+When it is executed, Linux evaluates the executable's file capability information and the thread's existing capability sets to calculate the new process capabilities.
+
+The file capability metadata is stored in a filesystem extended attribute named:
+
+```
+security.capability
+```
+
+This requires filesystem support for the relevant extended attributes.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://linux.die.net\&sz=32)
+
+Linux man page+1
+
+
+
+Conceptually:
+
+```
+Executable file
+    │
+    ├── File capabilities
+    │
+    ▼
+Process executes file
+    │
+    ▼
+Kernel evaluates capability rules
+    │
+    ▼
+Process receives resulting capability sets
+```
+
+### **Important distinction**
+
+A process can have capabilities because of:
+
+- Its existing process credentials.
+- Its parent process and inheritance rules.
+- File capabilities on the executable.
+- Administrative configuration and execution context.
+
+A file capability does not mean that every process belonging to the same username automatically receives that capability.
+
+## **7. Linux Tools for Managing Capabilities**
+
+The primary tools are:
+
+| Command            | Purpose                                                      |
+| ------------------ | ------------------------------------------------------------ |
+| `getcap`           | Inspect file capabilities                                    |
+| `setcap`           | Set file capabilities                                        |
+| `capsh`            | Inspect and manipulate capability-related execution contexts |
+| `getpcaps`         | Inspect process capability sets                              |
+| `/proc/PID/status` | Read capability masks for a process                          |
+
+On Ubuntu, install the capability utilities:
+
+```
+sudo apt update
+sudo apt install libcap2-bin
+```
+
+Check the tools:
+
+```
+command -v getcap
+command -v setcap
+command -v capsh
+command -v getpcaps
+```
+
+### **7.1 Inspect process capabilities**
+
+```
+capsh --print
+```
+
+This displays capability-related information for the current process context, including capability sets and securebits.
+
+Inspect the shell process:
+
+```
+getpcaps $$
+```
+
+Here, `$$` is the current Bash process ID.
+
+### **7.2 Inspect&#x20;**`/proc`
+
+Run:
+
+```
+grep '^Cap' /proc/$$/status
+```
+
+You may see:
+
+```
+CapInh:
+CapPrm:
+CapEff:
+CapBnd:
+CapAmb:
+```
+
+The values are hexadecimal bitmasks.
+
+They are not ordinary decimal UID or GID values.
+
+### **7.3 Decode a hexadecimal capability mask**
+
+Suppose you want to decode the effective capability mask of the current shell:
+
+```
+CAP_MASK=$(awk '/^CapEff:/ {print "0x"$2}' /proc/$$/status)
+
+capsh --decode="$CAP_MASK"
+```
+
+This translates the hexadecimal mask into readable capability names where supported by the installed tooling.
+
+### **7.4 Inspect file capabilities**
+
+```
+getcap /usr/bin/ping
+```
+
+The result varies by distribution. Some installations use file capabilities for `ping`; others may use different mechanisms.
+
+### **7.5 Search for file capabilities**
+
+```
+sudo getcap -r /usr/bin /usr/sbin 2>/dev/null
+```
+
+This recursively inspects those directories for file capabilities.
+
+Use the output as an inventory, not as a list of files to modify blindly.
+
+## **8. Setting File Capabilities with&#x20;**`setcap`
+
+The basic syntax is:
+
+```
+sudo setcap CAPABILITY=FLAGS FILE
+```
+
+For example:
+
+```
+sudo setcap cap_net_bind_service=+ep /path/to/application
+```
+
+Explanation:
+
+| Part                   | Meaning                                             |
+| ---------------------- | --------------------------------------------------- |
+| `cap_net_bind_service` | Capability name                                     |
+| `+e`                   | Add the capability to the file's effective behavior |
+| `+p`                   | Add the capability to the file's permitted set      |
+| `FILE`                 | Executable file being configured                    |
+
+Inspect it:
+
+```
+getcap /path/to/application
+```
+
+Expected format:
+
+```
+/path/to/application cap_net_bind_service=ep
+```
+
+Remove file capabilities:
+
+```
+sudo setcap -r /path/to/application
+```
+
+**Security warning:** File capabilities can give a program special privileges whenever it is executed. Never apply capabilities to widely used interpreters, shells or general-purpose binaries simply to make an error disappear.
+
+## **9. Practical Demonstration — Inspecting Capabilities**
+
+Works in WSL2 Ubuntu on its Linux filesystem
+
+We will first inspect capabilities without modifying system binaries.
+
+### **Step 1 — Create the lab**
+
+```
+mkdir -p ~/linux-learning/lab-18-capabilities
+cd ~/linux-learning/lab-18-capabilities
+```
+
+### **Step 2 — Install capability tools**
+
+```
+sudo apt update
+sudo apt install libcap2-bin
+```
+
+### **Step 3 — Inspect your current capabilities**
+
+```
+capsh --print
+```
+
+Observe:
+
+- Current capability set.
+- Bounding set.
+- Ambient set.
+- Securebits information.
+
+### **Step 4 — Inspect the shell process**
+
+```
+getpcaps $$
+```
+
+Then:
+
+```
+grep '^Cap' /proc/$$/status
+```
+
+Compare the capability values.
+
+### **Step 5 — Decode the effective mask**
+
+```
+CAP_MASK=$(awk '/^CapEff:/ {print "0x"$2}' /proc/$$/status)
+
+capsh --decode="$CAP_MASK"
+```
+
+### **Step 6 — Inspect existing file capabilities**
+
+```
+sudo getcap -r /usr/bin /usr/sbin 2>/dev/null
+```
+
+This helps you understand how a Linux installation may use file capabilities for specific utilities.
+
+### **Step 7 — Inspect a process as another user**
+
+If the disposable `labuser` account still exists:
+
+```
+sudo -u labuser capsh --print
+```
+
+Compare its output with your current account.
+
+The capabilities available to processes can differ according to how they are launched, their identity, their execution context and system restrictions.
+
+## **10. Practical Demonstration — Safe Capability Grant**
+
+For a stronger demonstration, we will build a small program that attempts to create a raw ICMP socket.
+
+A raw socket is a useful example because it normally requires `CAP_NET_RAW`.
+
+The program will **not send network packets**. It only tries to create the socket and immediately closes it.
+
+This avoids modifying a system binary or sending network traffic.
+
+### **Step 1 — Install the compiler**
+
+```
+sudo apt update
+sudo apt install build-essential libcap2-bin
+```
+
+### **Step 2 — Create a small C program**
+
+```
+cat > rawsocket-check.c <<'EOF'
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip_icmp.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+
+int main(void)
+{
+    int fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+
+    if (fd < 0) {
+        fprintf(stderr, "socket creation failed: %s\n",
+                strerror(errno));
+        return 1;
+    }
+
+    printf("Raw ICMP socket created successfully.\n");
+    printf("No network packet was sent.\n");
+
+    close(fd);
+    return 0;
+}
+EOF
+```
+
+### **Step 3 — Compile it**
+
+```
+gcc -Wall -Wextra -O2 rawsocket-check.c -o rawsocket-check
+```
+
+- `gcc` is the C compiler.
+- `-Wall -Wextra` enable useful compiler warnings.
+- `-O2` enables compiler optimization.
+- `-o` specifies the output executable.
+
+Inspect:
+
+```
+ls -l rawsocket-check
+```
+
+### **Step 4 — Run it without a capability**
+
+```
+./rawsocket-check
+```
+
+On a system enforcing the normal raw-socket restriction, the expected result for an unprivileged user is:
+
+```
+socket creation failed: Operation not permitted
+```
+
+If it succeeds already, your environment may grant raw-socket access to the user or have different restrictions. Continue with the inspection steps, but this particular before/after test will not demonstrate the privilege difference.
+
+### **Step 5 — Grant only CAP_NET_RAW**
+
+```
+sudo setcap cap_net_raw=+ep ./rawsocket-check
+```
+
+Inspect:
+
+```
+getcap ./rawsocket-check
+```
+
+Expected:
+
+```
+./rawsocket-check cap_net_raw=ep
+```
+
+### **Step 6 — Execute again as your normal user**
+
+```
+./rawsocket-check
+```
+
+On a compatible system, expected:
+
+```
+Raw ICMP socket created successfully.
+No network packet was sent.
+```
+
+The program is not running as root. It has been given a specific capability.
+
+### **Step 7 — Remove the capability**
+
+```
+sudo setcap -r ./rawsocket-check
+```
+
+Verify:
+
+```
+getcap ./rawsocket-check
+```
+
+No capability entry should be shown.
+
+Run again:
+
+```
+./rawsocket-check
+```
+
+It should return to the original permission failure on a system where the normal raw-socket restriction applies.
+
+### **WSL-specific limitations**
+
+This demonstration depends on:
+
+- A Linux filesystem supporting file capabilities.
+- The WSL kernel permitting the raw-socket operation.
+- The capability mechanism being available in the execution context.
+
+Run it in your Linux home directory, not `/mnt/c`.
+
+If WSL does not support the particular operation, keep the source and binary for inspection and use a disposable Ubuntu VM for the actual test. Do not try to overcome the limitation by granting broader privileges to the WSL distribution.
+
+## **11. Real-World Production Scenarios**
+
+### **Scenario A — Web server binding to port 80**
+
+A custom web server might need to bind to port `80`.
+
+One possible approach is granting:
+
+```
+CAP_NET_BIND_SERVICE
+```
+
+to the appropriate executable.
+
+This can avoid running the whole service as root.
+
+However, a mature web server may have built-in privilege separation, socket activation support or other safer mechanisms. Evaluate the complete service design before using file capabilities.
+
+### **Scenario B — Network monitoring**
+
+A monitoring tool needs to inspect raw network traffic.
+
+It may require:
+
+```
+CAP_NET_RAW
+```
+
+Granting that capability may be narrower than running the entire monitoring agent as root.
+
+### **Scenario C — Container security**
+
+A container process often runs with a restricted capability set.
+
+For example, a service container may need to bind to its application port but should not need network-interface administration.
+
+Container runtimes can drop unnecessary capabilities and grant only selected ones.
+
+We will study this in detail in **Module 08 — Container Primitives**.
+
+### **Scenario D — Security audit**
+
+An administrator inspects the capability inventory:
+
+```
+sudo getcap -r /usr/bin /usr/sbin 2>/dev/null
+```
+
+Unexpected capabilities should be investigated.
+
+A file capability can be a significant privilege grant even if the executable is owned by a normal account.
+
+## **12. Troubleshooting Capabilities**
+
+| Problem                                     | Possible cause                                                              | Diagnostic                                        |
+| ------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------- |
+| `getcap: command not found`                 | Tools missing                                                               | Install `libcap2-bin`                             |
+| `setcap: Operation not supported`           | Filesystem or mount lacks required support                                  | `findmnt -T file`                                 |
+| Capability exists but operation fails       | Wrong capability, missing effective flag or additional security restriction | `getcap`, `capsh`, logs                           |
+| Capability disappears after copying         | File metadata was not preserved                                             | `getcap` before and after copying                 |
+| User still cannot perform operation         | Capability was applied to a different executable or process                 | Inspect the actual executable path                |
+| `Operation not permitted`                   | Missing capability or other kernel/security restriction                     | Inspect process capabilities and application logs |
+| File capability not applied after execution | `nosuid`, `no_new_privs`, user namespace or other execution restriction     | Inspect mount options and process status          |
+
+Two important security controls:
+
+`no_new_privs`
+
+A process can be configured not to gain additional privileges through operations such as executing a privileged binary.
+
+`nosuid`
+
+A filesystem mount may suppress privilege-gaining behavior associated with SUID/SGID and file capabilities.
+
+These controls matter when diagnosing a capability that looks correctly configured but does not become effective.
+
+## **13. Advanced Notes**
+
+### **Capabilities are not a replacement for application security**
+
+A process with one capability is still capable of abusing that privilege.
+
+For example:
+
+- `CAP_NET_ADMIN` can significantly affect network security.
+- `CAP_DAC_OVERRIDE` can weaken filesystem isolation.
+- `CAP_SYS_PTRACE` can expose information from other processes.
+- `CAP_SYS_ADMIN` covers a very broad set of privileged operations.
+
+Never grant a capability without understanding what its operations permit.
+
+### **Capabilities can be inspected per thread**
+
+Because Linux capabilities are thread attributes, inspecting the status of a process's main thread is not always sufficient when a multithreaded application changes credentials independently between threads.
+
+For detailed diagnostics, inspect relevant thread entries under:
+
+```
+/proc/PID/task/TID/status
+```
+
+### **Root and capabilities**
+
+Modern Linux privilege checks use capabilities to represent many privileged operations.
+
+A root process normally starts with a broad capability set, but containers, user namespaces, bounding sets and security settings can restrict what it actually possesses.
+
+Therefore:
+
+```
+UID 0
+```
+
+does not always mean unrestricted host-level authority.
+
+## **14. Teaching Summary**
+
+**Topic 09 — Linux capabilities**
+
+- Capabilities divide traditional root privileges into individual units.
+- Capabilities are per-thread attributes.
+- `CAP_NET_BIND_SERVICE` allows privileged-port binding under applicable rules.
+- `CAP_NET_RAW` allows raw and packet socket operations.
+- `CAP_NET_ADMIN` enables various network administration operations.
+- `CAP_DAC_OVERRIDE` bypasses many ordinary file permission checks.
+- `CAP_SYS_ADMIN` is extremely broad.
+- `getcap` inspects file capabilities.
+- `setcap` configures file capabilities.
+- `capsh` helps inspect capability sets.
+- `/proc/PID/status` exposes hexadecimal capability masks.
+- Least privilege applies to capabilities just as it applies to users and groups.
+
+MODULE 02 COMPLETE
+
+**Stage 01 — Module 02: Users, Permissions & Access**
+
+# **9 / 9**
+
+All nine curriculum areas have now been covered.

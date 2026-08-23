@@ -1,0 +1,1155 @@
+title: "Linux File Permissions: rwx and umask"
+description: "Understand Linux read, write, and execute permissions, permission modes, and umask behavior."
+slug: "02-linux-file-permissions-rwx-and-umask"
+courseSlug: "linux-fundamentals"
+moduleSlug: "02-users-permissions-and-access"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 2
+readingTime: "16 min"
+tags: ["linux", "permissions", "chmod", "umask", "filesystem-security"]
+toc: true
+---
+
+## **1. Introduction**
+
+Now that we understand users and groups, we can understand one of the most important Linux security mechanisms: file permissions.
+
+Suppose a server contains:
+
+```
+/var/www/application/config.env
+```
+
+It contains database connection information.
+
+Should every Linux user be able to read it?
+
+No.
+
+Suppose another directory contains public website assets:
+
+```
+/var/www/application/public
+```
+
+The web server needs to read those files, and users may need to access them through HTTP.
+
+Different resources require different access rules.
+
+Linux controls basic file access with three permission types:
+
+- `r` — Read
+- `w` — Write
+- `x` — Execute
+
+These permissions are assigned to three identity categories:
+
+- User — the file's owning user
+- Group — the file's owning group
+- Other — everyone who is neither the owning user nor a member of the owning group
+
+We will focus on the permission model and `umask` here. Detailed ownership management comes next in the syllabus.
+
+## **2. Conceptual Foundation**
+
+### **2.1 Understanding&#x20;**`rwx`
+
+| Permission    | Letter | Numeric value |
+| ------------- | ------ | ------------- |
+| Read          | `r`    | 4             |
+| Write         | `w`    | 2             |
+| Execute       | `x`    | 1             |
+| No permission | `-`    | 0             |
+
+Permissions are combined by adding their numeric values.
+
+For example:
+
+```
+rwx = 4 + 2 + 1 = 7
+rw- = 4 + 2     = 6
+r-x = 4     + 1 = 5
+r-- = 4         = 4
+-wx =     2 + 1 = 3
+-w- =     2     = 2
+--x =         1 = 1
+--- = 0
+```
+
+This is the foundation of numeric permission notation.
+
+### **2.2 Three permission categories**
+
+Consider the output:
+
+```
+-rwxr-xr--
+```
+
+Break it into sections:
+
+```
+- | rwx | r-x | r--
+    │     │     │
+    │     │     └── Others
+    │     └──────── Group
+    └────────────── Owner
+```
+
+The first character identifies the file type.
+
+Common first characters:
+
+| Character | Meaning       |
+| --------- | ------------- |
+| `-`       | Regular file  |
+| `d`       | Directory     |
+| `l`       | Symbolic link |
+
+Then the next nine characters represent the three permission sets.
+
+For:
+
+```
+-rwxr-xr--
+```
+
+The permissions are:
+
+| Category | Permissions | Numeric |
+| -------- | ----------- | ------- |
+| Owner    | `rwx`       | 7       |
+| Group    | `r-x`       | 5       |
+| Others   | `r--`       | 4       |
+
+The corresponding numeric permission is:
+
+```
+754
+```
+
+### **2.3 Common permission combinations**
+
+| Numeric | Symbolic    | Typical use                                          |
+| ------- | ----------- | ---------------------------------------------------- |
+| `777`   | `rwxrwxrwx` | Everyone can read, write and execute                 |
+| `755`   | `rwxr-xr-x` | Common for public directories and executable scripts |
+| `750`   | `rwxr-x---` | Owner and group access; others blocked               |
+| `700`   | `rwx------` | Private directory                                    |
+| `644`   | `rw-r--r--` | Common for ordinary public-readable files            |
+| `640`   | `rw-r-----` | Owner read/write, group read                         |
+| `600`   | `rw-------` | Private file                                         |
+| `400`   | `r--------` | Owner read-only                                      |
+
+These are common patterns, not universal requirements. The correct permissions depend on the application and its threat model.
+
+Security warning
+
+Avoid treating `chmod 777` as a general solution to permission problems. It grants unnecessary write access and can create serious security risks.
+
+## **3. Windows-to-Linux Comparison**
+
+Windows NTFS permissions include concepts such as:
+
+- Read
+- Write
+- Modify
+- Read and execute
+- Full control
+- Inheritance
+- Allow and deny access-control entries
+
+Linux traditional permissions are simpler.
+
+| Concept               | Windows NTFS              | Linux basic permissions |
+| --------------------- | ------------------------- | ----------------------- |
+| Read                  | Read                      | `r`                     |
+| Write                 | Write                     | `w`                     |
+| Execute               | Execute                   | `x`                     |
+| Account access        | User or group SID         | UID/GID                 |
+| Everyone else         | Other security principals | Others                  |
+| Advanced access rules | ACLs                      | POSIX ACLs              |
+
+Linux also supports Access Control Lists (ACLs), which we will cover later.
+
+For now, understand the basic owner/group/other model.
+
+## **4. Understanding Permissions on Files and Directories**
+
+An important concept: `rwx` does not have exactly the same practical meaning for files and directories.
+
+### **4.1 Permissions on a file**
+
+For an ordinary file:
+
+| Permission    | Meaning                                                                  |
+| ------------- | ------------------------------------------------------------------------ |
+| Read (`r`)    | Read the contents                                                        |
+| Write (`w`)   | Modify the contents                                                      |
+| Execute (`x`) | Execute the file as a program, if it is executable in the relevant sense |
+
+Example:
+
+```
+cat report.txt
+```
+
+Requires read access to the file and access to its parent directory.
+
+Running a script:
+
+```
+./script.sh
+```
+
+Normally requires execute access and the ability to traverse its parent directories. The script interpreter and file contents must also be accessible as required.
+
+### **4.2 Permissions on a directory**
+
+For directories, the meanings are different:
+
+| Permission    | Meaning                                                                             |
+| ------------- | ----------------------------------------------------------------------------------- |
+| Read (`r`)    | List directory entries                                                              |
+| Write (`w`)   | Create, remove or rename directory entries, subject to other restrictions           |
+| Execute (`x`) | Traverse/search the directory and access known entries subject to their permissions |
+
+This distinction is extremely important.
+
+Consider:
+
+```
+project/
+├── app.py
+├── config.json
+└── logs/
+```
+
+A user may have permission to read `app.py` but still be unable to reach it if the user lacks execute permission on a parent directory.
+
+### **4.3 Why directory execute permission matters**
+
+Imagine:
+
+```
+project/
+└── private/
+    └── secret.txt
+```
+
+If a user has no execute permission on `private`, the user cannot traverse it to access `secret.txt`, even if the file itself has read permission.
+
+A directory's execute permission is often described as *search permission*.
+
+### **4.4 Directory deletion is a special case**
+
+Deleting a file is primarily controlled by permissions on its containing directory, not simply by the file's own write bit.
+
+For example, a user may not be allowed to modify a file's contents but could potentially remove its directory entry if they have sufficient write and execute permissions on the parent directory.
+
+This distinction explains many real-world permission surprises.
+
+## **5. Inspecting Permissions with&#x20;**`ls -l`**&#x20;and&#x20;**`stat`
+
+Create a practice directory:
+
+```
+mkdir -p ~/linux-learning/lab-12-permissions
+cd ~/linux-learning/lab-12-permissions
+```
+
+Create a file:
+
+```
+touch report.txt
+```
+
+Inspect it:
+
+```
+ls -l report.txt
+```
+
+Example output:
+
+```
+-rw-r--r-- 1 developer developer 0 Nov 15 17:00 report.txt
+```
+
+The output includes:
+
+- File type and permissions
+- Link count
+- Owner
+- Group
+- File size
+- Modification timestamp
+- Filename
+
+Inspect more details:
+
+```
+stat report.txt
+```
+
+Look for:
+
+```
+Access: (0644/-rw-r--r--) 
+Uid: (1000/developer)
+Gid: (1000/developer)
+```
+
+This displays the permission mode and numeric identity information.
+
+`ls` is useful for quickly viewing directory contents. `stat` provides detailed file metadata.
+
+## **6. Changing Permissions with&#x20;**`chmod`
+
+`chmod` means **change mode**.
+
+It changes the permission bits of a file or directory.
+
+There are two common methods:
+
+1. Numeric permissions.
+2. Symbolic permissions.
+
+### **6.1 Numeric method**
+
+Create files:
+
+```
+touch private.txt public.txt script.sh
+```
+
+Set private file permissions:
+
+```
+chmod 600 private.txt
+```
+
+Result:
+
+```
+-rw-------
+```
+
+Only the owner gets read and write permissions.
+
+Set public-readable file permissions:
+
+```
+chmod 644 public.txt
+```
+
+Result:
+
+```
+-rw-r--r--
+```
+
+Set executable script permissions:
+
+```
+chmod 755 script.sh
+```
+
+Result:
+
+```
+-rwxr-xr-x
+```
+
+Verify:
+
+```
+ls -l
+```
+
+### **6.2 Symbolic method**
+
+Symbolic permissions are often more readable when you need to change only one permission.
+
+The general format:
+
+```
+chmod [who][operator][permission] file
+```
+
+| Symbol | Meaning               |
+| ------ | --------------------- |
+| `u`    | Owner/user            |
+| `g`    | Group                 |
+| `o`    | Others                |
+| `a`    | All                   |
+| `+`    | Add permission        |
+| `-`    | Remove permission     |
+| `=`    | Set exact permissions |
+
+Examples:
+
+Add execute permission for the owner:
+
+```
+chmod u+x script.sh
+```
+
+Remove write permission from group:
+
+```
+chmod g-w public.txt
+```
+
+Remove all permissions for others:
+
+```
+chmod o= private.txt
+```
+
+Give owner read/write and group read:
+
+```
+chmod u=rw,g=r,o= private.txt
+```
+
+Inspect:
+
+```
+ls -l
+```
+
+### **6.3 Recursive permissions**
+
+You can apply changes recursively:
+
+```
+chmod -R 755 directory/
+```
+
+This attempts to apply the same permission set to the directory and everything inside it.
+
+However, this is often a poor practice for mixed application content.
+
+Why?
+
+A directory needs execute permission for traversal, while an ordinary data file may not need execute permission.
+
+Applying `755` to every file can accidentally make scripts or data files executable.
+
+For now, prefer setting directory and file permissions separately.
+
+## **7. Practical Demonstration: Access Control Between Users**
+
+We will use the `labuser` created in Topic 01.
+
+First, return to your normal WSL account and go to the lab directory:
+
+```
+cd ~/linux-learning/lab-12-permissions
+```
+
+Create two directories:
+
+```
+mkdir private-dir shared-dir
+```
+
+Create a private file:
+
+```
+echo "This is confidential." > secret.txt
+```
+
+Create a shared file:
+
+```
+echo "This is a shared report." > shared.txt
+```
+
+Configure permissions:
+
+```
+chmod 700 private-dir
+chmod 755 shared-dir
+chmod 600 secret.txt
+chmod 644 shared.txt
+```
+
+Inspect:
+
+```
+ls -ld private-dir shared-dir
+ls -l secret.txt shared.txt
+```
+
+Expected permission patterns:
+
+```
+drwx------ private-dir
+drwxr-xr-x shared-dir
+-rw------- secret.txt
+-rw-r--r-- shared.txt
+```
+
+### **Test 1 — Access the private file as&#x20;**`labuser`
+
+```
+sudo -u labuser cat secret.txt
+```
+
+Expected result:
+
+```
+Permission denied
+```
+
+The file has mode `600`, so only its owner has read/write access.
+
+### **Test 2 — Read the public file as&#x20;**`labuser`
+
+```
+sudo -u labuser cat shared.txt
+```
+
+Expected output:
+
+```
+This is a shared report.
+```
+
+The file has mode `644`, so other users can read it.
+
+### **Test 3 — Access the private directory**
+
+```
+sudo -u labuser ls private-dir
+```
+
+Expected result: permission denied.
+
+The directory has mode `700`. Only the owner can traverse it.
+
+### **Test 4 — Access the shared directory**
+
+```
+sudo -u labuser ls shared-dir
+```
+
+Expected result: no error. The directory is accessible to other users for listing and traversal.
+
+These tests demonstrate how the same Linux user identity system from Topic 01 works with filesystem permissions.
+
+## **8. Understanding&#x20;**`umask`
+
+So far, we have changed permissions after creating files and directories.
+
+But what determines the initial permissions when a new file or directory is created?
+
+The answer includes the **umask**.
+
+`umask` defines which permission bits should be removed from the permissions requested during file or directory creation.
+
+It does not grant permissions. It masks permissions out.
+
+### **8.1 Inspect the current umask**
+
+```
+umask
+```
+
+A common result on Ubuntu is:
+
+```
+0022
+```
+
+The exact default can depend on the distribution, user configuration and environment.
+
+For symbolic representation:
+
+```
+umask -S
+```
+
+Example:
+
+```
+u=rwx,g=rx,o=rx
+```
+
+### **8.2 Default creation modes**
+
+For ordinary file creation, a common requested base mode is:
+
+```
+666
+```
+
+Why not `777`?
+
+Ordinary files are not created with execute permission by default.
+
+For directory creation, a common requested base mode is:
+
+```
+777
+```
+
+The umask removes selected bits from these requested modes.
+
+The simplified calculation:
+
+```
+Final permissions = requested permissions with umask bits removed
+```
+
+### **8.3 Example: umask&#x20;**`022`
+
+For a new regular file:
+
+```
+Requested mode: 666
+Umask:          022
+Final mode:     644
+```
+
+Result:
+
+```
+-rw-r--r--
+```
+
+For a new directory:
+
+```
+Requested mode: 777
+Umask:          022
+Final mode:     755
+```
+
+Result:
+
+```
+drwxr-xr-x
+```
+
+This is why `644` files and `755` directories are common defaults.
+
+### **8.4 Example: umask&#x20;**`027`
+
+For a regular file:
+
+```
+Requested: 666
+Umask:     027
+Result:    640
+```
+
+For a directory:
+
+```
+Requested: 777
+Umask:     027
+Result:    750
+```
+
+This prevents access by users outside the owner and group.
+
+### **8.5 Example: umask&#x20;**`077`
+
+For a regular file:
+
+```
+Requested: 666
+Umask:     077
+Result:    600
+```
+
+For a directory:
+
+```
+Requested: 777
+Umask:     077
+Result:    700
+```
+
+This is a more private default.
+
+### **Quick reference**
+
+| Umask | New file | New directory | General effect           |
+| ----- | -------- | ------------- | ------------------------ |
+| `022` | `644`    | `755`         | Others can read/traverse |
+| `027` | `640`    | `750`         | Others blocked           |
+| `077` | `600`    | `700`         | Private to owner         |
+
+The calculation is a **bitmask operation**, not ordinary decimal subtraction. The examples above show the resulting common permission modes.
+
+### **8.6 Change umask for the current shell**
+
+```
+umask 027
+```
+
+Now create a file and directory:
+
+```
+touch umask-file.txt
+mkdir umask-directory
+```
+
+Inspect:
+
+```
+stat -c '%a %n' umask-file.txt umask-directory
+```
+
+Expected output:
+
+```
+640 umask-file.txt
+750 umask-directory
+```
+
+The `stat -c` option specifies a custom output format.
+
+- `%a` displays the numeric permission mode.
+- `%n` displays the filename.
+
+### **8.7 Reset the umask**
+
+For a typical Ubuntu user session:
+
+```
+umask 022
+```
+
+This affects the current shell and processes started from it.
+
+A child process inherits the environment's umask when created. Changing the umask in a child process does not change the parent shell's umask.
+
+### **8.8 Why file permissions cannot be calculated by simply subtracting**
+
+Consider:
+
+```
+666
+022
+---
+644
+```
+
+This example looks like arithmetic subtraction, but the actual mechanism is bit masking.
+
+For example:
+
+```
+Requested file mode: 110 110 110
+Umask:               000 010 010
+```
+
+Bits selected by the umask are removed from the requested mode.
+
+This matters when understanding unusual masks, such as `013`.
+
+## **9. Internal Working: How Linux Checks Permissions**
+
+When a process requests access to a file, Linux uses the process credentials and the file's access-control information.
+
+A simplified flow:
+
+```
+Process requests access
+        │
+        ▼
+Kernel obtains process identity
+        │
+        ▼
+File metadata is examined
+        │
+        ▼
+Does process UID match file owner UID?
+        │
+   ┌────┴────┐
+  Yes        No
+   │          │
+   ▼          ▼
+Owner       Does process belong
+permissions to file group?
+              │
+          ┌───┴───┐
+         Yes      No
+          │        │
+          ▼        ▼
+        Group    Others
+        permissions
+          │        │
+          └───┬────┘
+              ▼
+       Access decision
+```
+
+The real Linux access-control system has additional details:
+
+- Supplementary group membership matters.
+- ACLs can provide additional permission entries.
+- Capabilities can modify some access checks.
+- Root privileges can bypass many ordinary discretionary permission checks.
+- Mandatory access-control systems such as AppArmor or SELinux can impose additional restrictions.
+
+We will cover those topics later in the syllabus.
+
+### **A subtle but important detail**
+
+When checking ordinary owner/group/other permissions, Linux does not simply add permissions together.
+
+It selects the relevant permission class according to the process identity and file metadata. The existence of a matching owner entry takes precedence over group and other permissions in the traditional mode-bit model.
+
+This is why a file with:
+
+```
+-rwx------ 1 alice developers ...
+```
+
+is not automatically executable by Bob just because Bob belongs to `developers`. The owner permission class is the applicable class for Alice, but Bob must be checked against the group class.
+
+## **10. Real-World Production Scenarios**
+
+### **Scenario A — Private application secrets**
+
+An application stores sensitive configuration:
+
+```
+/opt/myapp/.env
+```
+
+A reasonable basic permission pattern might be:
+
+```
+-rw------- 
+```
+
+That corresponds to:
+
+```
+chmod 600 .env
+```
+
+Only the file's owner can read or modify it under ordinary permission checks.
+
+But remember: the application process must run as an identity that can read it.
+
+### **Scenario B — Public static website**
+
+A website contains:
+
+```
+/var/www/site/
+├── index.html
+├── styles.css
+└── images/
+```
+
+Typical basic permissions could be:
+
+```
+Directories: 755
+Files:       644
+```
+
+The web server can read the content while normal users cannot modify it.
+
+### **Scenario C — Private deployment directory**
+
+A deployment directory might use:
+
+```
+750
+```
+
+This permits the owner full access, the group read/traverse access, and blocks others.
+
+That gives a controlled set of deployment users access without exposing the directory to every local account.
+
+### **Scenario D — Secure defaults for shared server accounts**
+
+A system administrator may use:
+
+```
+umask 027
+```
+
+to make newly created files less accessible to users outside the owner's group.
+
+This is useful when a team shares files but should prevent access from unrelated local accounts.
+
+## **11. Troubleshooting Permissions**
+
+| Symptom                                | Possible explanation                                     | Diagnostic command                 |
+| -------------------------------------- | -------------------------------------------------------- | ---------------------------------- |
+| `Permission denied` when reading file  | Missing file read permission                             | `ls -l file`                       |
+| Cannot enter directory                 | Missing directory execute permission                     | `ls -ld directory`                 |
+| Cannot create file                     | Missing write or execute access on parent directory      | `ls -ld parent/`                   |
+| Script will not run                    | Missing execute permission or invalid interpreter        | `ls -l script.sh`, inspect shebang |
+| New files too open                     | Umask too permissive                                     | `umask`                            |
+| File is readable but application fails | Parent directory traversal or other policy issue         | `namei -l /path/to/file`           |
+| `chmod` gives operation not permitted  | The user does not own the file or lacks needed privilege | `stat file`                        |
+
+### **Useful diagnostic command:&#x20;**`namei`
+
+Suppose an application cannot access:
+
+```
+/var/www/application/config/settings.json
+```
+
+Run:
+
+```
+namei -l /var/www/application/config/settings.json
+```
+
+This displays the permissions and ownership information for each component of the path.
+
+It is useful because access can fail on a parent directory, even when the file itself appears correctly configured.
+
+### **WSL-specific limitation**
+
+Store permission labs in:
+
+```
+/home/your-user/
+```
+
+The Windows-mounted filesystem under `/mnt/c` can have different permission behavior because WSL translates access between Linux and Windows filesystem semantics. The result can depend on mount configuration and metadata support.
+
+For learning Linux permission behavior, use the WSL Linux filesystem rather than a Windows-mounted directory.
+
+## **12. Practical Lab — Permission and Umask Workshop**
+
+Works in WSL2 Ubuntu
+
+We will combine the concepts from this topic.
+
+### **Step 1 — Create a structured lab**
+
+```
+mkdir -p ~/linux-learning/lab-12-permissions/workshop
+cd ~/linux-learning/lab-12-permissions/workshop
+```
+
+### **Step 2 — Create sample content**
+
+```
+echo "Public application report" > report.txt
+echo "Database password placeholder" > database.env
+mkdir public private
+```
+
+### **Step 3 — Apply permissions**
+
+```
+chmod 644 report.txt
+chmod 600 database.env
+chmod 755 public
+chmod 700 private
+```
+
+Verify:
+
+```
+stat -c '%a %A %n' report.txt database.env public private
+```
+
+Expected permission pattern:
+
+```
+644 -rw-r--r-- report.txt
+600 -rw------- database.env
+755 drwxr-xr-x public
+700 drwx------ private
+```
+
+### **Step 4 — Test a second user's access**
+
+```
+sudo -u labuser cat report.txt
+sudo -u labuser cat database.env
+```
+
+Expected:
+
+- `report.txt` should be readable.
+- `database.env` should fail with permission denied.
+
+### **Step 5 — Test directory access**
+
+```
+sudo -u labuser ls public
+sudo -u labuser ls private
+```
+
+Expected:
+
+- `public` should be accessible.
+- `private` should return permission denied.
+
+### **Step 6 — Test umask**
+
+Set the mask:
+
+```
+umask 027
+```
+
+Create new objects:
+
+```
+touch new-file.txt
+mkdir new-directory
+```
+
+Inspect:
+
+```
+stat -c '%a %n' new-file.txt new-directory
+```
+
+Expected:
+
+```
+640 new-file.txt
+750 new-directory
+```
+
+Reset the shell's umask:
+
+```
+umask 022
+```
+
+### **Step 7 — Examine all permissions**
+
+```
+ls -la
+```
+
+Then inspect a complete path:
+
+```
+namei -l "$PWD/database.env"
+```
+
+This helps you understand the entire path, not just the final file.
+
+### **Step 8 — Clean up**
+
+After completing both topics, return to your normal WSL account and remove the disposable test account:
+
+```
+sudo userdel -r labuser
+sudo groupdel linuxaudit
+sudo groupdel linuxlab
+```
+
+You can keep the learning materials under `~/linux-learning`.
+
+## **13. Advanced Notes**
+
+### **13.1&#x20;**`chmod`**&#x20;and&#x20;**`umask`**&#x20;do different jobs**
+
+| Command | Purpose                                                               |
+| ------- | --------------------------------------------------------------------- |
+| `chmod` | Changes permissions on an existing file or directory                  |
+| `umask` | Controls which permission bits are removed from newly created objects |
+
+### **13.2&#x20;**`umask`**&#x20;does not guarantee final permissions**
+
+An application may explicitly request restrictive permissions when creating a file.
+
+For example, a program can create a file with mode `0600` regardless of whether the current umask would allow more permissions.
+
+Therefore, the simple `666` and `777` calculations describe common default creation modes, not every application.
+
+### **13.3&#x20;**`chmod`**&#x20;is not ownership management**
+
+`chmod` changes permissions; it does not change the file's owner or group.
+
+Ownership will be covered as the next topic.
+
+### **13.4 Special permission bits come later**
+
+Linux also supports:
+
+- SUID
+- SGID
+- Sticky bit
+
+These introduce additional behavior beyond basic `rwx` permissions. They are part of the later permissions topics in this module.
+
+Do not confuse these special bits with ordinary `rwx`.
+
+## **14. Teaching Summary**
+
+**Topic 02 — Key concepts**
+
+**Three permissions**
+
+- `r` = read = 4
+- `w` = write = 2
+- `x` = execute = 1
+
+**Three permission classes**
+
+- Owner
+- Group
+- Others
+
+**Important commands**
+
+- `ls -l` — inspect permissions
+- `stat` — inspect detailed metadata
+- `chmod` — change permissions
+- `umask` — control default permission masking
+- `namei -l` — inspect permissions along a path
+
+**Common permission modes**
+
+- `755` — owner full access; group and others read/traverse
+- `644` — owner read/write; group and others read
+- `700` — private directory
+- `600` — private file
+
+**Most important distinction**
+
+- File `x` means execute.
+- Directory `x` means traverse/search.
+- Directory `w` allows changes to directory entries when the required access conditions are met.
+
+# **MODULE 02 — PROGRESS**
+
+**Users, Permissions & Access**
+
+# **2/9**
+
+Two topics covered from the nine listed curriculum areas.
+
+1. **Users and Groups**
+
+   Covered
+2. **File Permissions: rwx and umask**
+
+   Covered
+3. Ownership and Group Ownership
+4. SUID, SGID and Sticky Bit
+5. Access Control Lists (ACLs)
+6. sudo Policy
+7. SSH Keys and SSH Agent
+8. SCP and SFTP
+9. Linux Capabilities Overview
+
+**Next lesson: Topic 03 — Ownership and Group Ownership**
+
+We will cover `chown`, `chgrp`, ownership changes, how ownership affects permission checks, and practical ownership patterns used by application deployments and production services.

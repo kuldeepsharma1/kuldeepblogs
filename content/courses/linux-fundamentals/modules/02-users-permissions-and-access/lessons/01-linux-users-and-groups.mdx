@@ -1,0 +1,955 @@
+title: "Linux Users and Groups"
+description: "Understand Linux user identities, UIDs, groups, account databases, and user-management commands."
+slug: "01-linux-users-and-groups"
+courseSlug: "linux-fundamentals"
+moduleSlug: "02-users-permissions-and-access"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "14 min"
+tags: ["linux", "users", "groups", "uid", "gid", "account-management"]
+toc: true
+---
+
+## **1. Introduction**
+
+Linux is a multi-user operating system.
+
+That means multiple users and services can use the same machine while having different levels of access.
+
+Consider a production server:
+
+- A system administrator manages the server.
+- A developer deploys application code.
+- An Nginx process serves web requests.
+- A database process accesses database files.
+- A backup process reads files and creates backups.
+- A monitoring agent collects system information.
+
+These processes should not all operate with unrestricted access.
+
+For example, an Nginx process should not need permission to modify system account configuration. A database service should not need permission to modify SSH configuration.
+
+Linux manages these identities through **users and groups**.
+
+The central principle is:
+
+> Every process runs with an identity, and that identity determines which resources it can access.
+
+## **2. Conceptual Foundation**
+
+### **2.1 What is a Linux user?**
+
+A Linux user is an identity represented internally by a numeric identifier called a **UID — User Identifier**.
+
+For example:
+
+```
+whoami
+id
+```
+
+Possible output:
+
+```
+developer
+
+uid=1000(developer) gid=1000(developer) groups=1000(developer),27(sudo)
+```
+
+This tells us:
+
+| Field       | Meaning                     |
+| ----------- | --------------------------- |
+| `developer` | Username                    |
+| `1000`      | User ID (UID)               |
+| `developer` | Primary group name          |
+| `1000`      | Primary group ID (GID)      |
+| `sudo`      | Additional group membership |
+
+The username is human-readable, but Linux ultimately uses numeric identity information when making access-control decisions.
+
+**Important:** Two different usernames with the same UID are treated as the same numeric user identity by many kernel permission checks.
+
+### **2.2 What is a Linux group?**
+
+A group is a collection of users.
+
+Groups make it easier to grant access to multiple users without individually configuring every user.
+
+For example:
+
+```
+Linux server
+│
+├── User: alice
+│   ├── Primary group: developers
+│   └── Supplementary group: deployment
+│
+├── User: bob
+│   ├── Primary group: developers
+│   └── Supplementary group: monitoring
+│
+└── User: charlie
+    ├── Primary group: operations
+    └── Supplementary group: deployment
+```
+
+The group `deployment` contains Alice and Charlie. Resources can be configured to allow that group access.
+
+We will examine the actual file permission rules in Topic 02.
+
+### **2.3 Primary groups vs supplementary groups**
+
+Every user has a primary group.
+
+A user can also belong to multiple supplementary groups.
+
+Example:
+
+```
+User: alice
+
+UID: 1001
+
+Primary group:
+developers (GID 2001)
+
+Supplementary groups:
+deployment (GID 2002)
+monitoring (GID 2003)
+```
+
+The primary group is the default group identity used for many operations, including creating new files.
+
+Supplementary groups give the user additional group memberships that can grant access to resources.
+
+You can inspect both using:
+
+```
+id alice
+```
+
+### **2.4 Important Linux identity categories**
+
+Linux installations commonly contain several kinds of accounts.
+
+| Account category | Purpose                            | Example     |
+| ---------------- | ---------------------------------- | ----------- |
+| Root             | Full administrative identity       | `root`      |
+| Regular user     | Human login account                | `developer` |
+| System user      | Runs system services               | `www-data`  |
+| Service account  | Runs a particular application      | `postgres`  |
+| Nobody           | Restricted, low-privilege identity | `nobody`    |
+
+These names and conventions vary between distributions.
+
+**Root user**
+
+The root account has UID `0`.
+
+```
+id root
+```
+
+Typical output:
+
+```
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+Root has extensive administrative privileges. It can modify protected system files, manage accounts, and control services.
+
+Do not use root for normal application execution. A compromised process running as root can cause much greater damage.
+
+**System users and service accounts**
+
+A web server might run as:
+
+```
+www-data
+```
+
+A PostgreSQL service might run as:
+
+```
+postgres
+```
+
+These accounts are used to isolate services from one another.
+
+Some service accounts do not have a normal interactive login shell.
+
+Common examples include:
+
+```
+/usr/sbin/nologin
+/bin/false
+```
+
+A service account with a non-login shell is generally not intended for interactive login.
+
+## **3. Windows-to-Linux Comparison**
+
+Windows and Linux both have user identities and groups, but their internal implementations differ.
+
+| Windows                | Linux                                  |
+| ---------------------- | -------------------------------------- |
+| Windows user account   | Linux user                             |
+| SID                    | UID                                    |
+| Windows group SID      | GID                                    |
+| Local Users and Groups | User and group databases               |
+| Administrator account  | Root account                           |
+| Service account        | System/service user                    |
+| NTFS permissions       | Linux discretionary access permissions |
+
+A Windows identity may have a SID such as:
+
+```
+S-1-5-21-...
+```
+
+Linux commonly identifies a user with an integer:
+
+```
+1000
+```
+
+Linux does not simply rely on the username string. It resolves names into numeric identifiers.
+
+## **4. Linux Implementation: Where User Information Lives**
+
+Linux exposes user and group information through several standard files.
+
+### **4.1&#x20;**`/etc/passwd`
+
+This file contains account information.
+
+Inspect it safely:
+
+```
+cat /etc/passwd
+```
+
+A typical entry:
+
+```
+developer:x:1000:1000:Developer:/home/developer:/bin/bash
+```
+
+It contains seven colon-separated fields:
+
+| Field | Example           | Meaning                                   |
+| ----- | ----------------- | ----------------------------------------- |
+| 1     | `developer`       | Username                                  |
+| 2     | `x`               | Password information is stored separately |
+| 3     | `1000`            | UID                                       |
+| 4     | `1000`            | Primary GID                               |
+| 5     | `Developer`       | Comment or descriptive field              |
+| 6     | `/home/developer` | Home directory                            |
+| 7     | `/bin/bash`       | Login shell                               |
+
+The `x` does not contain the password. Password hash information is maintained separately.
+
+To inspect a particular account:
+
+```
+getent passwd developer
+```
+
+`getent` is useful because it queries the configured Name Service Switch (NSS), rather than assuming all identity information must come directly from `/etc/passwd`.
+
+### **4.2&#x20;**`/etc/shadow`
+
+This file contains protected password authentication information, including password hashes and password-aging metadata.
+
+Inspect its permissions:
+
+```
+ls -l /etc/shadow
+```
+
+On a typical Ubuntu installation, access is restricted.
+
+Do not display, copy, share, or manually modify password hash entries during this lesson.
+
+For account password-status information, use:
+
+```
+sudo passwd -S developer
+```
+
+### **4.3&#x20;**`/etc/group`
+
+This file stores group information.
+
+Inspect it:
+
+```
+cat /etc/group
+```
+
+Example:
+
+```
+developers:x:2001:alice,bob
+deployment:x:2002:alice,charlie
+```
+
+The four fields are:
+
+| Field          | Meaning                            |
+| -------------- | ---------------------------------- |
+| Group name     | Human-readable group name          |
+| Password field | Usually `x`                        |
+| GID            | Numeric group ID                   |
+| Members        | Listed supplementary group members |
+
+Use:
+
+```
+getent group developers
+```
+
+### **4.4&#x20;**`/etc/gshadow`
+
+This file contains protected group administration and membership information.
+
+Inspect its permissions:
+
+```
+ls -l /etc/gshadow
+```
+
+Do not edit it manually for routine account management. Use the account-management commands instead.
+
+### **4.5&#x20;**`/etc/skel`
+
+This directory contains default files that can be copied into a newly created user's home directory.
+
+Inspect it:
+
+```
+ls -la /etc/skel
+```
+
+For example, it may contain default shell configuration files.
+
+### **4.6 How Linux resolves usernames**
+
+Linux commonly uses the Name Service Switch, or NSS, to resolve identity information.
+
+A simplified view:
+
+```
+Application
+    │
+    ▼
+NSS lookup
+    │
+    ├── Local files (/etc/passwd)
+    │
+    ├── Local group database (/etc/group)
+    │
+    └── Other configured identity sources
+         (for example, directory services)
+```
+
+This is why `getent passwd` is often more useful than only reading `/etc/passwd`: the identity source may not be a local file.
+
+## **5. Linux Commands for Inspecting Users and Groups**
+
+These commands are worth learning before creating accounts.
+
+### `whoami`
+
+Displays the effective username associated with your current identity.
+
+```
+whoami
+```
+
+### `id`
+
+Displays UID, primary GID and supplementary groups.
+
+```
+id
+id root
+id developer
+```
+
+### `groups`
+
+Displays group memberships.
+
+```
+groups
+groups developer
+```
+
+### `who`
+
+Displays users currently logged into the system, where login-session information is available.
+
+```
+who
+```
+
+### `w`
+
+Displays logged-in users and activity information.
+
+```
+w
+```
+
+### `getent`
+
+Queries identity databases through NSS.
+
+```
+getent passwd developer
+getent group sudo
+```
+
+### `last`
+
+Displays historical login information when the relevant login records exist.
+
+```
+last
+```
+
+Some WSL installations have limited login-session information, so `who`, `w`, or `last` may produce little or no useful output.
+
+### **Inspect the command type**
+
+Use:
+
+```
+type id
+type groups
+type whoami
+```
+
+This lets you identify whether a command is a shell built-in, an external executable, an alias, or a function.
+
+Most of these identity-inspection commands are external executables.
+
+## **6. Creating and Managing Users and Groups**
+
+Account creation and modification normally require administrative privileges.
+
+In Ubuntu, the commands below use `sudo` to run the administrative operation.
+
+### **6.1 Create a group**
+
+```
+sudo groupadd developers
+```
+
+This creates a group named `developers`.
+
+Verify:
+
+```
+getent group developers
+```
+
+### **6.2 Create a user**
+
+On Ubuntu, the interactive convenience command is:
+
+```
+sudo adduser alice
+```
+
+It guides you through account creation and prompts for password and optional details.
+
+The lower-level command is:
+
+```
+sudo useradd alice
+```
+
+`useradd` provides more direct control, but a plain `useradd` invocation may not create a home directory, depending on configuration and options.
+
+For a regular user, commonly use:
+
+```
+sudo useradd -m -s /bin/bash alice
+```
+
+| Option         | Meaning                   |
+| -------------- | ------------------------- |
+| `-m`           | Create the home directory |
+| `-s /bin/bash` | Set the login shell       |
+| `alice`        | Username                  |
+
+Set a password separately when interactive password authentication is required:
+
+```
+sudo passwd alice
+```
+
+### **6.3 Create a user with a primary group**
+
+First create the group:
+
+```
+sudo groupadd developers
+```
+
+Then create the user:
+
+```
+sudo useradd -m -s /bin/bash -g developers alice
+```
+
+Here:
+
+- `-m` creates `/home/alice`.
+- `-s` sets Bash as the login shell.
+- `-g` assigns the primary group.
+
+Verify:
+
+```
+id alice
+```
+
+### **6.4 Add supplementary groups**
+
+Create another group:
+
+```
+sudo groupadd deployment
+```
+
+Add Alice to it:
+
+```
+sudo usermod -aG deployment alice
+```
+
+The combination is important:
+
+- `-G` sets the supplementary group list.
+- `-a` appends the specified groups instead of replacing the existing list.
+
+Important safety rule
+
+Do not casually run:
+
+```
+sudo usermod -G deployment alice
+```
+
+Without `-a`, this replaces Alice's supplementary group list. It can unintentionally remove other memberships.
+
+Verify:
+
+```
+id alice
+groups alice
+```
+
+### **6.5 Modify a user's primary group**
+
+```
+sudo usermod -g developers alice
+```
+
+This changes the primary group.
+
+It is different from adding a supplementary group.
+
+### **6.6 Remove a user from a supplementary group**
+
+On Ubuntu, one way to remove a user from a particular supplementary group is:
+
+```
+sudo gpasswd -d alice deployment
+```
+
+Verify:
+
+```
+id alice
+```
+
+### **6.7 Rename a user**
+
+```
+sudo usermod -l alice-new alice
+```
+
+This changes the login name. It does not automatically rename every related resource or necessarily change the home-directory path.
+
+Account renaming should be planned carefully, particularly when the user has active processes or owns files.
+
+### **6.8 Delete a user**
+
+```
+sudo userdel alice
+```
+
+This removes the account but generally does not remove its home directory.
+
+To remove the account and its home directory:
+
+```
+sudo userdel -r alice
+```
+
+Be careful: the `-r` option removes the user's home directory and mail spool where applicable.
+
+Never use this against your own active WSL account during this lesson.
+
+### **6.9 Manage groups**
+
+```
+sudo groupadd operations
+sudo groupmod -n platform-operations operations
+sudo groupdel platform-operations
+```
+
+These commands respectively create, rename and delete groups.
+
+A group cannot safely be deleted while it is still the primary group of an account. Resolve those account dependencies first.
+
+### **6.10 Switch the current group**
+
+```
+newgrp deployment
+```
+
+This starts a new shell with the selected group as its effective group identity.
+
+It does not add the group permanently to the account. Permanent membership is managed through user/group configuration.
+
+## **7. Internal Working: How Linux Uses User Identity**
+
+When a program starts, Linux maintains credentials for its process.
+
+At a conceptual level:
+
+```
+User starts a command
+        │
+        ▼
+Shell creates process
+        │
+        ▼
+Process has credentials
+        │
+        ├── User ID
+        ├── Group ID
+        └── Supplementary groups
+        │
+        ▼
+Process requests access to a file
+        │
+        ▼
+Linux checks access-control rules
+```
+
+The kernel uses numeric credentials to perform permission checks.
+
+For example, a process may run with:
+
+```
+UID = 1001
+GID = 2001
+Supplementary GIDs = 2002, 2003
+```
+
+A username such as `alice` is the convenient human-readable representation resolved through the identity system.
+
+You can inspect a process's credential information through `/proc`.
+
+For example:
+
+```
+cat /proc/$$/status
+```
+
+Look for:
+
+```
+Uid:
+Gid:
+Groups:
+```
+
+Here `$$` is a Bash variable containing the PID of the current shell.
+
+This is process-level evidence of the identity information used by the running shell.
+
+## **8. Running Commands as Another User**
+
+Three commands are useful to understand.
+
+### `su`
+
+Switches to another user or starts a shell with another identity.
+
+```
+su - alice
+```
+
+The `-` requests a login-style shell, which loads the target user's login environment.
+
+Return to the original shell:
+
+```
+exit
+```
+
+### `sudo -u`
+
+Runs a command as another user, subject to sudo policy.
+
+```
+sudo -u alice whoami
+```
+
+Expected output:
+
+```
+alice
+```
+
+This is often useful for testing which identity an application or service runs under.
+
+### `runuser`
+
+Used by administrators and scripts to run a command as another user, generally without the interactive password-prompt behavior of `su`.
+
+Example:
+
+```
+sudo runuser -u alice -- whoami
+```
+
+`--` separates `runuser` options from the command being executed.
+
+**Distinction:** `su` is commonly used to switch identities interactively; `sudo -u` runs a permitted command as another user; `runuser` is a utility intended for administrative identity switching.
+
+We will study `sudo` configuration policy separately in a later topic.
+
+## **9. Windows-to-WSL Practical Demonstration**
+
+Works in WSL2 Ubuntu
+
+For this exercise, create a disposable user and two groups. Do not modify the account you normally use to access WSL.
+
+### **Step 1 — Create the lab directory**
+
+```
+mkdir -p ~/linux-learning/lab-11-users-groups
+cd ~/linux-learning/lab-11-users-groups
+```
+
+### **Step 2 — Create the groups**
+
+```
+sudo groupadd linuxlab
+sudo groupadd linuxaudit
+```
+
+Verify:
+
+```
+getent group linuxlab
+getent group linuxaudit
+```
+
+Expected output will resemble:
+
+```
+linuxlab:x:2001:
+linuxaudit:x:2002:
+```
+
+The exact GIDs may differ.
+
+### **Step 3 — Create a test user**
+
+```
+sudo useradd -m -s /bin/bash -g linuxlab labuser
+```
+
+Set a password if you want to test interactive `su` authentication:
+
+```
+sudo passwd labuser
+```
+
+### **Step 4 — Add a supplementary group**
+
+```
+sudo usermod -aG linuxaudit labuser
+```
+
+### **Step 5 — Inspect the account**
+
+```
+id labuser
+```
+
+Expected format:
+
+```
+uid=1001(labuser) gid=2001(linuxlab) groups=2001(linuxlab),2002(linuxaudit)
+```
+
+Your numeric values may differ.
+
+Inspect the records:
+
+```
+getent passwd labuser
+getent group linuxlab
+getent group linuxaudit
+```
+
+### **Step 6 — Execute a command as the test user**
+
+```
+sudo -u labuser whoami
+```
+
+Expected output:
+
+```
+labuser
+```
+
+Inspect its identity:
+
+```
+sudo -u labuser id
+```
+
+### **Step 7 — Switch to the user**
+
+```
+su - labuser
+```
+
+Then:
+
+```
+whoami
+pwd
+id
+```
+
+The expected home-directory location is:
+
+```
+/home/labuser
+```
+
+Return to your regular account:
+
+```
+exit
+```
+
+WSL notes:
+
+- User and group database operations work normally in a typical WSL2 Ubuntu installation.
+- WSL may not behave like a full traditional server with conventional login sessions.
+- `who`, `w` and `last` may show limited information.
+- You do not need to change `/etc/wsl.conf` or your WSL default account for this exercise.
+- Keep the lab inside the WSL Linux filesystem, such as `/home/your-user`, rather than `/mnt/c`.
+
+### **Topic 01 lab cleanup**
+
+Keep the test user and groups until Topic 02 is complete, because we will use `labuser` to demonstrate permissions.
+
+After Topic 02:
+
+```
+sudo userdel -r labuser
+sudo groupdel linuxaudit
+sudo groupdel linuxlab
+```
+
+These commands remove only the disposable lab account and groups created above.
+
+## **10. Real-World Production Scenario**
+
+Imagine a server hosting a web application.
+
+```
+Production server
+│
+├── nginx
+│   └── Serves HTTP requests
+│
+├── application
+│   └── Runs business logic
+│
+├── postgres
+│   └── Accesses database files
+│
+├── deployer
+│   └── Deploys application releases
+│
+└── backup
+    └── Performs backup operations
+```
+
+A good design gives each service its own identity.
+
+For example:
+
+- Nginx runs as a dedicated web-service user.
+- PostgreSQL runs as a dedicated database user.
+- Deployment access is granted only to approved deployment users.
+- Backup processes receive only the access needed to read and copy their target data.
+
+This is the foundation of **least privilege**: give each identity only the access it needs to perform its job.
+
+## **11. Troubleshooting**
+
+| Problem                                   | Possible reason                             | What to inspect                               |
+| ----------------------------------------- | ------------------------------------------- | --------------------------------------------- |
+| `useradd: command not found`              | Account utilities unavailable or PATH issue | `command -v useradd`                          |
+| `Permission denied`                       | Administrative privileges required          | Use `sudo` for the intended account operation |
+| `user already exists`                     | Account name already exists                 | `getent passwd username`                      |
+| `group already exists`                    | Group name already exists                   | `getent group groupname`                      |
+| New group not appearing in existing shell | Existing session has old group credentials  | Start a new login session                     |
+| User cannot switch with `su`              | Password or login-shell configuration issue | Inspect account and shell settings            |
+| `userdel` says user is in use             | User has active processes                   | Inspect with `ps` before resolving            |
+
+Do not fix account errors by blindly deleting users or editing `/etc/passwd` and `/etc/shadow`.
+
+## **12. Advanced Notes**
+
+Three ideas are important for server administration:
+
+**Numeric identities matter.** A file can remain owned by UID `1001` even when the username associated with that UID changes.
+
+**Identity lookup can be external.** Enterprise Linux systems can use centrally managed identities through services such as LDAP or Active Directory integration. NSS provides the lookup interface.
+
+**Service accounts are security boundaries.** Running unrelated applications under the same highly privileged identity makes it harder to isolate compromise and accidental damage.
+
+## **13. Teaching Summary**
+
+**Topic 01 — Key concepts**
+
+- A user represents a Linux identity.
+- UID identifies a user numerically.
+- GID identifies a group numerically.
+- Every user has a primary group.
+- Users may have supplementary groups.
+- Root has UID `0`.
+- Service accounts isolate applications.
+- `/etc/passwd`, `/etc/group` and related databases store identity information.
+- `id`, `groups` and `getent` are essential inspection commands.
+- `useradd`, `usermod`, `userdel`, `groupadd` and `groupdel` manage identities.

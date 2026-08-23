@@ -1,0 +1,1879 @@
+---
+title: "Linux Package Managers"
+description: "Understand packages, repositories, dependencies and package management across Linux distributions."
+slug: "08-linux-package-managers"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 8
+readingTime: "30 min"
+tags: ['linux', 'linux-fundamentals', 'bash', 'wsl', 'shell', 'filesystem', 'apt', 'dnf', 'packages']
+toc: true
+---
+
+## **1. Introduction**
+
+A Linux system needs software just like Windows.
+
+You might install:
+
+- Nginx web server.
+- PostgreSQL database.
+- Git.
+- Node.js.
+- Python.
+- Docker.
+- System monitoring tools.
+- Security utilities.
+
+On Windows, you might download an installer such as `.exe` or `.msi`, run it, and follow the installation wizard.
+
+Linux commonly uses a **package manager**.
+
+A package manager is software that installs, updates, removes and tracks other software.
+
+For example, on Ubuntu:
+
+```
+sudo apt update
+sudo apt install nginx
+```
+
+Two commands, and Ubuntu can download and install Nginx along with its required dependencies.
+
+Package management is essential for production Linux administration. A server administrator must know how software is installed, where it comes from, how dependencies work, how updates are applied, and how to investigate failed installations.
+
+**Our goal:** Understand Linux software distribution and package management across Ubuntu/Debian and RHEL-based systems.
+
+## **2. Conceptual Foundation**
+
+### **2.1 What is a software package?**
+
+A package is a structured collection of files and metadata required to install a piece of software.
+
+A package may contain:
+
+- Executable programs.
+- Configuration files.
+- Libraries.
+- Documentation.
+- Installation metadata.
+- Dependency information.
+- Scripts that run during installation or removal.
+
+For example, installing Nginx may create files such as:
+
+```
+/usr/sbin/nginx
+/etc/nginx/
+/usr/share/nginx/
+/var/log/nginx/
+/var/lib/nginx/
+```
+
+The exact files depend on the distribution and package version.
+
+A package manager tracks which files belong to which installed packages.
+
+### **2.2 What is a package manager?**
+
+A package manager is a tool that manages software packages.
+
+Its responsibilities include:
+
+1. Finding packages in configured repositories.
+2. Downloading package files.
+3. Checking package metadata and integrity.
+4. Resolving dependencies.
+5. Installing files in the correct locations.
+6. Recording installed package information.
+7. Updating and removing packages.
+
+Conceptually:
+
+**Package installation workflow**
+
+**Administrator requests software**
+
+`sudo apt install nginx`
+
+**Package manager**
+
+Checks package metadata and dependencies
+
+**Repositories**
+
+Downloads packages and required dependencies
+
+**Package database**
+
+Records installed package information
+
+Installed
+
+**Software is available to the system**
+
+### **2.3 What is a repository?**
+
+A repository is a software distribution source containing packages and metadata.
+
+Instead of manually downloading every application, your package manager uses configured repositories.
+
+For example, Ubuntu repositories provide thousands of packages.
+
+You can inspect configured APT repositories through:
+
+```
+cat /etc/apt/sources.list
+```
+
+On modern Ubuntu versions, repository definitions may also be stored in:
+
+```
+ls -l /etc/apt/sources.list.d/
+```
+
+Some Ubuntu installations use `.sources` files instead of the older `.list` format.
+
+### **2.4 What is a dependency?**
+
+Software often depends on other software.
+
+For example:
+
+```
+Application A
+   |
+   +-- Library B
+   |
+   +-- Library C
+          |
+          +-- Library D
+```
+
+If Application A requires Library B and Library C, those dependencies must also be available.
+
+Package managers resolve these dependencies automatically.
+
+Without dependency management, administrators would need to identify and install every required library manually.
+
+## **3. Windows-to-Linux Comparison**
+
+| Windows                            | Linux equivalent                                    |
+| ---------------------------------- | --------------------------------------------------- |
+| `.exe` / `.msi` installer          | `.deb` / `.rpm` package                             |
+| Microsoft Store                    | Distribution repositories                           |
+| Windows Update                     | Distribution package updates                        |
+| Installed Apps                     | Package database                                    |
+| Winget / Chocolatey                | APT / DNF                                           |
+| DLL dependencies                   | Shared library dependencies                         |
+| Application installation directory | Files distributed across Linux filesystem hierarchy |
+
+The most important difference:
+
+On Linux, applications are often installed into standard filesystem locations rather than one self-contained application directory.
+
+For example:
+
+```
+/usr/bin/       Executable commands
+/usr/sbin/      System administration executables
+/usr/lib/       Libraries
+/etc/           Configuration
+/usr/share/     Architecture-independent application data
+/var/lib/       Persistent application state
+/var/log/       Logs
+```
+
+This connects package management directly to the filesystem hierarchy we studied earlier.
+
+## **4. Linux Distribution Package Systems**
+
+Not every Linux distribution uses the same package manager.
+
+Two major package families are especially important.
+
+**Package ecosystem overview**
+
+[Cos'è Ubuntu e a cosa serve](https://images.openai.com/static-rsc-4/ahzv27rTIE05hZrp486UTFa_gcXg8q_JXF3AF54jkdsPfZ298zZ8CeLr9YwCifebR9v9kraFJo7Fn9Tx6hs8wrFn3DOErSvzT-37WhvKL_tuKBjg7zg7F9HAJlK6uMJcyHmHO0hepjiv54CLAZrY8KuLVZUfi56PGuZphD8OCi4?purpose=inline)
+
+**Debian package family**
+
+## **APT + DPKG**
+
+- Ubuntu
+- Debian
+- Linux Mint (Ubuntu/Debian-based)
+
+Package format: `.deb`
+
+[Red Hat Enterprise Linux Logo Png | Red Hat Enterprise Linux Logo Vector  - freepng](https://images.openai.com/static-rsc-4/sdwDAENTuUyIHziX8mnAjeb5A2M6bZ-MMqn0qeDJDu8ZbiSLCKOQgYgtNu7GaIRI8l7ZuBtUF8hWP6hDqONxPQdsZeGw8e6Qq-ofNpm4T5hVIDOYBsJ8is32Tx6gRkzkV2DEnvsZs2rZZfdBCMsQt2bCo9PXckJQHa7jhfrxnt0?purpose=inline)
+
+**Red Hat package family**
+
+## **DNF + RPM**
+
+- Red Hat Enterprise Linux
+- Fedora
+- Rocky Linux
+- AlmaLinux
+- Amazon Linux (RPM-based, with version-specific tooling)
+
+Package format: `.rpm`
+
+### **4.1 Debian and Ubuntu**
+
+Ubuntu uses:
+
+- APT for high-level package management.
+- DPKG for low-level `.deb` package management.
+
+### **4.2 Red Hat family**
+
+RHEL-based systems use:
+
+- DNF as a high-level package manager on current systems.
+- RPM as the underlying package format and low-level package management tool.
+- YUM on older systems and as a compatibility command on some newer systems.
+
+### **4.3 Amazon Linux**
+
+Amazon Linux is RPM-based.
+
+- Amazon Linux 2 commonly uses YUM.
+- Amazon Linux 2023 uses DNF.
+
+Do not assume all distributions use the same command syntax.
+
+## **5. APT — Ubuntu and Debian Package Management**
+
+Since our teaching environment is Ubuntu on WSL2, APT is the package manager we will use for the practical demonstrations.
+
+APT stands for **Advanced Package Tool**.
+
+It provides commands for installing, updating, searching and removing packages.
+
+### **5.1 Understand APT and DPKG**
+
+These tools work together, but they have different responsibilities.
+
+| Tool | Responsibility                                           |
+| ---- | -------------------------------------------------------- |
+| APT  | High-level package management and dependency resolution  |
+| DPKG | Low-level installation and management of `.deb` packages |
+
+Think of it this way:
+
+```
+Administrator
+     |
+     v
+    APT
+     |
+     +-- Finds packages
+     +-- Resolves dependencies
+     +-- Downloads packages
+     |
+     v
+   DPKG
+     |
+     +-- Unpacks package files
+     +-- Configures packages
+     +-- Records package installation
+```
+
+In normal administration, prefer APT for repository-based installation because it handles dependencies.
+
+### **5.2 Check your Ubuntu version**
+
+Run:
+
+```
+cat /etc/os-release
+```
+
+Example output:
+
+```
+PRETTY_NAME="Ubuntu 24.04 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04 LTS (Noble Numbat)"
+ID=ubuntu
+```
+
+Your version may differ.
+
+This file identifies your Linux distribution and release.
+
+You can also run:
+
+```
+lsb_release -a
+```
+
+This command may require the `lsb-release` package to be installed.
+
+### **5.3 Update package metadata**
+
+Run:
+
+```
+sudo apt update
+```
+
+What does it do?
+
+- Contacts configured repositories.
+- Downloads updated package indexes.
+- Updates local information about available package versions.
+- Does not install or upgrade your applications by itself.
+
+Example output may include:
+
+```
+Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease
+Get:2 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Reading package lists... Done
+```
+
+**Important distinction:** `apt update` updates package information, not the installed software.
+
+### **5.4 Upgrade installed packages**
+
+Run:
+
+```
+sudo apt upgrade
+```
+
+This upgrades installed packages where possible without removing installed packages to resolve the upgrade.
+
+Review the proposed changes before confirming.
+
+On a production server, do not automatically approve every update without considering maintenance windows, compatibility and service impact.
+
+For a broader upgrade that may install or remove packages to resolve dependencies:
+
+```
+sudo apt full-upgrade
+```
+
+This command can remove packages when required to complete the upgrade. Review its proposed changes carefully.
+
+### **5.5 Search for a package**
+
+Suppose you want to install Git.
+
+Search:
+
+```
+apt search git
+```
+
+This searches the package metadata available locally.
+
+For a more focused search:
+
+```
+apt search '^git$'
+```
+
+The `^` and `$` characters are regular-expression anchors. They match the beginning and end of the package name.
+
+### **5.6 Show package information**
+
+```
+apt show git
+```
+
+This displays information such as:
+
+- Package name.
+- Version.
+- Architecture.
+- Dependencies.
+- Description.
+- Package size.
+- Repository information.
+
+This is useful before installing software.
+
+### **5.7 Install software**
+
+Install Git:
+
+```
+sudo apt install git
+```
+
+APT will:
+
+1. Find the package.
+2. Check dependencies.
+3. Calculate required downloads.
+4. Ask for confirmation when appropriate.
+5. Download package files.
+6. Install and configure them.
+
+Verify:
+
+```
+git --version
+```
+
+Example:
+
+```
+git version 2.x.x
+```
+
+The exact version depends on your Ubuntu repositories.
+
+### **5.8 Remove software**
+
+To remove Git:
+
+```
+sudo apt remove git
+```
+
+This removes the package but generally leaves system configuration files behind.
+
+To remove the package and its package-managed configuration files:
+
+```
+sudo apt purge git
+```
+
+Be careful: package configuration files may contain important settings.
+
+To remove automatically installed dependencies that are no longer needed:
+
+```
+sudo apt autoremove
+```
+
+Review the list before confirming.
+
+### **5.9 Clean package cache**
+
+APT stores downloaded package files in its local cache.
+
+Inspect the cache size:
+
+```
+du -sh /var/cache/apt/archives/
+```
+
+Remove cached package files that are no longer downloadable or useful:
+
+```
+sudo apt autoclean
+```
+
+Remove all downloaded package archives from the cache:
+
+```
+sudo apt clean
+```
+
+Neither command removes your installed applications.
+
+### **5.10 List installed packages**
+
+```
+apt list --installed
+```
+
+This may produce a long output.
+
+To find a particular installed package:
+
+```
+apt list --installed | grep '^git/'
+```
+
+Another option:
+
+```
+dpkg -l git
+```
+
+### **5.11 Find which package owns a file**
+
+Suppose you want to know which package installed `/usr/bin/ls`.
+
+Run:
+
+```
+dpkg -S /usr/bin/ls
+```
+
+Example:
+
+```
+coreutils: /usr/bin/ls
+```
+
+This is useful when investigating a binary or library on a server.
+
+## **6. DPKG — Low-Level Debian Package Management**
+
+DPKG works directly with Debian `.deb` packages.
+
+You will encounter it when inspecting packages, installing downloaded package files, or diagnosing package database problems.
+
+### **6.1 Inspect installed packages**
+
+```
+dpkg -l
+```
+
+This lists packages known to the DPKG database.
+
+To inspect one package:
+
+```
+dpkg -l git
+```
+
+The output contains a status column.
+
+Common status indicators include:
+
+| Status | Meaning                                             |
+| ------ | --------------------------------------------------- |
+| `ii`   | Package is installed and configured                 |
+| `rc`   | Package was removed, but configuration files remain |
+| `un`   | Package is not installed                            |
+
+### **6.2 Inspect package details**
+
+```
+dpkg -s git
+```
+
+This displays package status and metadata.
+
+### **6.3 Inspect files installed by a package**
+
+```
+dpkg -L git
+```
+
+This lists files recorded as belonging to the Git package.
+
+This is useful when learning where software places its executables, documentation and supporting files.
+
+### **6.4 Inspect a downloaded&#x20;**`.deb`**&#x20;file**
+
+If you have a local package file:
+
+```
+dpkg-deb --info package.deb
+```
+
+To inspect its contents:
+
+```
+dpkg-deb --contents package.deb
+```
+
+`dpkg-deb` inspects and manipulates Debian package archives.
+
+### **6.5 Install a local&#x20;**`.deb`**&#x20;package**
+
+For example:
+
+```
+sudo dpkg -i ./package.deb
+```
+
+However, `dpkg -i` does not automatically resolve and download missing dependencies from repositories.
+
+If dependencies are missing, repair the package situation with:
+
+```
+sudo apt --fix-broken install
+```
+
+APT attempts to resolve broken dependencies using the configured repositories.
+
+**Production rule:** Prefer `sudo apt install ./package.deb` for a local `.deb` when you want APT to resolve dependencies.
+
+## **7. RPM, DNF and YUM — Red Hat-Based Systems**
+
+You may eventually administer:
+
+- RHEL servers.
+- Fedora workstations.
+- Rocky Linux servers.
+- AlmaLinux servers.
+- Amazon Linux cloud instances.
+
+These systems use the RPM package ecosystem.
+
+### **7.1 What is RPM?**
+
+RPM stands for RPM Package Manager.
+
+It is associated with the `.rpm` package format.
+
+A package might look like:
+
+```
+nginx-1.24.0-1.el9.x86_64.rpm
+```
+
+This filename communicates several pieces of information:
+
+| Part     | Meaning                   |
+| -------- | ------------------------- |
+| `nginx`  | Package name              |
+| `1.24.0` | Version                   |
+| `1.el9`  | Release/build information |
+| `x86_64` | CPU architecture          |
+
+The exact naming format varies.
+
+### **7.2 What is DNF?**
+
+DNF is a high-level package manager used in current Fedora and RHEL-family environments.
+
+It handles:
+
+- Repository metadata.
+- Package downloads.
+- Dependency resolution.
+- Installation.
+- Updates.
+- Removal.
+
+### **7.3 Common DNF commands**
+
+These are examples for an RPM-based system. They are not intended to be run in Ubuntu.
+
+| Task                       | DNF command                     |
+| -------------------------- | ------------------------------- |
+| Refresh metadata           | `sudo dnf makecache`            |
+| Update packages            | `sudo dnf upgrade`              |
+| Search                     | `dnf search nginx`              |
+| Package details            | `dnf info nginx`                |
+| Install                    | `sudo dnf install nginx`        |
+| Remove                     | `sudo dnf remove nginx`         |
+| List installed             | `dnf list installed`            |
+| Find package owning a file | `dnf provides /usr/bin/example` |
+
+For example:
+
+```
+sudo dnf install nginx
+```
+
+DNF resolves dependencies and installs the requested package.
+
+### **7.4 Common RPM commands**
+
+RPM provides lower-level package inspection and management.
+
+Examples:
+
+```
+rpm -qa
+```
+
+Lists installed RPM packages.
+
+```
+rpm -qi nginx
+```
+
+Displays information about an installed package.
+
+```
+rpm -ql nginx
+```
+
+Lists files belonging to an installed package.
+
+```
+rpm -qf /usr/sbin/nginx
+```
+
+Identifies which installed package owns a file.
+
+To install a local RPM directly:
+
+```
+sudo rpm -ivh package.rpm
+```
+
+This does not provide the same repository-based dependency resolution as DNF. Prefer DNF for normal installations.
+
+### **7.5 What about YUM?**
+
+YUM was widely used on older Red Hat-based systems.
+
+Examples:
+
+```
+sudo yum install nginx
+sudo yum update
+sudo yum remove nginx
+```
+
+On some modern systems, `yum` is a compatibility interface that delegates to DNF.
+
+Do not assume that YUM and DNF are identical across all releases.
+
+## **8. Compare Package Managers**
+
+| Operation           | Ubuntu / Debian | RHEL / Fedora family |
+| ------------------- | --------------- | -------------------- |
+| Package format      | `.deb`          | `.rpm`               |
+| High-level manager  | APT             | DNF                  |
+| Low-level manager   | DPKG            | RPM                  |
+| Refresh metadata    | `apt update`    | `dnf makecache`      |
+| Install             | `apt install`   | `dnf install`        |
+| Remove              | `apt remove`    | `dnf remove`         |
+| Search              | `apt search`    | `dnf search`         |
+| Package information | `apt show`      | `dnf info`           |
+| List installed      | `dpkg -l`       | `rpm -qa`            |
+
+A package for Ubuntu is not normally directly installable on RHEL, and vice versa.
+
+The package formats, dependencies, filesystem conventions and distribution policies differ.
+
+## **9. How Package Repositories Work**
+
+Understanding repositories is important because package managers need trusted sources from which to obtain software.
+
+### **9.1 Ubuntu repository structure**
+
+Ubuntu repositories are commonly divided into components:
+
+| Component    | General purpose                                              |
+| ------------ | ------------------------------------------------------------ |
+| `main`       | Free and open-source software officially supported by Ubuntu |
+| `universe`   | Community-maintained free and open-source software           |
+| `restricted` | Software with restrictions, often hardware-related drivers   |
+| `multiverse` | Software with licensing or other restrictions                |
+
+The exact availability and support arrangements depend on the Ubuntu release and subscription configuration.
+
+### **9.2 Inspect APT repository configuration**
+
+Run:
+
+```
+ls -l /etc/apt/sources.list.d/
+```
+
+Then inspect the source definitions:
+
+```
+grep -R -nE '^(deb |URIs:|Suites:|Components:)' \
+    /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null
+```
+
+On newer Ubuntu installations, you may find a file such as:
+
+```
+/etc/apt/sources.list.d/ubuntu.sources
+```
+
+A modern deb822-style source definition may look conceptually like:
+
+```
+Types: deb
+URIs: http://archive.ubuntu.com/ubuntu
+Suites: noble noble-updates
+Components: main universe
+```
+
+The actual values depend on the Ubuntu release and configured mirrors.
+
+### **9.3 What happens during&#x20;**`apt update`**?**
+
+Consider:
+
+```
+sudo apt update
+```
+
+The process is approximately:
+
+```
+APT
+ |
+ +--> Reads configured repositories
+ |
+ +--> Contacts repository servers
+ |
+ +--> Downloads package index metadata
+ |
+ +--> Checks repository signatures
+ |
+ +--> Updates local package indexes
+ |
+ v
+Local package metadata is refreshed
+```
+
+APT uses signed repository metadata to help establish package authenticity and integrity.
+
+This is one reason you should not casually add random package repositories to a production server.
+
+### **9.4 What is a package mirror?**
+
+A mirror is a server that hosts a copy of repository content.
+
+For example, Ubuntu has many mirrors around the world.
+
+Mirrors help distribute download traffic and improve availability.
+
+Your system may use a regional mirror rather than one central server.
+
+### **9.5 Why repositories matter in production**
+
+Suppose you run a production server and add an untrusted repository.
+
+That repository may offer a package with the same name as an official package but a different version or build.
+
+Depending on repository priorities and package configuration, your package manager may select the unexpected package.
+
+This can introduce:
+
+- Vulnerable software.
+- Untrusted executable code.
+- Unexpected dependency changes.
+- Compatibility problems.
+- Supply-chain risk.
+
+**Production rule:** Use trusted distribution repositories or carefully vetted vendor repositories. Understand what repository you are adding and why.
+
+## **10. Package Versions, Holds and Updates**
+
+Package managers do more than install software. They also manage versions.
+
+### **10.1 Check the installed version**
+
+```
+git --version
+```
+
+Inspect package metadata:
+
+```
+apt show git
+```
+
+### **10.2 Check available package versions**
+
+```
+apt policy git
+```
+
+This can show:
+
+- Installed version.
+- Candidate version.
+- Available versions.
+- Which repositories provide those versions.
+
+Example structure:
+
+```
+git:
+  Installed: 1:2.x.x-...
+  Candidate: 1:2.x.x-...
+  Version table:
+ *** 1:2.x.x-... 500
+        500 http://archive.ubuntu.com/ubuntu ...
+```
+
+Your exact versions and repository addresses will differ.
+
+### **10.3 Hold a package**
+
+Sometimes a production application depends on a specific package version.
+
+APT supports package holds.
+
+For example:
+
+```
+sudo apt-mark hold git
+```
+
+This marks Git as held so normal package upgrades do not automatically upgrade it.
+
+Check held packages:
+
+```
+apt-mark showhold
+```
+
+Remove the hold:
+
+```
+sudo apt-mark unhold git
+```
+
+A package hold is not a substitute for patch management. A held security-sensitive package still needs review.
+
+### **10.4 Install a specific version**
+
+First inspect available versions:
+
+```
+apt policy git
+```
+
+If a particular version is available, you can request it:
+
+```
+sudo apt install git=PACKAGE_VERSION
+```
+
+Replace `PACKAGE_VERSION` with an actual version shown by `apt policy`.
+
+Do not copy an example version from another Ubuntu release. Your repositories determine which versions are available.
+
+### **10.5 Why not always install the newest version?**
+
+Production software needs compatibility and predictable behavior.
+
+A newer version might:
+
+- Remove an option.
+- Change a configuration format.
+- Require newer libraries.
+- Introduce a regression.
+- Change default security behavior.
+
+Package updates should be managed as part of a controlled maintenance process.
+
+## **11. Package Installation and Security**
+
+Installing software is a privileged operation.
+
+Consider:
+
+```
+sudo apt install nginx
+```
+
+`sudo` runs APT with elevated privileges because installing software changes system-managed directories and package databases.
+
+### **11.1 Why does installation require root privileges?**
+
+Package installation may write to:
+
+```
+/usr/bin/
+/usr/lib/
+/etc/
+/var/lib/dpkg/
+/var/cache/apt/
+```
+
+Normal users generally cannot modify these system-owned locations.
+
+### **11.2 Understand package signing**
+
+Repositories provide signed metadata.
+
+APT verifies repository signatures using trusted signing keys configured for the repository.
+
+This helps protect against unauthorized repository metadata changes.
+
+However, a valid signature does not mean every application is automatically safe. You must still trust the publisher and repository.
+
+### **11.3 Avoid random installation commands**
+
+You may encounter commands such as:
+
+```
+curl https://example.com/install.sh | sudo bash
+```
+
+This downloads a script and executes it with administrative privileges.
+
+The danger is that you are trusting the downloaded script with full system access.
+
+Before executing an installation script:
+
+1. Verify the official source.
+2. Inspect the script.
+3. Understand the changes it makes.
+4. Check whether the vendor offers a repository or signed package.
+5. Avoid blindly executing downloaded code as root.
+
+### **11.4 Package integrity and verification**
+
+Package managers maintain records and use repository security mechanisms, but an administrator may still need to investigate unexpected modifications.
+
+On Debian/Ubuntu:
+
+```
+sudo dpkg --verify
+```
+
+This checks installed package files against available package metadata and checksums where verification information exists.
+
+It does not prove the entire system is secure, nor does it replace a security audit.
+
+On RPM-based systems:
+
+```
+rpm -Va
+```
+
+This verifies installed package files against RPM database metadata. Differences may be legitimate configuration changes, so interpret the output rather than assuming every reported difference is malicious.
+
+## **12. What Happens Internally During Installation?**
+
+Let's examine the lifecycle of a package installation.
+
+Suppose you execute:
+
+```
+sudo apt install nginx
+```
+
+### **Stage 1 — Command execution**
+
+Your interactive Bash shell resolves `sudo` through PATH.
+
+The `sudo` program checks whether your user is authorized to execute the requested command with elevated privileges.
+
+### **Stage 2 — Repository metadata**
+
+APT consults its local package indexes.
+
+These indexes contain information about available packages, versions and dependencies.
+
+### **Stage 3 — Dependency resolution**
+
+APT calculates what needs to be installed, upgraded or changed to satisfy the request.
+
+For example:
+
+```
+nginx
+ |
+ +-- nginx-common
+ |
+ +-- Required libraries
+ |
+ +-- Supporting packages
+```
+
+This is a simplified example; actual dependencies depend on your release and selected package version.
+
+### **Stage 4 — Download**
+
+APT downloads the required package archives from configured repositories.
+
+### **Stage 5 — Package verification**
+
+APT checks repository metadata and package integrity according to its trust configuration.
+
+### **Stage 6 — DPKG installation**
+
+DPKG unpacks package contents and runs package configuration steps.
+
+Packages can contain maintainer scripts for tasks such as:
+
+- Creating system users.
+- Registering services.
+- Updating configuration.
+- Preparing directories.
+- Updating system integration.
+
+### **Stage 7 — Package database update**
+
+The package database records the package's installation state.
+
+### **Stage 8 — Service integration**
+
+Some packages install or register systemd service units.
+
+Whether a service starts automatically depends on the package scripts, distribution policy and environment.
+
+In WSL, service startup behavior may differ from a traditional Linux installation.
+
+### **Internal flow**
+
+```
+Bash
+ |
+ v
+sudo
+ |
+ v
+APT
+ |
+ +--> Repository metadata
+ |
+ +--> Dependency solver
+ |
+ +--> Package downloads
+ |
+ +--> Integrity checks
+ |
+ v
+DPKG
+ |
+ +--> Unpack files
+ |
+ +--> Run package scripts
+ |
+ +--> Configure package
+ |
+ +--> Update package database
+ |
+ v
+Software installed
+```
+
+## **13. Package Troubleshooting**
+
+Package managers can fail. A Linux administrator must be able to diagnose the failure instead of immediately deleting files or changing system configuration.
+
+### **Problem 1 —&#x20;**`Unable to locate package`
+
+Example:
+
+```
+E: Unable to locate package example-package
+```
+
+Possible causes:
+
+- Incorrect package name.
+- Repository metadata has not been refreshed.
+- Required repository is disabled.
+- Package is not available for your release.
+
+Investigate:
+
+```
+sudo apt update
+apt search example-package
+apt policy example-package
+```
+
+Do not assume every software project publishes a package under its product name.
+
+### **Problem 2 — Package download fails**
+
+Example:
+
+```
+Temporary failure resolving 'archive.ubuntu.com'
+```
+
+Possible cause: DNS or network connectivity problems.
+
+Inspect:
+
+```
+getent hosts archive.ubuntu.com
+```
+
+Try:
+
+```
+curl -I https://archive.ubuntu.com/
+```
+
+These commands help separate DNS resolution problems from repository configuration issues.
+
+In WSL, network connectivity can also depend on the Windows host network and WSL networking configuration.
+
+### **Problem 3 — Package dependencies are broken**
+
+You may see errors indicating unmet dependencies.
+
+Inspect:
+
+```
+sudo apt --fix-broken install
+```
+
+This asks APT to attempt dependency repair.
+
+Review the proposed changes before confirming.
+
+### **Problem 4 — DPKG was interrupted**
+
+You may see a message indicating that DPKG was interrupted and needs manual configuration.
+
+A common recovery command is:
+
+```
+sudo dpkg --configure -a
+```
+
+This attempts to configure packages that were unpacked but not fully configured.
+
+Review errors carefully. A failed maintainer script may require investigation before proceeding.
+
+### **Problem 5 — Another package operation is running**
+
+You may see an error involving a package-manager lock.
+
+For example:
+
+```
+Could not get lock /var/lib/dpkg/lock-frontend
+```
+
+Possible causes:
+
+- Another APT process is running.
+- Automatic updates are running.
+- A previous package operation did not finish.
+
+Inspect:
+
+```
+ps aux | grep -E 'apt|dpkg'
+```
+
+Wait for a legitimate package operation to finish.
+
+**Never delete package lock files as a first response.** The lock protects package database consistency. Removing a lock file while another package operation is active can cause serious problems.
+
+### **Problem 6 — Package configuration is broken**
+
+Inspect:
+
+```
+dpkg --audit
+```
+
+This reports partially installed or improperly configured packages.
+
+You can also inspect an individual package:
+
+```
+dpkg -s git
+```
+
+### **Problem 7 — Package is installed, but command is not found**
+
+Inspect:
+
+```
+dpkg -L git
+command -v git
+echo "$PATH"
+```
+
+Possible causes:
+
+- The command is not part of the package you installed.
+- Its executable directory is not in PATH.
+- The package did not finish installing.
+- You installed a library or development package rather than the command-line application.
+
+## **14. WSL2 Practical Lab — Install and Manage Software**
+
+Works in WSL2 Ubuntu
+
+We will use Git because it is a useful developer tool and safe to practice with.
+
+We will keep this lab within your Linux home directory wherever possible.
+
+### **Step 1 — Confirm your distribution**
+
+```
+cat /etc/os-release
+```
+
+Confirm that the distribution is Ubuntu.
+
+### **Step 2 — Check whether APT is available**
+
+```
+apt --version
+dpkg --version
+```
+
+These commands display the installed tool versions.
+
+### **Step 3 — Refresh repository metadata**
+
+```
+sudo apt update
+```
+
+Explain:
+
+- `sudo` grants administrative privileges for the command.
+- `apt` invokes the package manager.
+- `update` refreshes package indexes.
+
+Expected: repository information is downloaded or confirmed up to date.
+
+Common error: DNS or network failure. Check connectivity before changing repository configuration.
+
+### **Step 4 — Search for Git**
+
+```
+apt search '^git$'
+```
+
+Expected: a package result named `git`, if it is available in your configured repositories.
+
+### **Step 5 — Inspect Git package information**
+
+```
+apt show git
+```
+
+Inspect its version, description and dependencies.
+
+### **Step 6 — Install Git if it is not already installed**
+
+```
+sudo apt install git
+```
+
+If Git is already installed, APT may report that it is already at the newest available version.
+
+Review the package list before confirming.
+
+### **Step 7 — Verify installation**
+
+```
+git --version
+command -v git
+```
+
+Example:
+
+```
+git version 2.x.x
+/usr/bin/git
+```
+
+Your version may differ.
+
+### **Step 8 — Inspect the installed package**
+
+```
+dpkg -s git
+```
+
+Look for:
+
+```
+Status: install ok installed
+```
+
+### **Step 9 — Inspect package-owned files**
+
+```
+dpkg -L git | head -n 20
+```
+
+This displays the first 20 paths recorded for the Git package.
+
+### **Step 10 — Find which package owns the executable**
+
+```
+dpkg -S "$(command -v git)"
+```
+
+Expected output identifies the package that owns the executable path.
+
+### **Step 11 — Check available package version**
+
+```
+apt policy git
+```
+
+Compare the installed and candidate versions.
+
+### **Step 12 — Inspect package cache**
+
+```
+du -sh /var/cache/apt/archives/
+```
+
+This reports how much space downloaded package archives occupy.
+
+### **Step 13 — Clean unused cached downloads**
+
+```
+sudo apt autoclean
+```
+
+This removes package archives that are no longer downloadable or useful.
+
+You do not need to uninstall Git to complete the lab.
+
+**Verification:** Run `git --version` again. It should still work.
+
+## **15. Installing a Server Application — Nginx Example**
+
+Let's connect package management to a real Linux server.
+
+[Installing a Web Server on Linux](https://images.openai.com/static-rsc-4/B_3jz01F3rqVqhqfaBLu9kWIeXZljet99ARInh4nUITIikgYUt9XlY8fxZsfFiVW72aIxVJ3L4gUySidbFyyYiuSq5oyIvYIi2G01E2IVyDV1vuf6cGYfJmCbGW33PI20ByZInXQ87fr61mB0lvKpIRwK1Yzh0LkUAskc9aq-go?purpose=inline)
+
+[noob2poweruser.com](https://www.noob2poweruser.com/installing-a-web-server-on-linux/?utm_source=chatgpt.com)
+
+Nginx is a web server commonly used for:
+
+- Serving websites.
+- Reverse proxying applications.
+- TLS termination.
+- Load balancing.
+- Static file delivery.
+
+On Ubuntu, installation is straightforward:
+
+```
+sudo apt install nginx
+```
+
+Inspect the package:
+
+```
+apt show nginx
+```
+
+Find the executable:
+
+```
+command -v nginx
+```
+
+Inspect package files:
+
+```
+dpkg -L nginx
+```
+
+Common locations include:
+
+```
+/usr/sbin/nginx
+/etc/nginx/
+/var/log/nginx/
+/var/lib/nginx/
+```
+
+Check its version:
+
+```
+nginx -v
+```
+
+### **Important WSL distinction**
+
+Installing Nginx and running Nginx are two different operations.
+
+A package can install successfully even if the service manager is not running.
+
+Check whether systemd is PID 1:
+
+```
+ps -p 1 -o comm=
+```
+
+If the output is:
+
+```
+systemd
+```
+
+systemd is the init process.
+
+If it displays another process, your WSL environment may not be using systemd as PID 1.
+
+You can inspect whether WSL systemd support is enabled:
+
+```
+systemctl is-system-running
+```
+
+If systemd is available, you can manage Nginx using:
+
+```
+sudo systemctl status nginx
+```
+
+Starting it:
+
+```
+sudo systemctl start nginx
+```
+
+If systemd is not running, do not assume `systemctl` will work. WSL can be configured to support systemd on supported WSL versions, but service management differs from a traditional server.
+
+We will cover systemd properly in Module 03.
+
+For this lesson, installing and inspecting the package is sufficient. You do not need to install Nginx just to complete the package-management lab.
+
+## **16. Package Management in Production**
+
+Let's consider a real deployment situation.
+
+Imagine you administer a Linux server running:
+
+```
+Nginx
+Node.js
+PostgreSQL
+Git
+Monitoring tools
+```
+
+Your responsibility is not simply to install these packages.
+
+You must manage their lifecycle.
+
+| Operational task      | Administrator responsibility    |
+| --------------------- | ------------------------------- |
+| Initial installation  | Install trusted software        |
+| Dependency management | Ensure compatible dependencies  |
+| Security updates      | Apply security fixes            |
+| Version management    | Maintain compatibility          |
+| Repository management | Use trusted sources             |
+| Troubleshooting       | Diagnose failed installations   |
+| Removal               | Remove obsolete packages safely |
+| Auditing              | Know what software is installed |
+
+### **Example: Updating a production server**
+
+A sensible maintenance workflow might look like:
+
+```
+1. Inspect current package versions
+          |
+          v
+2. Review available updates
+          |
+          v
+3. Check security advisories
+          |
+          v
+4. Back up critical data/configuration
+          |
+          v
+5. Apply updates in a maintenance window
+          |
+          v
+6. Verify services and application health
+          |
+          v
+7. Record changes
+```
+
+Useful commands:
+
+```
+apt list --upgradable
+apt policy nginx
+dpkg -l nginx
+```
+
+On an Ubuntu server, you may also inspect security-related package information through the distribution's security tools and advisories.
+
+**Production lesson:** Updating packages is an operational change. It should be planned, reviewed and verified.
+
+## **17. Important Package Management Safety Rules**
+
+Keep these rules in mind when administering Linux servers.
+
+1. Never add an unknown repository just because a tutorial recommends it.
+2. Do not blindly execute downloaded installation scripts with `sudo`.
+3. Review package removals before confirming an operation.
+4. Do not delete APT or DPKG lock files to force installation.
+5. Do not manually delete package-managed files to uninstall software.
+6. Do not use `dpkg -i` expecting it to resolve dependencies automatically.
+7. Check the distribution and release before following installation instructions.
+8. Keep security updates under an appropriate maintenance process.
+9. Record important package and version changes.
+10. Test significant upgrades before applying them to critical production systems.
+
+### **Commands to be especially careful with**
+
+```
+sudo apt full-upgrade
+sudo apt autoremove
+sudo apt purge package-name
+sudo dpkg --remove package-name
+```
+
+These commands can make significant changes to installed software and configuration.
+
+Always inspect what the package manager proposes before accepting.
+
+## **18. Advanced Notes**
+
+### **18.1 Package managers versus language package managers**
+
+As a developer, you may already use:
+
+```
+npm install
+pip install
+composer install
+```
+
+These are not the same as APT.
+
+| Package manager | Typical scope                               |
+| --------------- | ------------------------------------------- |
+| APT             | Operating-system packages                   |
+| DPKG            | Debian package database and `.deb` packages |
+| DNF             | RPM-based operating-system packages         |
+| RPM             | RPM packages                                |
+| npm             | JavaScript packages                         |
+| pip             | Python packages                             |
+| Composer        | PHP packages                                |
+
+For example:
+
+```
+sudo apt install nodejs
+```
+
+installs a distribution-provided Node.js package.
+
+But:
+
+```
+npm install express
+```
+
+installs a JavaScript dependency into a Node.js project or another npm-managed location.
+
+These tools operate at different layers.
+
+### **18.2 System packages versus project dependencies**
+
+Consider a Next.js application:
+
+```
+Next.js application
+   |
+   +-- Node.js runtime
+   |
+   +-- npm
+   |
+   +-- React
+   |
+   +-- Next.js
+   |
+   +-- Other npm dependencies
+```
+
+APT might install Node.js and npm.
+
+npm installs the application's JavaScript dependencies.
+
+This distinction is important when building and deploying applications.
+
+### **18.3 What is Snap?**
+
+Ubuntu also supports Snap packages.
+
+Snap is a separate packaging and distribution system.
+
+Example:
+
+```
+snap list
+```
+
+Install a Snap package:
+
+```
+sudo snap install package-name
+```
+
+Snap packages have different packaging and isolation characteristics from traditional `.deb` packages.
+
+Do not confuse APT and Snap. They are different software distribution mechanisms.
+
+### **18.4 What is Flatpak?**
+
+Flatpak is another application packaging system, commonly used for desktop applications.
+
+Example:
+
+```
+flatpak list
+```
+
+Flatpak is especially common in desktop Linux environments.
+
+For this Linux systems course, our primary focus remains traditional OS package management with APT, DPKG, DNF and RPM.
+
+### **18.5 Package managers do not replace configuration management**
+
+Installing a package does not automatically mean your entire server is configured correctly.
+
+For example, installing Nginx does not automatically create your desired:
+
+- Virtual hosts.
+- Reverse proxy configuration.
+- TLS certificates.
+- Firewall policy.
+- Application deployment.
+- Monitoring configuration.
+
+Package management installs and tracks software. System administration configures and operates it.
+
+## **19. Command Reference**
+
+Keep this table as your package-management reference.
+
+### **Ubuntu / Debian**
+
+| Purpose                    | Command                         |
+| -------------------------- | ------------------------------- |
+| Refresh package metadata   | `sudo apt update`               |
+| Upgrade installed packages | `sudo apt upgrade`              |
+| Broader upgrade            | `sudo apt full-upgrade`         |
+| Search                     | `apt search git`                |
+| Package information        | `apt show git`                  |
+| Install                    | `sudo apt install git`          |
+| Remove                     | `sudo apt remove git`           |
+| Purge                      | `sudo apt purge git`            |
+| Remove unused dependencies | `sudo apt autoremove`           |
+| Clean cache                | `sudo apt clean`                |
+| Show package versions      | `apt policy git`                |
+| List installed packages    | `dpkg -l`                       |
+| Package details            | `dpkg -s git`                   |
+| List package files         | `dpkg -L git`                   |
+| Find file owner            | `dpkg -S /usr/bin/git`          |
+| Repair dependencies        | `sudo apt --fix-broken install` |
+| Configure pending packages | `sudo dpkg --configure -a`      |
+| Audit package state        | `sudo dpkg --audit`             |
+
+### **RHEL / Fedora family**
+
+| Purpose             | Command                         |
+| ------------------- | ------------------------------- |
+| Refresh metadata    | `sudo dnf makecache`            |
+| Upgrade             | `sudo dnf upgrade`              |
+| Search              | `dnf search nginx`              |
+| Package details     | `dnf info nginx`                |
+| Install             | `sudo dnf install nginx`        |
+| Remove              | `sudo dnf remove nginx`         |
+| List installed      | `dnf list installed`            |
+| Find provider       | `dnf provides /usr/bin/example` |
+| List RPM packages   | `rpm -qa`                       |
+| Package information | `rpm -qi nginx`                 |
+| List package files  | `rpm -ql nginx`                 |
+| Find file owner     | `rpm -qf /usr/sbin/nginx`       |
+
+## **20. Practical Lab — Final Verification**
+
+Before completing the lesson, run these commands in WSL Ubuntu:
+
+```
+# Distribution
+cat /etc/os-release
+
+# Package manager versions
+apt --version
+dpkg --version
+
+# Refresh metadata
+sudo apt update
+
+# Check Git
+git --version
+
+# Inspect Git package
+dpkg -s git
+
+# Find Git executable
+command -v git
+
+# Find package owning executable
+dpkg -S "$(command -v git)"
+
+# Check available version
+apt policy git
+
+# Check package cache
+du -sh /var/cache/apt/archives/
+
+# Check package health
+sudo dpkg --audit
+```
+
+Expected results:
+
+- Ubuntu distribution information is displayed.
+- APT and DPKG versions are displayed.
+- Package metadata refreshes successfully, assuming network connectivity.
+- Git reports its installed version.
+- DPKG reports Git as installed.
+- The executable path is identified.
+- The package database identifies its owner.
+- Package version information is displayed.
+- Cache usage is reported.
+- The package audit should normally report no problems.
+
+If a command reports an error, use the troubleshooting section rather than immediately modifying package databases.
+
+## **21. Teaching Summary**
+
+The learner should leave this lesson understanding five major ideas:
+
+**1. Packages:** Linux software is commonly distributed as structured packages such as `.deb` and `.rpm`.
+
+**2. Package managers:** APT and DNF handle repository access, dependency resolution and package lifecycle management.
+
+**3. Low-level package tools:** DPKG and RPM manage package formats and installed package information.
+
+**4. Repositories:** Package managers download software and metadata from configured sources. Repository trust is a security concern.
+
+**5. Production responsibility:** Installing software is only one part of administering a Linux server. Version management, updates, compatibility and troubleshooting matter just as much.
+
+### **Mastery checklist**
+
+- Understand software packages and repositories.
+- Understand dependencies.
+- Understand APT versus DPKG.
+- Understand DNF versus RPM.
+- Understand the differences between Ubuntu and RHEL-based distributions.
+- Install and inspect software using APT.
+- Identify which package owns an executable.
+- Inspect package versions and available updates.
+- Understand repository trust and package security.
+- Diagnose common package installation errors.
+- Understand OS package managers versus npm, pip and Composer.
+- Complete the WSL package-management lab.
+
+## **22. Official Documentation**
+
+- [Ubuntu — APT package management](https://documentation.ubuntu.com/server/how-to/software/package-management/?utm_source=chatgpt.com)
+- [Debian — APT documentation](https://www.debian.org/doc/manuals/apt-guide/?utm_source=chatgpt.com)
+- [Ubuntu — DPKG manual](https://manpages.ubuntu.com/manpages/noble/en/man1/dpkg.1.html?utm_source=chatgpt.com)
+- [Fedora — DNF documentation](https://dnf.readthedocs.io/?utm_source=chatgpt.com)
+- [RPM documentation](https://rpm.org/documentation.html?utm_source=chatgpt.com)
+- [Amazon Linux documentation](https://docs.aws.amazon.com/linux/?utm_source=chatgpt.com)
+
+**Module 01 Progress**
+
+Topic 08 complete
+
+# **8 / 10**
+
+Next: Topic 09 — Bash Scripting Fundamentals
+
+**Next lesson:** We will start writing Bash scripts from scratch: shebangs, script execution, variables, arguments, user input, conditions, loops, functions, exit codes and practical automation. This will bring Module 01 close to completion.

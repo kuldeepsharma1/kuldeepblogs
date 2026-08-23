@@ -1,0 +1,3474 @@
+---
+title: "Linux Filesystem Hierarchy"
+description: "Understand the unified Linux directory tree and the purpose of its important system directories."
+slug: "02-linux-filesystem-hierarchy"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 2
+readingTime: "1 hr 12 min"
+tags: ['linux', 'linux-fundamentals', 'bash', 'wsl', 'shell', 'filesystem']
+toc: true
+---
+
+Part 1 — Introduction: How Linux organizes everything
+1.1 Start with a simple problem
+Imagine you are building a computer operating system.
+
+You have thousands of files:
+- Applications.
+- Configuration files.
+- Libraries.
+- User documents.
+- System logs.
+- Device information.
+- Temporary files.
+- Runtime information.
+- Kernel information.
+- Database files.
+- Application data.
+Now imagine putting all those files into a single folder.
+
+You would quickly encounter problems:
+- Application files would mix with user documents.
+- Temporary files would mix with permanent data.
+- Configuration files would be difficult to locate.
+- System logs would become difficult to manage.
+- Administrators would not know where software should store its data.
+- Backup and recovery would become complicated.
+Linux solves this organizational problem through a structured filesystem hierarchy.
+
+A filesystem hierarchy defines how files and directories are organized and where different categories of information should live.
+
+Linux follows established Unix filesystem conventions, particularly the Filesystem Hierarchy Standard (FHS).
+
+The FHS defines guidelines for placing files and directories so that software, administrators and system tools can predict where things belong. The current published FHS specification is Version 3.0. 
+
+specifications.freedesktop.org+1
+
+1.2 The most important concept: Linux has one unified directory tree
+Windows users are accustomed to seeing drives:
+C:\
+D:\
+E:\
+
+
+Each drive has its own drive letter and directory tree.
+
+Linux works differently.
+
+Linux exposes filesystems through one unified directory hierarchy.
+
+The entire tree starts at:
+/
+
+
+This is called the root directory.
+
+Everything else exists underneath it, either as an ordinary directory or as a mount point connected to another filesystem.
+
+For example:
+/
+├── home
+├── etc
+├── usr
+├── var
+├── tmp
+└── dev
+
+
+All these paths belong to the same overarching namespace.
+
+A directory does not need its own drive letter.
+Windows versus Linux
+Windows filesystem model
+C:\
+
+Windows operating system
+
+Windows · Program Files · Users
+
+D:\
+
+Another drive
+
+Projects · Backups · Media
+
+E:\
+
+Another drive
+
+
+
+Linux filesystem model
+/
+
+One unified root directory
+
+/home
+
+
+/etc
+
+
+/usr
+
+
+/var
+
+
+/tmp
+
+
+/mnt
+
+
+
+Different storage devices can be attached at directories within this same tree.
+
+
+The Linux approach allows different storage devices and filesystems to appear at specific locations within the same directory hierarchy.
+
+For example, a production server might have:
+/
+├── home       → user storage
+├── var        → application state and logs
+├── boot       → boot-related files
+└── data       → separate mounted storage
+
+
+Even if /data resides on a completely different physical disk, users access it through the same unified namespace.
+
+This operation is called mounting, which we will examine in depth in Module 05.
+1.3 What exactly is /?
+The symbol / represents the root of the filesystem namespace.
+
+It is the highest directory in the Linux directory hierarchy.
+
+Examples:
+/etc
+/home
+/usr
+/var
+/tmp
+/dev
+
+
+All these paths begin from /.
+
+Important distinction:
+- / is the filesystem root directory.
+- /root is normally the home directory of the Linux root user.
+- /home contains ordinary user home directories.
+These three things are not interchangeable.
+
+For example:
+/
+├── root
+└── home
+    ├── alice
+    └── bob
+
+
+The administrator account named root normally has:
+/root
+
+
+A regular user named alice might have:
+/home/alice
+
+
+This distinction becomes especially important when we study users and permissions.
+1.4 What is a filesystem?
+A filesystem is the mechanism and data structure used to organize and manage files on a storage medium or through a filesystem interface.
+
+It handles concepts such as:
+- File contents.
+- Directory entries.
+- Metadata.
+- Permissions.
+- File ownership.
+- Timestamps.
+- Storage allocation.
+- Directory structures.
+Examples of Linux filesystems include:
+Filesystem	Common use
+ext4	General-purpose Linux storage
+XFS	Enterprise and server storage
+Btrfs	Linux filesystem with snapshots and advanced features
+tmpfs	Temporary filesystem backed by memory and possibly swap
+vfat	FAT-compatible filesystems
+NFS	Network filesystem
+
+Do not confuse a filesystem with a filesystem hierarchy.
+
+A filesystem is how data is managed and represented. The hierarchy is how locations are organized and exposed through paths.
+
+For example:
+ext4 filesystem
+       |
+       v
+Mounted at /
+       |
+       v
+Contains Linux directories
+       |
+       +-- /etc
+       +-- /home
+       +-- /usr
+       +-- /var
+
+
+A separate ext4 filesystem could also be mounted at /home, while the rest of the hierarchy remains available through the root filesystem.
+1.5 Why does the filesystem hierarchy matter?
+Imagine an application running on a cloud server.
+
+Its components might be distributed like this:
+Application executable:
+    /usr/bin/myapp
+
+Configuration:
+    /etc/myapp/
+
+Application persistent data:
+    /var/lib/myapp/
+
+Logs:
+    /var/log/myapp/
+
+Temporary files:
+    /tmp/myapp/
+
+Runtime socket:
+    /run/myapp/
+
+
+Each directory has a purpose.
+
+If an application fails, an administrator can investigate the relevant location instead of searching the entire machine randomly.
+
+Consider these examples:
+Problem	Relevant directory
+Application configuration is incorrect	/etc
+Server disk is filling with logs	/var/log
+Application cannot find its executable	/usr/bin or another executable location
+Application has lost its persistent state	/var/lib
+Temporary files are consuming storage	/tmp
+Service cannot access its runtime socket	/run
+Device or kernel information is needed	/dev, /proc, /sys
+User cannot find personal files	/home
+
+The filesystem hierarchy is therefore not just organization. It is an operational map of a Linux machine.
+
+Part 2 — The complete Linux filesystem tree
+Here is a representative Linux filesystem hierarchy.
+
+This is a teaching model based on the FHS and common modern Linux systems. Individual distributions can differ, some directories may be symbolic links, and optional components may be absent. 
+
+specifications.freedesktop.org+1
+
+Linux filesystem map
+Select a directory in the map to see its purpose.
+/
+
+/bin
+/boot
+/dev
+/etc
+/home
+/lib
+/media
+/mnt
+/opt
+/proc
+/root
+/run
+/sbin
+/srv
+/sys
+/tmp
+/usr
+/var
+
+
+/
+Root of the entire filesystem namespace. Everything is accessible underneath it./ is not the same as /root.
+
+
+2.1 The directories fall into functional groups
+For teaching, do not make someone memorize 20 paths independently.
+
+Group them by what they do.
+Functional category	Important directories
+System configuration	/etc
+Installed software	/usr, /opt, /bin, /sbin, /lib
+User data	/home, /root
+Variable application and system data	/var
+Runtime and temporary data	/run, /tmp, /var/tmp
+Devices and hardware interfaces	/dev, /sys
+Kernel and process information	/proc
+Storage attachment locations	/mnt, /media
+Boot and service data	/boot, /srv
+
+This grouping is a useful mental model for administration.
+
+The important part is understanding the responsibility of each directory, not memorizing a diagram.
+
+Part 3 — Understanding the major directories in depth
+This is the most important part of the lesson.
+
+We will examine each directory, its purpose, examples of files that belong there, how Linux uses it, and what an administrator investigates when something goes wrong.
+3.1 / — The root directory
+Filesystem root
+Foundational
+
+The root directory is the starting point of the entire Linux filesystem hierarchy.
+
+Every ordinary directory and file is reachable underneath it.
+
+Examples:
+/
+/etc
+/home
+/usr
+/var
+/tmp
+
+
+What is its responsibility?
+The root filesystem must contain enough essential files for a Linux system to start, operate sufficiently, and recover or repair itself.
+
+The FHS describes this as one of the root filesystem's central responsibilities. 
+
+specifications.freedesktop.org+1
+
+How does Linux use it?
+When Linux starts, the operating system needs an accessible root filesystem containing essential resources.
+
+The kernel and initial userspace environment establish access to the root filesystem, after which the system can access other mounted filesystems.
+
+For a typical Linux server:
+/
+├── boot
+├── etc
+├── home
+├── usr
+└── var
+
+
+The root filesystem might contain everything, or individual directories might be separate mounted filesystems.
+
+For example:
+Filesystem A → /
+Filesystem B → /home
+Filesystem C → /var
+Filesystem D → /data
+
+
+The administrator sees one directory tree even though the data comes from multiple storage locations.
+Production scenario
+Suppose the root filesystem runs out of storage.
+
+Even if a machine has another large storage disk, the operating system might experience failures if essential directories remain on the full root filesystem.
+
+Possible symptoms:
+- Applications cannot create temporary files.
+- Services fail to write logs.
+- Package installations fail.
+- System updates cannot complete.
+- Programs cannot create sockets or runtime files.
+An experienced administrator investigates which mounted filesystem is full instead of simply assuming the physical disk is full.
+
+We will learn the actual storage diagnostic workflow in Module 05.
+
+3.2 /etc — System configuration
+System configuration
+Critical directory
+
+What is /etc?
+/etc contains system-wide configuration files.
+
+These files control how applications, services and operating-system components behave.
+
+Think of /etc as the configuration center of a Linux machine.
+
+Examples:
+/etc
+├── hostname
+├── hosts
+├── passwd
+├── group
+├── fstab
+├── ssh
+├── apt
+├── systemd
+└── ...
+
+
+Why does Linux need /etc?
+Applications need configurable behavior.
+
+For example, a web server might need to know:
+- Which port to listen on.
+- Which directory contains website files.
+- Which hostname to serve.
+- Which TLS certificate to use.
+- Where to write logs.
+- Which users or groups it should operate under.
+Instead of hardcoding everything inside application executables, Linux software commonly uses configuration files.
+
+The application reads those files when it starts or reloads its configuration.
+
+The FHS defines /etc as the location for host-specific system configuration. 
+
+specifications.freedesktop.org+1
+
+Important files inside /etc
+A. /etc/os-release
+Identifies the operating system.
+cat /etc/os-release
+
+
+Example:
+NAME="Ubuntu"
+ID=ubuntu
+VERSION_ID="24.04"
+
+
+The exact output depends on the installed distribution.
+B. /etc/hostname
+Contains the system's configured hostname.
+
+Inspect:
+cat /etc/hostname
+
+
+Example:
+learning-machine
+
+
+The hostname is the human-readable identity assigned to the machine.
+C. /etc/hosts
+Provides a local hostname-to-IP-address mapping.
+
+Example:
+127.0.0.1 localhost
+127.0.1.1 learning-machine
+
+
+Inspect:
+cat /etc/hosts
+
+
+Why is this useful?
+
+Suppose an application tries to resolve:
+my-local-app
+
+
+A matching entry in /etc/hosts can provide a local address without needing a DNS server.
+
+DNS and hostname resolution will be explored further in Module 06.
+D. /etc/passwd
+Contains account records.
+
+Inspect:
+cat /etc/passwd
+
+
+Representative entry:
+alice:x:1000:1000:Alice:/home/alice:/bin/bash
+
+
+We will examine all seven fields in the Users and Permissions module.
+
+For now, understand that this is part of the Linux user account database.
+E. /etc/shadow
+Contains password-related authentication data, including password hashes and account aging information.
+Sensitive file
+Do not use cat /etc/shadow as a beginner demonstration.
+
+Inspect its permissions safely:
+ls -l /etc/shadow
+
+
+A typical Linux system restricts access to this file because its contents are security-sensitive.
+F. /etc/fstab
+The filesystem table.
+
+It describes filesystems that should be mounted through the system's mount configuration.
+
+Inspect:
+cat /etc/fstab
+
+
+An illustrative entry:
+UUID=example-uuid /data ext4 defaults 0 2
+
+
+Conceptually, it describes:
+Field	Meaning
+UUID	Filesystem identifier
+/data	Mount location
+ext4	Filesystem type
+defaults	Mount options
+0	Dump-related setting
+2	Traditional filesystem check ordering
+
+We will revisit this file when we study storage and mounting.
+G. /etc/ssh/
+Contains SSH server and client configuration, depending on which SSH components are installed.
+
+An important example:
+/etc/ssh/sshd_config
+
+
+This is commonly used to configure the SSH server.
+
+We will explore SSH in Module 02.
+H. /etc/apt/
+Contains APT configuration and repository source definitions on Ubuntu and Debian.
+
+For example:
+/etc/apt/sources.list.d/
+
+
+Modern Ubuntu releases commonly use files with the .sources extension here.
+I. /etc/systemd/
+Contains systemd configuration files and unit configuration locations where systemd is installed.
+
+Example:
+/etc/systemd/system/
+
+
+This directory is important when administrators create custom services or override existing service settings.
+
+We will study it in Module 03.
+How applications use /etc
+Consider a web application.
+Administrator edits configuration
+              |
+              v
+/etc/myapp/myapp.conf
+              |
+              v
+Application starts
+              |
+              v
+Application reads configuration
+              |
+              v
+Application applies settings
+              |
+              v
+Application runs
+
+
+The operating system does not automatically interpret every file in /etc.
+
+The application or service that owns a particular configuration file is responsible for reading and using it.
+What should not normally go into /etc?
+Do not use /etc as a general storage location for:
+- Application logs.
+- User documents.
+- Database files.
+- Uploaded files.
+- Temporary exports.
+- Large application-generated datasets.
+The directory is intended for configuration.
+Production scenario: Configuration failure
+A web application stops starting after a configuration change.
+
+An administrator investigates:
+ls -la /etc/myapp/
+
+
+Then inspects the configuration:
+cat /etc/myapp/myapp.conf
+
+
+The administrator compares the modified configuration against the expected format, corrects the invalid setting and verifies the application.
+
+The exact service verification commands depend on the application.
+
+Key lesson: When an application behaves incorrectly because of its settings, /etc is one of the first places to investigate.
+
+3.3 /home — Ordinary user home directories
+User data
+
+What is /home?
+/home contains personal home directories belonging to ordinary Linux users.
+
+Example:
+/home
+├── alice
+├── bob
+└── student
+
+
+A user named alice might have:
+/home/alice
+
+
+This directory is commonly abbreviated using the tilde character:
+~
+
+
+For example:
+cd ~
+
+
+This changes the current directory to the current user's home directory.
+
+For our learner, the home directory may be:
+/home/student
+
+
+What lives inside a home directory?
+Typical contents:
+/home/student
+├── Documents
+├── Downloads
+├── Projects
+├── .bashrc
+├── .profile
+├── .ssh
+└── .config
+
+
+The contents depend on the distribution, installed applications and user.
+
+Some important examples:
+Path	Purpose
+~/.bashrc	Bash interactive non-login shell configuration
+~/.profile	Login environment initialization on many systems
+~/.ssh/	User SSH keys and configuration
+~/.config/	Per-user application configuration
+~/Projects/	User-created projects
+
+We will study shell startup files in Topic 07.
+How does Linux use /home?
+When a user signs into Linux, the operating environment usually assigns that user's home directory.
+
+It is available through the environment variable:
+echo "$HOME"
+
+
+Representative output:
+/home/student
+
+
+Applications often use the home directory for:
+- Personal configuration.
+- Developer projects.
+- SSH keys.
+- Command history.
+- Personal files.
+- Application preferences.
+Production scenario: Application cannot access a user's files
+Suppose an application tries to read:
+/home/alice/project/config.json
+
+
+But the application process runs as another user.
+
+Even if the file exists, the process might not have permission to access it.
+
+The administrator must investigate ownership and permissions.
+
+We will cover the actual permission model in Module 02.
+Important distinction
+/home is intended for ordinary user accounts.
+
+The root administrator's home directory is normally:
+/root
+
+
+
+3.4 /root — Home directory of the root user
+Root administrator's home
+
+This directory causes confusion because Linux uses the word root for two different concepts.
+
+Concept 1: Filesystem root
+/
+
+
+The starting point of the filesystem hierarchy.
+
+Concept 2: Root user's home directory
+/root
+
+
+The home directory of the privileged Linux account named root.
+
+Example:
+/
+├── root
+├── home
+│   ├── alice
+│   └── bob
+├── etc
+└── var
+
+
+Why does /root exist separately?
+The root account has administrative privileges.
+
+Its configuration and personal files should not depend on ordinary users' home directories.
+
+The /root directory provides the root account with its own home location.
+How can you inspect it?
+ls -ld /root
+
+
+This shows directory metadata without listing its contents.
+
+Depending on the learner's account and permissions, reading the contents may be restricted.
+Advanced note
+Linux commonly uses a special user identity:
+root
+UID 0
+
+
+This is the primary traditional superuser identity.
+
+We will learn why this account has special privileges in the Users and Permissions module.
+
+Important: Do not use the root account for every ordinary activity. The principle of least privilege will be central to our administration training.
+
+3.5 /usr — Installed software and shared resources
+Software hierarchy
+Very important
+
+What is /usr?
+/usr is one of the most important directories in Linux.
+
+It contains a large part of the software and supporting resources installed on the operating system.
+
+Examples:
+/usr
+├── bin
+├── sbin
+├── lib
+├── libexec
+├── local
+├── share
+├── include
+└── src
+
+
+A beginner often assumes /usr means the directory containing user documents.
+
+That is incorrect.
+
+The directory is a historical Unix convention and primarily holds system software, libraries and shared data.
+
+The FHS defines /usr as a major secondary software hierarchy. 
+
+specifications.freedesktop.org+1
+
+A. /usr/bin
+Contains most ordinary executable programs.
+
+Examples may include:
+/usr/bin/ls
+/usr/bin/cat
+/usr/bin/grep
+/usr/bin/python3
+/usr/bin/curl
+
+
+Inspect:
+ls -ld /usr/bin
+
+
+Locate a program:
+command -v python3
+
+
+On many Ubuntu systems, the result is:
+/usr/bin/python3
+
+
+The exact executable location can differ.
+What does an executable mean?
+An executable is a file that the operating system can run as a program, subject to appropriate permissions and execution rules.
+
+For example, when Bash executes an external utility such as grep, it must locate the relevant executable.
+
+The shell commonly searches directories specified in the PATH environment variable.
+
+We will study this mechanism in the Environment Variables topic.
+B. /usr/sbin
+Traditionally contains system administration programs that are not essential for the most minimal system-recovery environment.
+
+The distinction between /usr/bin and /usr/sbin is less strict than it historically was.
+
+Modern distributions may place many administrative executables in /usr/bin.
+
+Do not assume that every command named somethingadmin must reside in /usr/sbin.
+C. /usr/lib
+Contains program libraries and supporting software files.
+
+What is a library?
+
+A software library is reusable code that programs can use rather than implementing every functionality themselves.
+
+For example, an application might depend on:
+- OpenSSL libraries.
+- C standard libraries.
+- Database client libraries.
+- Runtime support libraries.
+The operating system provides these libraries in standard locations.
+
+A program may fail to start when an expected shared library is missing or incompatible.
+
+That is one reason /usr/lib is operationally important.
+D. /usr/share
+Contains architecture-independent shared data.
+
+Examples include:
+/usr/share/man
+/usr/share/doc
+/usr/share/zoneinfo
+/usr/share/applications
+
+
+Consider:
+/usr/share/man
+
+
+This location contains many installed manual pages.
+
+When you run:
+man ls
+
+
+The manual-page system can retrieve the documentation installed for ls.
+
+Not every file in /usr/share is a manual page. It can contain translations, themes, documentation and other shared data.
+E. /usr/local
+This is particularly important for administrators and developers.
+
+/usr/local is intended for software and data installed locally by the system administrator rather than supplied as part of the normal distribution-managed software hierarchy.
+
+A common structure is:
+/usr/local
+├── bin
+├── sbin
+├── lib
+├── etc
+├── share
+└── src
+
+
+For example:
+/usr/local/bin/my-tool
+
+
+This might be a locally installed administration utility.
+Why does /usr/local matter?
+Imagine you install a custom internal utility.
+
+You could place it under:
+/usr/local/bin/
+
+
+This separates it from programs supplied by the distribution.
+
+It makes ownership and maintenance easier to understand.
+
+It also reduces the chance that your custom application will conflict with a distribution-managed package at the same path.
+
+However, this is a convention, not an absolute guarantee.
+/usr/bin versus /usr/local/bin
+Directory	Typical responsibility
+/usr/bin	Distribution-managed executable programs
+/usr/local/bin	Locally installed executable programs
+
+Example:
+/usr/bin/python3
+/usr/local/bin/my-custom-script
+
+
+Production scenario
+An organization deploys an internal monitoring tool to all its Linux servers.
+
+Rather than placing it randomly in /home/admin/Downloads, it installs the utility at:
+/usr/local/bin/server-health
+
+
+If that directory is on the user's PATH, administrators can execute:
+server-health
+
+
+This is more maintainable than relying on the location of an individual administrator's personal files.
+
+3.6 /bin, /sbin and /lib
+These directories deserve separate attention because their historical roles can confuse people using modern Ubuntu.
+/bin
+Historically, /bin contained essential commands needed to use and repair the system.
+
+Examples included:
+/bin/sh
+/bin/ls
+/bin/cat
+/bin/mkdir
+
+
+Modern Linux distributions increasingly use a design called merged-/usr.
+
+In a merged-/usr environment, directories such as:
+/bin
+/sbin
+/lib
+
+
+may be symbolic links into /usr.
+
+For example:
+/bin -> usr/bin
+/sbin -> usr/sbin
+/lib -> usr/lib
+
+
+This allows compatibility with older software while organizing the main software hierarchy under /usr.
+
+The FHS explicitly allows required top-level directories to be symbolic links. 
+
+Filesystem Hierarchy Standard+1
+
+Inspect the actual environment:
+ls -ld /bin /sbin /lib
+
+
+The first character in the output can indicate a symbolic link.
+
+For example:
+lrwxrwxrwx ... /bin -> usr/bin
+
+
+Do not assume every distribution uses this exact layout.
+/sbin
+Historically contained essential system administration commands.
+
+Examples:
+/sbin/fsck
+/sbin/reboot
+/sbin/init
+
+
+Actual locations vary across modern distributions.
+
+Some of these commands may now live in /usr/sbin or elsewhere.
+/lib
+Traditionally contains essential shared libraries required by core system executables.
+
+It may also contain kernel-related modules in distribution-specific arrangements.
+
+For example:
+/lib/modules/
+
+
+This location is associated with loadable kernel modules on many conventional Linux systems.
+What is a shared library?
+Suppose several programs need the same cryptographic functionality.
+
+Instead of each program containing a completely separate copy of every cryptographic routine, they can dynamically link to a shared library.
+
+This reduces duplication and allows shared functionality.
+
+An executable may depend on several shared libraries.
+
+A missing or incompatible dependency may prevent it from running.
+Important safety note
+Do not manually delete or replace files inside /bin, /sbin or /lib.
+
+These are core software locations.
+
+Incorrect changes can break important commands or the operating system itself.
+
+3.7 /var — Variable data
+Variable system and application data
+Production-critical
+
+What is /var?
+/var stores data that changes while the operating system and applications run.
+
+The word var comes from variable.
+
+Unlike many files in /usr, which are installed software and relatively static data, /var holds information that changes during normal operation.
+
+The FHS includes logs, cache data, application state and spool data within this hierarchy. 
+
+specifications.freedesktop.org+1
+
+Think of it this way:
+/usr
+  |
+  +-- Installed programs and supporting files
+
+/var
+  |
+  +-- Data produced or changed during operation
+
+
+Important subdirectories inside /var
+A. /var/log — System and application logs
+Log files
+
+Logs record events that occur in the operating system and applications.
+
+Examples:
+/var/log
+├── syslog
+├── auth.log
+├── kern.log
+└── apt
+
+
+Exact files vary by distribution and logging configuration.
+
+Inspect:
+ls -lh /var/log
+
+
+On Ubuntu systems using traditional rsyslog logging, common examples are:
+File	Purpose
+/var/log/syslog	General system messages
+/var/log/auth.log	Authentication-related messages
+/var/log/kern.log	Kernel-related messages
+/var/log/apt/	APT package management logs
+
+On systems where systemd-journald handles logging, logs may also be maintained in the journal rather than appearing as individual text files.
+
+We will study journald in Module 03.
+Why are logs important?
+Suppose a web server stops working at 14:35.
+
+An administrator needs evidence of what happened around that time.
+
+The logs might show:
+14:32 Application started
+14:33 Database connection established
+14:34 Configuration reload attempted
+14:35 Application error
+
+
+These are illustrative events.
+
+Logs allow administrators to reconstruct events and identify causes instead of guessing.
+
+Production reality: /var/log is one of the first locations investigated during many incident-response and troubleshooting situations.
+B. /var/lib — Persistent application state
+This directory is especially important.
+
+/var/lib contains variable state associated with applications and system components.
+
+For example:
+/var/lib
+├── dpkg
+├── apt
+├── systemd
+└── ...
+
+
+Possible application data might reside under:
+/var/lib/postgresql/
+/var/lib/mysql/
+/var/lib/docker/
+
+
+These are examples; actual paths depend on the distribution, application and configuration.
+What is persistent application state?
+Suppose you run a database.
+
+The database needs to remember:
+- Stored records.
+- Indexes.
+- Internal metadata.
+- Transaction state.
+- Other database-managed information.
+That is persistent application state.
+
+Unlike temporary data, it must survive normal reboots.
+
+Administrators must understand exactly where an application stores that data before planning backups, upgrades or migrations.
+
+Very important: Do not assume every database or application stores all its data in /var/lib. Always inspect its actual configuration.
+C. /var/cache — Regenerable cache data
+A cache stores information that can often be regenerated.
+
+For example:
+- Downloaded package metadata.
+- Application cache entries.
+- Generated thumbnails.
+- Temporary optimized content.
+A cache is not necessarily unimportant, but it is usually different from the application's authoritative persistent data.
+
+This distinction matters when managing disk space.
+
+Removing a cache may cause an application to regenerate information and use more resources later.
+
+Never assume every cache directory can be safely deleted while the application is running.
+D. /var/tmp — Longer-lived temporary files
+This directory stores temporary data that is generally expected to survive longer than files in /tmp.
+
+A useful distinction:
+Directory	Intended role
+/tmp	Short-lived temporary files
+/var/tmp	Temporary files that may need to persist longer
+
+The exact cleanup behavior depends on distribution policies and system configuration.
+
+Neither directory should be treated as permanent application storage.
+E. /var/spool — Queued work
+A spool is a location where work waits until it can be processed.
+
+Examples:
+- Print jobs.
+- Scheduled tasks.
+- Mail queues.
+- Other queued application work.
+For example:
+/var/spool/
+
+
+An application may place a task into a queue, then another process consumes and processes it.
+
+This concept becomes important when studying background services and scheduling.
+F. /var/backups
+Some distributions and applications use this location for system backup data.
+
+It may contain automatically generated backups of selected configuration or package-management information.
+
+It is not a universal destination for every server backup.
+Production scenario: Server disk fills unexpectedly
+An administrator receives an alert:
+Root filesystem usage: 96%
+
+
+Instead of immediately deleting random files, the administrator investigates:
+df -hT
+
+
+Then:
+du -sh /var/log
+
+
+And:
+du -sh /var/lib
+
+
+Suppose the administrator finds that logs occupy a significant amount of space.
+
+The next steps are:
+1. Determine which log files are growing.
+2. Identify which service is generating them.
+3. Investigate why the messages are repeating.
+4. Correct the underlying service problem.
+5. Apply an appropriate log retention or rotation policy.
+6. Verify that storage usage is returning to a safe level.
+Deleting logs without finding the cause may only hide the problem temporarily.
+
+Also, du and df can report different usage because they inspect different aspects of filesystem allocation. We will explore this during the storage module.
+
+3.8 /tmp — Temporary files
+Temporary working storage
+
+What is /tmp?
+/tmp is a location for temporary files.
+
+Programs often need temporary storage while performing operations.
+
+Examples:
+- Intermediate build artifacts.
+- Temporary exports.
+- Application scratch files.
+- Short-lived processing data.
+- Temporary communication files.
+Example:
+/tmp
+├── temporary-report.txt
+├── build-cache
+└── application-session-data
+
+
+These are illustrative names.
+Why does Linux need a temporary directory?
+Imagine a program processes a large file.
+
+It might:
+1. Read the original file.
+2. Generate an intermediate result.
+3. Modify the result.
+4. Complete the operation.
+5. Remove the intermediate file.
+The program needs somewhere to store that temporary information.
+
+/tmp provides a common location.
+Important behavior
+Files in /tmp are not guaranteed to remain permanently.
+
+A distribution may clean them during boot or through scheduled cleanup policies.
+
+On some systems, /tmp is mounted using tmpfs, which means it is backed by memory and potentially swap rather than being an ordinary persistent disk filesystem.
+
+On other systems, it may reside on regular storage.
+
+Inspect:
+findmnt -T /tmp
+
+
+This shows the filesystem and mount information for /tmp.
+Security consideration
+Temporary files can create security problems when programs:
+- Use predictable filenames.
+- Store sensitive information without appropriate protection.
+- Leave secrets behind.
+- Follow attacker-controlled symbolic links incorrectly.
+- Allow other users to interfere with temporary files.
+A safer approach for scripts is often to use mktemp.
+
+Example:
+temp_file=$(mktemp)
+
+
+This asks the system to create a uniquely named temporary file.
+
+We will study safe scripting later.
+
+Never place critical permanent data in /tmp.
+
+3.9 /run — Runtime information
+Runtime state
+
+What is /run?
+/run stores runtime information associated with the currently operating system instance.
+
+Examples:
+- Process identification files.
+- Unix domain sockets.
+- Service runtime state.
+- Lock information.
+- Other transient system data.
+Example:
+/run
+├── lock
+├── systemd
+├── user
+└── ...
+
+
+The actual contents vary considerably.
+Why does it exist?
+Applications and services often need to coordinate while they are running.
+
+For example, a service may need to create a socket file so other programs can communicate with it.
+
+A process manager may need runtime information about currently managed processes.
+
+/run provides a standard location for this kind of state.
+Difference between /run and /var
+This distinction is important.
+/run	/var
+Runtime state	Variable system and application data
+Generally transient	Can contain persistent data
+Active service information	Application state, logs and caches
+Usually recreated during system startup	Contents persist according to the filesystem and application policies
+
+For example:
+/run/myapp/
+
+
+Might contain a runtime socket.
+
+Meanwhile:
+/var/lib/myapp/
+
+
+Might contain persistent application state.
+
+These locations serve different purposes.
+Production scenario
+A service fails because another process cannot connect to its Unix domain socket.
+
+The administrator might inspect:
+ls -la /run/
+
+
+And the application's runtime directory:
+ls -la /run/myapp/
+
+
+The objective is to determine whether:
+- The expected socket exists.
+- The service started.
+- The runtime directory exists.
+- The process has appropriate access.
+We will cover the service-management side in Module 03.
+
+3.10 /dev — Device files
+Device interfaces
+
+This is one of the most interesting parts of Linux.
+What is /dev?
+/dev contains device nodes and special files that expose interfaces to devices and certain kernel facilities.
+
+Examples:
+/dev
+├── null
+├── zero
+├── random
+├── urandom
+├── tty
+└── ...
+
+
+On a conventional Linux machine, it may also contain device nodes corresponding to hardware devices such as disks and terminals.
+Why does Linux represent devices as files?
+Unix-derived systems follow the philosophy of providing common interfaces for interacting with different resources.
+
+This allows programs to interact with many device interfaces using familiar file operations.
+
+However, not everything in Linux is literally an ordinary file stored on disk.
+
+Device nodes represent special kernel-managed interfaces.
+Important devices
+A. /dev/null
+
+This is a data-discarding device.
+
+Anything written to it is discarded.
+
+Example:
+echo "This will not be displayed" > /dev/null
+
+
+The command writes its output to /dev/null instead of the terminal.
+
+Why is this useful?
+
+Suppose a script produces unimportant output, but the administrator wants to hide it.
+
+Output can be redirected to /dev/null.
+
+We will study redirection in Topic 05.
+
+B. /dev/zero
+
+Provides a stream of zero-valued bytes.
+
+It is commonly used in controlled storage and testing operations.
+
+Do not use it to generate large files on the learner's real filesystem.
+
+C. /dev/random and /dev/urandom
+
+Provide interfaces to the kernel's random-number generation system.
+
+They are used by applications requiring random data.
+
+The modern Linux kernel uses a cryptographically secure random-number generator and the two interfaces have evolved over time; do not assume the historical behavior of /dev/random on older systems applies to current Linux.
+
+D. /dev/tty
+
+Refers to the controlling terminal of the current process, when one exists.
+
+This is useful for terminal-oriented interactions.
+How does it work internally?
+Consider a program writing to /dev/null.
+Application
+    |
+    v
+Open /dev/null
+    |
+    v
+Kernel device handling
+    |
+    v
+Write operation
+    |
+    v
+Data discarded
+
+
+The program uses a file-like interface, but the kernel handles the operation according to the special device's implementation.
+
+The actual hardware is not necessarily involved.
+WSL limitations
+WSL provides Linux device interfaces, but it does not expose unrestricted access to every physical device on the Windows machine.
+
+Some devices are virtualized or provided through WSL integration.
+
+Do not assume that seeing a device under /dev means Linux has direct unrestricted control over the corresponding Windows hardware.
+
+3.11 /proc — Process and kernel information
+Process information
+Important for diagnostics
+
+What is /proc?
+/proc is a virtual filesystem known as procfs.
+
+It exposes information about processes and the operating system's running state.
+
+Unlike an ordinary filesystem containing persistent files stored on a disk, much of the information under /proc is generated dynamically by the kernel.
+
+The Linux manual describes /proc as an interface providing access to kernel data structures and process information. 
+
+Linux manual page+1
+
+What is a virtual filesystem?
+A virtual filesystem provides a filesystem-like interface to data that does not necessarily exist as normal files on physical storage.
+
+For example:
+cat /proc/uptime
+
+
+The command reads information exposed by the kernel.
+
+It is not reading a normal uptime document saved to disk.
+Important locations inside /proc
+A. /proc/cpuinfo
+
+Information about processors visible to the Linux environment.
+cat /proc/cpuinfo
+
+
+Output can include:
+- Processor identifiers.
+- CPU architecture information.
+- Processor features.
+- Virtual CPU details.
+In WSL, the information represents the virtualized CPU environment rather than an unrestricted hardware inventory.
+
+B. /proc/meminfo
+
+Information about memory usage and memory management.
+cat /proc/meminfo
+
+
+Example fields:
+MemTotal
+MemFree
+MemAvailable
+Buffers
+Cached
+SwapTotal
+SwapFree
+
+
+These fields help administrators investigate memory behavior.
+
+We will study them thoroughly in Stage 02.
+
+C. /proc/uptime
+
+Shows system uptime information.
+cat /proc/uptime
+
+
+It typically produces two numbers:
+123456.78 234567.89
+
+
+These are representative values.
+
+The first describes elapsed time since the kernel started. The second reports accumulated idle time across CPUs, with details depending on the kernel interface.
+
+D. /proc/self/
+
+Provides information associated with the process accessing the interface.
+
+For example:
+cat /proc/self/status
+
+
+This displays status information about the process used to read the file.
+
+The PID-related directories under /proc are particularly important.
+
+Example:
+/proc/1/
+/proc/100/
+/proc/2500/
+
+
+These directories represent processes using their process IDs.
+
+A process ID, or PID, uniquely identifies a process within its PID namespace during its lifetime.
+How does Linux use /proc?
+The kernel exposes process-related and system-related information through procfs.
+
+A monitoring utility can read that information without needing to develop its own kernel module.
+
+For example:
+top
+  |
+  v
+Reads process and system information
+  |
+  v
+/proc interfaces and other system interfaces
+  |
+  v
+Kernel-provided information
+  |
+  v
+Displays resource usage
+
+
+This is one reason /proc is extremely important for Linux diagnostics.
+Important warning: Not all /proc entries are read-only
+Some files under:
+/proc/sys/
+
+
+expose configurable kernel parameters.
+
+Changing values through these interfaces can alter runtime kernel behavior.
+
+For this lesson, inspect information only.
+
+Do not write arbitrary values into /proc.
+
+3.12 /sys — Kernel devices and subsystem information
+Kernel and device information
+
+What is /sys?
+/sys is another virtual filesystem.
+
+It is provided by the kernel and is commonly associated with sysfs.
+
+While /proc exposes broad process and kernel information, /sys provides a structured view of devices, drivers, kernel objects and system subsystems.
+
+The Linux manual describes sysfs as an interface exposing information about kernel objects and the device model. 
+
+Linux manual page+1
+
+Examples
+/sys
+├── block
+├── bus
+├── class
+├── devices
+├── dev
+├── firmware
+├── kernel
+└── module
+
+
+Not every system has all of these locations populated.
+A. /sys/class
+Provides views organized by device class.
+
+For example:
+ls /sys/class/
+
+
+Possible entries include:
+block
+net
+tty
+
+
+The exact list depends on the system.
+B. /sys/class/net
+Contains network-interface information.
+
+Inspect:
+ls /sys/class/net/
+
+
+Representative output:
+eth0
+lo
+
+
+These are examples; WSL network interface names can differ.
+C. /sys/block
+Provides information about block devices.
+
+On a conventional Linux host, it can expose information about storage devices.
+
+Inspect:
+ls /sys/block/
+
+
+WSL may expose a limited or virtualized view depending on the environment.
+How is /sys different from /proc?
+/proc	/sys
+Process and kernel information	Device and kernel-object information
+Process-specific directories	Device, bus and class hierarchy
+Memory and uptime information	Interface and hardware attributes
+Kernel information API	Kernel device-model API
+
+Important security warning
+Some sysfs attributes are writable.
+
+Writing to one of them can change kernel or device behavior.
+
+For this lesson, read information only.
+
+Never experiment with writes to /sys without first understanding the exact attribute and its effects.
+
+3.13 /boot — Boot-related files
+Operating system startup
+
+What is /boot?
+/boot contains files needed during a conventional Linux system boot.
+
+Examples may include:
+/boot
+├── vmlinuz-...
+├── initrd.img-...
+├── config-...
+└── grub/
+
+
+Actual contents depend on the boot architecture and distribution.
+What is the Linux kernel image?
+The kernel image is the executable kernel that the boot process loads.
+
+It contains the core Linux operating system code.
+What is initramfs?
+An initramfs is an initial temporary root filesystem used during early boot.
+
+It contains tools and components needed to prepare the actual root filesystem and continue startup.
+
+For example, it may contain storage drivers or utilities needed to access the system's real root filesystem.
+What is GRUB?
+GRUB is a widely used bootloader.
+
+A bootloader helps load the operating system kernel.
+
+On a conventional Linux installation, GRUB configuration and supporting files may be stored under locations such as:
+/boot/grub/
+
+
+Why is /boot important?
+If a conventional Linux machine cannot find or load its kernel, the operating system may fail to boot.
+
+If the bootloader configuration is damaged, startup can also fail.
+
+An administrator may have to investigate bootloader configuration, kernel images and initramfs contents.
+What about WSL?
+This is an important environment difference.
+
+WSL 2 does not perform the ordinary bare-metal Linux boot sequence using a guest GRUB bootloader.
+
+Microsoft manages the Linux kernel used by WSL 2.
+
+Therefore, seeing /boot in WSL does not mean the learner should experiment with GRUB, bootloader installation or kernel replacement.
+WSL LIMITED
+We will study the full boot process in Stage 03.
+
+3.14 /mnt — Mounting filesystems
+Filesystem attachment
+
+What is /mnt?
+/mnt is a traditional directory used as a temporary mount point for filesystems.
+
+A mount point is a directory where another filesystem becomes accessible within the existing directory hierarchy.
+
+For example, suppose you connect a storage device to a Linux server.
+
+Its filesystem might be mounted at:
+/mnt/backup
+
+
+Then files can be accessed through:
+/mnt/backup/
+
+
+The directory is part of the same unified Linux path structure.
+The WSL connection
+This is particularly important for our learner.
+
+WSL commonly mounts Windows drives under /mnt.
+
+For example:
+Windows path	WSL path
+C:\	/mnt/c/
+D:\	/mnt/d/
+C:\Users\Student\Documents	/mnt/c/Users/Student/Documents
+
+Microsoft documents this Windows-drive integration as part of its WSL filesystem interoperability. 
+
+Microsoft Learn+1
+
+So, inside Ubuntu, the learner can inspect Windows files using:
+ls /mnt/c/Users/
+
+
+The exact directory depends on the Windows account.
+Why is this useful?
+It allows:
+- Accessing Windows documents.
+- Moving files between Windows and Linux.
+- Using Windows applications with Linux-created files.
+- Sharing project assets between operating systems.
+Performance implications
+This matters for software development.
+
+Imagine the learner builds a large Node.js application under:
+/mnt/c/Users/Student/project
+
+
+Linux tools access Windows-hosted files through the cross-filesystem integration layer.
+
+This can be slower than working in the native Linux filesystem.
+
+Microsoft recommends keeping Linux-tool projects inside the Linux filesystem for better performance. 
+
+Microsoft Learn+1
+
+Preferred:
+/home/student/projects/my-app
+
+
+Instead of:
+/mnt/c/Users/Student/projects/my-app
+
+
+The second location is still valid and may be useful when Windows tools need direct access, but it is not generally the preferred location for Linux-heavy workloads.
+
+3.15 /media — Removable media
+/media is commonly used as a mount location for removable media.
+
+Examples:
+- USB storage.
+- Removable drives.
+- Optical media.
+- Other removable filesystems.
+For example:
+/media/student/USB
+
+
+A desktop Linux environment may automatically mount removable devices below /media.
+
+The exact directory layout depends on the distribution and desktop configuration.
+Difference between /media and /mnt
+/media	/mnt
+Commonly used for removable media	Traditionally used for temporary/manual mounts
+Often integrated with desktop automounting	Frequently used by administrators and scripts
+USB drives and external devices	Temporary filesystem attachment
+
+These are conventions, not strict rules governing every possible mount.
+
+3.16 /opt — Optional and third-party software
+/opt is intended for add-on application software packages.
+
+For example:
+/opt
+├── vendor-a
+│   └── application
+└── vendor-b
+    └── monitoring-agent
+
+
+Suppose an organization installs a vendor application that maintains most of its files within one directory.
+
+It may be installed under:
+/opt/vendor/application/
+
+
+/opt versus /usr/local
+This distinction is useful for software deployment.
+/opt	/usr/local
+Add-on software packages	Locally installed software and administrator-managed files
+Often vendor-specific directory structures	Often follows conventional bin/lib/share layout
+Can contain self-contained applications	Commonly contains individual locally installed commands and libraries
+
+For example:
+/opt/company/product/bin/application
+
+
+versus:
+/usr/local/bin/my-admin-tool
+
+
+The choice depends on the application's installation model.
+
+3.17 /srv — Data served by services
+/srv is intended for data provided by services running on a machine.
+
+For example:
+/srv
+├── www
+├── ftp
+└── files
+
+
+Possible examples include:
+/srv/www/site-a/
+
+
+or:
+/srv/files/
+
+
+What is the difference between /srv and /var/www?
+You may encounter web server deployments using:
+/var/www/html
+
+
+This is also a familiar and widely used web content layout.
+
+/srv and /var/www are both encountered in real Linux environments, but their historical roles differ.
+
+The FHS describes /srv in terms of data served by the system. /var contains variable data, including application state and logs. 
+
+specifications.freedesktop.org+1
+
+An administrator must follow the software's actual configuration rather than assuming that every web server serves files from /srv.
+
+3.18 /lib and /usr/lib — Shared libraries and kernel modules
+We introduced /lib earlier, but there is another important location:
+/usr/lib
+
+
+Both are related to libraries, but their historical roles differ.
+
+In traditional filesystem layouts:
+- /lib contained essential libraries required by important system programs.
+- /usr/lib contained additional libraries for installed software.
+In modern merged-/usr distributions, /lib may be a symlink into /usr/lib.
+
+For example:
+/lib -> usr/lib
+
+
+The actual structure depends on the distribution.
+Why do libraries matter?
+An executable may depend on a shared library to function.
+
+For example:
+Application
+    |
+    v
+Dynamic linker
+    |
+    v
+Required shared libraries
+    |
+    v
+Application execution
+
+
+A missing library may cause an error such as:
+error while loading shared libraries:
+some-library.so: cannot open shared object file
+
+
+This is a real-world failure pattern.
+
+The administrator must determine:
+- Which library is missing.
+- Which package provides it.
+- Whether the library is installed.
+- Whether the application expects an incompatible version.
+We will study this more in package management and troubleshooting.
+
+Part 4 — The three directories that define system operation
+If the learner remembers only a few critical directories from this lesson, emphasize these three:
+/etc
+Configuration
+
+What should the system do?
+
+Configuration that controls application and system behavior.
+
+
+/usr
+Software
+
+Which programs and supporting resources are installed?
+
+Executables, libraries, shared data and documentation.
+
+
+/var
+Changing data
+
+What information is produced or changes as the system operates?
+
+Logs, application state, caches and queues.
+
+
+These represent three different responsibilities.
+
+Consider an Nginx web server:
+             NGINX SERVER
+                  |
+       +----------+----------+
+       |          |          |
+       v          v          v
+
+    /usr       /etc        /var
+     |           |          |
+     |           |          |
+ Executable   Config      Logs
+ Libraries    Settings    Runtime-independent
+ Docs         Virtual     State
+              Hosts       Cache
+
+
+A production administrator should be able to distinguish these areas before troubleshooting an application.
+
+Part 5 — How Linux actually sees the filesystem
+We have examined what each directory contains. Now let's understand the underlying architecture.
+5.1 A path is not necessarily a physical location
+Consider:
+/home/student/projects
+
+
+It looks like a regular directory path.
+
+However, its data might be stored on:
+- The root filesystem.
+- A separate SSD partition.
+- A network filesystem.
+- A mounted virtual disk.
+The path itself does not reveal the underlying storage device.
+
+This is one of the most important ideas in Linux.
+
+A Linux path identifies a location in the filesystem namespace, not necessarily a direct location on a physical disk.
+5.2 What is a mount point?
+A mount point is a directory where a filesystem is attached to the main directory hierarchy.
+
+Example:
+Main filesystem
+      |
+      v
+      /
+      |
+      +---- /etc
+      |
+      +---- /home
+      |
+      +---- /var
+      |
+      +---- /data  <---- Separate filesystem mounted here
+
+
+Suppose the /data directory exists before mounting.
+
+After another filesystem is mounted there, accessing /data shows the contents of that mounted filesystem.
+
+The directory acts as the attachment point.
+
+The underlying files that were previously visible at that location are hidden from the normal mounted view until the filesystem is unmounted.
+
+This is an important operational detail.
+
+Do not mount filesystems over important directories without understanding the consequences.
+5.3 What is a virtual filesystem?
+A virtual filesystem gives programs access to filesystem-like interfaces that may represent information rather than persistent disk files.
+
+Linux uses several important virtual filesystem implementations.
+Filesystem	Mount location	Purpose
+procfs	/proc	Process and kernel information
+sysfs	/sys	Devices and kernel objects
+devtmpfs / dev filesystem	/dev	Device nodes
+tmpfs	Various locations	Memory-backed temporary data
+
+A virtual filesystem may present information as files and directories even when it is not storing those files as ordinary persistent disk objects.
+
+This is why:
+ls /proc
+
+
+can display directories corresponding to currently running processes.
+
+The kernel is exposing information through a filesystem interface.
+5.4 What happens when you read /proc/meminfo?
+Conceptually:
+User runs:
+cat /proc/meminfo
+       |
+       v
+Bash starts cat
+       |
+       v
+cat requests the file's contents
+       |
+       v
+Kernel handles procfs access
+       |
+       v
+Kernel provides memory information
+       |
+       v
+cat writes output to the terminal
+
+
+The contents are generated from kernel-maintained information.
+
+They are not a regular memory report file stored permanently on the SSD.
+5.5 How can you see mounted filesystems?
+The command:
+findmnt
+
+
+displays mounted filesystem information in a tree-like layout.
+
+To inspect the filesystem that contains the root directory:
+findmnt -T /
+
+
+To inspect /home:
+findmnt -T /home
+
+
+To inspect /proc:
+findmnt -T /proc
+
+
+The -T option identifies the filesystem containing the specified path.
+
+Representative output may contain fields such as:
+TARGET  SOURCE       FSTYPE OPTIONS
+/       /dev/...     ext4   ...
+
+
+In WSL, the root filesystem is typically backed by the distribution's virtual disk.
+
+The actual source and filesystem information depend on the running environment.
+5.6 How do you see filesystem capacity?
+Run:
+df -hT
+
+
+Breakdown:
+- df reports filesystem disk-space usage.
+- -h shows human-readable sizes such as GB and MB.
+- -T includes the filesystem type.
+Representative output:
+Filesystem     Type   Size  Used  Avail Use% Mounted on
+/dev/...       ext4   250G   18G   220G   8% /
+none           tmpfs   ...   ...    ...   ... /dev
+
+
+The numbers and filesystem sources will vary.
+
+Important columns:
+Column	Meaning
+Filesystem	Device or filesystem source
+Type	Filesystem type
+Size	Total reported capacity
+Used	Used space
+Avail	Available space
+Use%	Percentage used
+Mounted on	Location in the Linux hierarchy
+
+This command is useful for identifying which mounted filesystem is approaching capacity.
+
+We will study df and du in detail in Module 05.
+
+Part 6 — Understanding WSL filesystem architecture
+This section is especially important for the learner.
+
+WSL 2 does not simply use the Windows C: drive as its Linux root directory.
+6.1 Where are Linux files actually stored?
+WSL 2 stores each Linux distribution in a virtual hard disk.
+
+Microsoft documents that WSL 2 uses virtual hard disk files (.vhdx) with an ext4 filesystem for Linux distribution storage. 
+
+Microsoft Learn+1
+
+Conceptually:
+Windows physical storage
+Windows NTFS filesystem
+WSL distribution virtual disk
+
+ext4.vhdx
+Linux ext4 filesystem
+
+/
+/home
+
+
+/etc
+
+
+/usr
+
+
+/var
+
+
+/tmp
+
+
+/dev
+
+
+
+
+
+
+
+The virtual disk file is stored on Windows storage, but its internal filesystem is Linux ext4.
+
+This is why Ubuntu behaves like a real Linux environment when accessing its own files.
+6.2 Windows files mounted into Linux
+The other direction is also supported.
+
+Windows drives are exposed to Linux under /mnt by default.
+
+For example:
+Windows:
+C:\Users\Student\Documents
+
+Linux:
+ /mnt/c/Users/Student/Documents
+
+
+A Linux application can read files from this Windows-mounted location.
+
+However, accessing files across the Windows/Linux filesystem boundary involves additional integration and performance considerations. 
+
+Microsoft Learn+1
+
+6.3 Demonstrate the difference
+Inside Ubuntu, run:
+pwd
+
+
+Then:
+cd ~
+
+
+And:
+pwd
+
+
+Expected path pattern:
+/home/student
+
+
+Now inspect Windows storage:
+ls /mnt/c/
+
+
+Then inspect your Linux filesystem:
+ls /
+
+
+Notice that the two directories show different things.
+- / is the Linux root directory.
+- /mnt/c is the mounted view of the Windows C: drive.
+They are not the same filesystem.
+6.4 Access Linux files from Windows
+Inside Ubuntu:
+cd ~/linux-learning
+
+
+Then:
+explorer.exe .
+
+
+This opens the current Linux directory in Windows File Explorer.
+
+Another access method is:
+\\wsl.localhost\Ubuntu\home\student\
+
+
+Replace Ubuntu with the installed distribution name.
+
+Microsoft documents both explorer.exe . and the \\wsl$ / \\wsl.localhost mechanisms for accessing Linux files from Windows. 
+
+Microsoft Learn+1
+
+Critical safety note about the WSL virtual disk
+Never manually edit, delete or move the distribution's ext4.vhdx file while WSL is running.
+
+It contains the Linux distribution's filesystem.
+
+Damaging it can result in data loss or an unusable WSL installation.
+
+For the curriculum, use normal Linux filesystem commands instead of directly manipulating the underlying virtual disk.
+
+Part 7 — Practical command reference: Exploring the hierarchy
+Now we will teach the learner how to inspect the filesystem safely.
+
+The goal is not just running commands. The learner should understand what each command reveals.
+7.1 Display the root directory
+Run:
+ls -la /
+
+
+Breakdown:
+- ls lists directory contents.
+- -l displays detailed information.
+- -a includes hidden entries.
+- / selects the filesystem root.
+Representative output:
+drwxr-xr-x  20 root root 4096 Nov 13 10:00 .
+drwxr-xr-x  20 root root 4096 Nov 13 10:00 ..
+drwxr-xr-x   2 root root 4096 Nov 13 10:00 boot
+drwxr-xr-x  10 root root 4096 Nov 13 10:00 etc
+drwxr-xr-x   4 root root 4096 Nov 13 10:00 home
+drwxr-xr-x   3 root root 4096 Nov 13 10:00 root
+drwxr-xr-x  12 root root 4096 Nov 13 10:00 usr
+drwxr-xr-x  13 root root 4096 Nov 13 10:00 var
+
+
+This is illustrative. Actual directory counts, ownership, timestamps and contents depend on the distribution.
+Understanding the columns
+drwxr-xr-x  10 root root 4096 Nov 13 10:00 etc
+
+
+Field	Meaning
+d	Entry is a directory
+rwxr-xr-x	Permission information
+10	Link count
+First root	Owner
+Second root	Group
+4096	Reported directory size
+Date and time	Modification timestamp
+etc	Directory name
+
+The size shown for a directory is not the total size of all files recursively inside it.
+
+We will cover this distinction later in storage administration.
+7.2 Inspect several important directories
+Execute:
+ls -ld /etc /home /root /usr /var /tmp /proc /sys /dev
+
+
+Why -d?
+
+Normally, ls lists the contents of a directory.
+
+With -d, it displays the directory entry itself.
+
+This is especially useful when inspecting directories and symbolic links.
+
+It also avoids unnecessarily listing sensitive directory contents.
+7.3 Inspect directories with their child directories
+Run:
+ls /usr
+
+
+Then:
+ls /var
+
+
+Then:
+ls /etc
+
+
+Explain to the learner:
+
+The purpose of each listing is to identify the organization of the operating system.
+
+Do not modify anything in these directories during this demonstration.
+7.4 Inspect the hierarchy using find
+The find command searches directory trees.
+
+For example:
+find /usr -maxdepth 1 -type d
+
+
+Breakdown:
+- find searches files and directories.
+- /usr is the starting location.
+- -maxdepth 1 prevents traversal into child directories.
+- -type d selects directories.
+This provides a useful view of the top-level /usr structure.
+
+For an even clearer output:
+find /usr -maxdepth 2 -type d
+
+
+This displays directories up to two levels below /usr.
+
+Avoid running an unrestricted find / operation as an introductory exercise. It can traverse large virtual filesystems, generate permission errors and examine transient process interfaces.
+7.5 Inspect symbolic links
+On modern Ubuntu systems, some traditional directory names may be symbolic links.
+
+Check:
+ls -ld /bin /sbin /lib
+
+
+Then:
+readlink -f /bin
+
+
+readlink reads symbolic-link information.
+
+The -f option resolves the final canonical path, following the link.
+
+For example, on a merged-/usr system:
+/usr/bin
+
+
+may be the resolved path.
+
+This is a very useful administration technique because it reveals the actual filesystem structure rather than relying on an assumption.
+7.6 Inspect a filesystem's type
+Run:
+df -hT /
+
+
+This shows the filesystem containing /.
+
+Then:
+findmnt -T /
+
+
+This identifies the mount supplying the root directory.
+
+For /proc:
+findmnt -T /proc
+
+
+You should see filesystem information indicating procfs in a typical Linux environment.
+
+For /sys:
+findmnt -T /sys
+
+
+You should see sysfs.
+
+The precise output depends on the WSL version and distribution configuration.
+7.7 Inspect virtual filesystem information
+Run these commands individually:
+cat /proc/uptime
+
+
+head -n 10 /proc/meminfo
+
+
+ls /proc/self/
+
+
+ls /sys/class/
+
+
+ls /dev/
+
+
+Now explain the difference:
+- /proc exposes process and kernel information.
+- /sys exposes structured device and kernel-subsystem information.
+- /dev exposes device interfaces.
+These three directories are not ordinary data directories.
+7.8 Understand directory sizes
+Run:
+du -sh /var/log
+
+
+Breakdown:
+- du estimates storage usage.
+- -s displays a summary.
+- -h displays human-readable sizes.
+- /var/log specifies the directory.
+Then:
+du -sh /home
+
+
+Compare the two results.
+
+This helps an administrator understand where files are consuming storage.
+
+For system-wide filesystem capacity:
+df -hT
+
+
+Remember:
+- df reports filesystem space.
+- du estimates usage from directory entries it can traverse.
+They answer related but different questions.
+
+Part 8 — Production engineering: Where should application files go?
+This is where the hierarchy becomes directly useful for developers and system administrators.
+
+Imagine the company deploys an application called inventory-api.
+
+The application consists of:
+- Application executable.
+- Configuration.
+- Database state.
+- Logs.
+- User uploads.
+- Runtime socket.
+- Temporary processing files.
+- Website assets.
+An administrator needs to organize them sensibly.
+8.1 A reasonable Linux application layout
+One possible deployment layout is:
+/
+├── etc/
+│   └── inventory-api/
+│       └── config.yaml
+│
+├── usr/
+│   └── local/
+│       └── bin/
+│           └── inventory-api
+│
+├── var/
+│   ├── lib/
+│   │   └── inventory-api/
+│   │       └── application-state.db
+│   │
+│   ├── log/
+│   │   └── inventory-api/
+│   │       └── application.log
+│   │
+│   └── cache/
+│       └── inventory-api/
+│
+├── run/
+│   └── inventory-api/
+│       └── inventory.sock
+│
+├── tmp/
+│
+└── srv/
+    └── inventory-api/
+        └── public/
+
+
+This is an illustrative layout, not a universal deployment standard.
+
+The actual locations must match the application's design and distribution packaging.
+Understand the decisions
+Application component	Location	Reason
+Executable	/usr/local/bin	Locally installed application
+Configuration	/etc/inventory-api	System-wide configuration
+Persistent state	/var/lib/inventory-api	Data that should survive reboot
+Logs	/var/log/inventory-api	Operational records
+Cache	/var/cache/inventory-api	Regenerable information
+Runtime socket	/run/inventory-api	Active process communication
+Temporary files	/tmp or app-specific temporary location	Short-lived processing
+Served data	/srv/inventory-api	Data exposed by a service
+
+8.2 Why should configuration and application data be separated?
+Imagine that the company must upgrade its application.
+
+The old executable may be replaced.
+
+But it should not unnecessarily overwrite:
+- Database files.
+- Customer uploads.
+- Application configuration.
+- Operational history.
+Separating the responsibilities makes upgrades and recovery more predictable.
+
+Consider:
+Application update
+      |
+      v
+Replace executable
+      |
+      v
+Preserve configuration
+      |
+      v
+Preserve persistent application state
+      |
+      v
+Restart service
+      |
+      v
+Verify application
+
+
+This is the foundation of maintainable server deployments.
+8.3 What about databases?
+Suppose PostgreSQL is running on a Linux server.
+
+Depending on the distribution and installation method, its database files might reside in a location such as:
+/var/lib/postgresql/
+
+
+The administrator must understand that these are not disposable cache files.
+
+The files may contain valuable persistent database state.
+
+Deleting or modifying them manually could destroy the database.
+
+Normal database backup, recovery and maintenance procedures must be used.
+8.4 Why separate storage for /var and /home?
+A production Linux server may have several filesystems.
+
+For example:
+Filesystem 1: /
+Filesystem 2: /home
+Filesystem 3: /var
+Filesystem 4: /data
+
+
+There are operational reasons for this design.
+
+Separate /home:
+
+A user's large personal file collection is less likely to consume all root filesystem capacity.
+
+Separate /var:
+
+Application logs and mutable state can be controlled independently.
+
+Separate /data:
+
+Large application datasets can be stored separately from the operating-system installation.
+
+However, separating every directory into its own partition adds administration complexity and must be designed around actual workload requirements.
+
+It is not automatically beneficial for every machine.
+8.5 Backup strategy and the filesystem hierarchy
+A good administrator does not blindly back up every directory using the same policy.
+
+Different locations have different operational meanings.
+Location	Typical backup approach
+/etc	Important configuration backup
+/home	User-data backup
+/var/lib	Application-consistent persistent state backup
+/var/log	Retention and incident-evidence policy
+/usr	Usually reproducible through package installation and deployment
+/tmp	Generally excluded from routine permanent backups
+/run	Generally excluded because it is transient
+/proc	Not backed up as ordinary files
+/sys	Not backed up as ordinary files
+/dev	Device interfaces are recreated by the system
+
+A critical warning:
+
+Backing up a database's live data directory by simply copying files may produce an inconsistent backup.
+
+The correct procedure depends on the database's backup mechanism, transaction state and filesystem snapshot support.
+
+This is why understanding the role of a directory matters before writing backup scripts.
+
+Part 9 — Troubleshooting through filesystem evidence
+An advanced Linux administrator should know how to connect symptoms to filesystem locations.
+9.1 Problem: The application cannot find its configuration
+Symptom:
+Configuration file not found
+
+
+Investigation:
+ls -la /etc/
+
+
+Then inspect the relevant application directory:
+ls -la /etc/myapp/
+
+
+Check whether the expected file exists:
+test -f /etc/myapp/config.yaml && echo "Configuration exists"
+
+
+What does test -f do?
+- test evaluates a condition.
+- -f checks whether the supplied path exists as a regular file.
+- && runs the next command only when the preceding command succeeds.
+If the file exists, the investigation continues with permissions, ownership and application-specific configuration.
+
+Do not assume that file existence means the application can read it.
+9.2 Problem: Server disk space is running out
+Symptom:
+No space left on device
+
+
+First inspect filesystem capacity:
+df -hT
+
+
+Then inspect relevant directory usage:
+sudo du -xhd1 /var
+
+
+Explanation:
+- sudo executes the inspection with elevated privileges.
+- du estimates directory storage usage.
+- -x stays on the same filesystem rather than crossing filesystem boundaries.
+- -h displays human-readable sizes.
+- -d1 limits the directory depth to one level.
+The learner might discover:
+/var/log
+/var/lib
+/var/cache
+
+
+are responsible for significant storage use.
+
+Next, investigate the largest relevant subdirectory rather than deleting files immediately.
+
+For example:
+sudo du -ah /var/log | sort -h | tail -n 20
+
+
+This lists large files and directory entries, sorted by reported size.
+
+Caution: the command can be more expensive on very large directories and its output can include directory totals alongside file sizes. It is an investigation aid, not a definitive cleanup command.
+9.3 Problem: A service's runtime socket is missing
+Symptom:
+
+An application reports that it cannot connect to a socket.
+
+Inspect:
+ls -la /run/
+
+
+Then:
+ls -la /run/myapp/
+
+
+The administrator investigates:
+- Is the application running?
+- Does the runtime directory exist?
+- Was the socket created?
+- Did startup fail before creating it?
+- Is another process responsible for the socket?
+The correct fix depends on the process and its service configuration.
+
+Manually creating a fake socket file will not fix the underlying application failure.
+9.4 Problem: Executable exists but cannot be found
+Symptom:
+command not found
+
+
+First inspect whether the executable exists.
+
+Example:
+ls -l /usr/local/bin/my-tool
+
+
+Then inspect the executable lookup path:
+echo "$PATH"
+
+
+The PATH environment variable contains directories in which the shell searches for executable commands.
+
+The executable might exist but reside in a directory not included in PATH.
+
+This leads directly into Topic 06: Environment Variables.
+9.5 Problem: Application works but cannot write data
+The application starts successfully but cannot save uploaded files.
+
+Possible application data directory:
+/var/lib/myapp/
+
+
+Inspect:
+ls -ld /var/lib/myapp/
+
+
+Then inspect the actual file or directory involved.
+
+Possible causes include:
+- Incorrect ownership.
+- Insufficient write permissions.
+- Read-only filesystem.
+- Full disk.
+- Application configured to use the wrong location.
+- Security policy restrictions.
+An important lesson:
+
+The filesystem hierarchy helps locate the problem, but permissions, storage and security investigations determine the actual root cause.
+9.6 Problem: /proc does not contain expected information
+The administrator tries:
+cat /proc/some-file
+
+
+But receives:
+No such file or directory
+
+
+Possible causes:
+- Incorrect filename.
+- Expected kernel interface is unavailable.
+- The relevant feature is unsupported.
+- The environment is virtualized or restricted.
+- A process-specific entry disappeared because the process exited.
+The administrator should first inspect the actual contents:
+ls /proc/
+
+
+Do not assume every conventional Linux server exposes an identical /proc layout.
+9.7 Problem: A file appears missing after mounting storage
+Imagine an administrator mounts another filesystem at:
+/data
+
+
+Before mounting, /data contained some files.
+
+After mounting, those files appear to disappear.
+
+What happened?
+
+The new filesystem is now visible through the /data mount point.
+
+The original directory contents are hidden underneath the mounted filesystem.
+
+They are not necessarily deleted.
+
+Unmounting the filesystem can reveal the underlying directory contents again.
+
+This is a classic Linux operational behavior and is one reason mount operations must be planned carefully.
+
+Part 10 — Advanced engineering concepts
+10.1 Static versus variable data
+This is an important design principle behind the filesystem hierarchy.
+
+Static data does not change frequently as the system operates.
+
+Variable data changes during normal operation.
+
+Examples:
+Static or relatively static	Variable
+Installed software	Application logs
+Shared libraries	Cache entries
+Documentation	Runtime state
+System programs	Database state
+Configuration	Queue contents
+
+Historically, Unix-like systems separated static and variable data partly to support mounting some filesystems read-only and applying different backup and maintenance policies.
+
+The FHS discusses this design rationale, particularly the separation between /usr, /etc and /var. 
+
+Debian+1
+
+Modern deployments do not necessarily mount /usr read-only, but the organizational principles remain useful.
+10.2 Shareable versus unshareable data
+The FHS also distinguishes data that can conceptually be shared between systems from data that is specific to one machine.
+
+For example:
+- Shared software resources may be suitable for sharing between compatible systems.
+- Host-specific configuration belongs to the individual system.
+- Runtime process information is specific to the currently running machine.
+- Application logs usually belong to the machine producing them.
+This is part of the reasoning behind the established filesystem hierarchy.
+10.3 Filesystem hierarchy versus mount namespace
+This is an advanced concept.
+
+Linux processes do not always see exactly the same mounted filesystem tree.
+
+Linux supports mount namespaces, which provide different mount views to different processes.
+
+For example:
+Host system mount view
+        |
+        +-- /data
+        |
+        +-- /home
+        |
+        +-- /var
+
+
+A container could receive a restricted mount view:
+Container mount view
+        |
+        +-- /
+        |
+        +-- /app
+        |
+        +-- /tmp
+
+
+A container process might not see the host's entire filesystem.
+
+This is one of the foundations behind container filesystem isolation.
+
+We will study mount namespaces in Stage 03, Module 08.
+10.4 Why /proc and /sys are important to observability
+Observability means collecting information that helps us understand what a system is doing.
+
+Consider a monitoring program.
+
+It may need to inspect:
+- Process IDs.
+- CPU information.
+- Memory information.
+- Network interfaces.
+- Block devices.
+- Kernel counters.
+Some of this information is exposed through /proc and /sys.
+
+A monitoring agent can collect it and send it to an observability platform.
+
+A simplified workflow:
+Linux kernel
+     |
+     +---- /proc
+     |
+     +---- /sys
+              |
+              v
+       Monitoring agent
+              |
+              v
+       Metrics collection
+              |
+              v
+       Monitoring platform
+              |
+              v
+       Dashboards and alerts
+
+
+These interfaces are therefore essential to Linux infrastructure monitoring.
+10.5 Why directory permissions matter
+The filesystem hierarchy defines where files live, but permissions determine who can access them.
+
+For example:
+/etc/myapp/config.yaml
+
+
+The location may be correct, but the application might still be unable to read the configuration.
+
+Likewise:
+/var/lib/myapp/
+
+
+may be the correct location, but an application may fail if its service account does not have write permission.
+
+This shows that three separate concerns work together:
+1. Hierarchy determines where information belongs.
+2. Ownership and permissions determine who can access it.
+3. Filesystem and mount behavior determine how that information is stored and exposed.
+We will study the second concept deeply in Module 02 and the third in Stage 02, Module 05.
+
+Part 11 — Practical Lab: Build a miniature Linux server filesystem
+LAB 02 — Linux Filesystem Architecture
+WSL READY
+
+Build an application filesystem layout
+Objective: Build a miniature representation of a Linux server, organize application files correctly, and understand why each directory exists.
+
+Difficulty: Beginner to intermediate · Estimated hands-on time: 40–50 minutes
+
+Safety: All files will be created under the learner's home directory. Nothing will be modified under the real /etc, /usr, /var or other system directories.
+
+11.1 What are we building?
+Imagine the learner is responsible for deploying a small application called inventory-api.
+
+They need to organize:
+- Its executable.
+- Configuration.
+- Persistent data.
+- Logs.
+- Temporary files.
+- Website content.
+- Runtime information.
+We will create a simulated Linux server layout inside the user's home directory.
+
+The directory structure will be:
+demo-root/
+│
+├── etc/
+│   └── inventory-api/
+│       └── config.yaml
+│
+├── usr/
+│   └── local/
+│       └── bin/
+│           └── inventory-api
+│
+├── var/
+│   ├── lib/
+│   │   └── inventory-api/
+│   │       └── application-state.db
+│   │
+│   ├── log/
+│   │   └── inventory-api/
+│   │       └── application.log
+│   │
+│   └── cache/
+│       └── inventory-api/
+│
+├── run/
+│   └── inventory-api/
+│
+├── tmp/
+│
+├── srv/
+│   └── inventory-api/
+│       └── public/
+│           └── index.html
+│
+└── home/
+    └── student/
+        └── project/
+
+
+Remember: this is a simulated hierarchy. We are not creating real system directories.
+11.2 Step 1: Prepare the lab environment
+Open Ubuntu.
+
+Execute:
+mkdir -p ~/linux-learning/lab-02
+
+
+Explanation:
+- mkdir creates directories.
+- -p creates missing parent directories.
+- ~ refers to the current user's home directory.
+- linux-learning/lab-02 specifies the destination.
+Navigate:
+cd ~/linux-learning/lab-02
+
+
+Verify:
+pwd
+
+
+Expected output pattern:
+/home/student/linux-learning/lab-02
+
+
+11.3 Step 2: Build the directory structure
+Execute:
+mkdir -p demo-root/etc/inventory-api
+
+mkdir -p demo-root/usr/local/bin
+
+mkdir -p demo-root/var/lib/inventory-api
+
+mkdir -p demo-root/var/log/inventory-api
+
+mkdir -p demo-root/var/cache/inventory-api
+
+mkdir -p demo-root/run/inventory-api
+
+mkdir -p demo-root/tmp
+
+mkdir -p demo-root/srv/inventory-api/public
+
+mkdir -p demo-root/home/student/project
+
+
+Now we have created the complete directory hierarchy.
+
+Important teaching point:
+
+The mkdir -p command can create multiple missing parent directories automatically.
+
+For example:
+mkdir -p demo-root/var/log/inventory-api
+
+
+If none of these directories exists, Linux creates the hierarchy from the top down.
+11.4 Step 3: Create the application configuration
+Execute:
+cat > demo-root/etc/inventory-api/config.yaml <<'EOF'
+application:
+  name: inventory-api
+  environment: development
+  port: 8080
+
+storage:
+  directory: /var/lib/inventory-api
+
+logging:
+  directory: /var/log/inventory-api
+EOF
+
+
+We will study redirection and heredocs fully in Topic 05.
+
+For now, understand that this creates a file named:
+demo-root/etc/inventory-api/config.yaml
+
+
+It contains configuration information.
+
+Read it:
+cat demo-root/etc/inventory-api/config.yaml
+
+
+Expected output:
+application:
+  name: inventory-api
+  environment: development
+  port: 8080
+
+storage:
+  directory: /var/lib/inventory-api
+
+logging:
+  directory: /var/log/inventory-api
+
+
+The configuration refers to a real-server layout to illustrate the intended deployment locations.
+
+Inside our simulation, those paths are not actual root-level system directories.
+11.5 Step 4: Create an application executable placeholder
+Execute:
+cat > demo-root/usr/local/bin/inventory-api <<'EOF'
+#!/bin/bash
+
+echo "Inventory API demonstration application"
+echo "Application started successfully"
+EOF
+
+
+Read the file:
+cat demo-root/usr/local/bin/inventory-api
+
+
+This is a small Bash script representing an application executable.
+
+It has not been granted executable permissions yet.
+
+That is intentional: we will study executable permissions in Module 02.
+11.6 Step 5: Create persistent application data
+Execute:
+cat > demo-root/var/lib/inventory-api/application-state.db <<'EOF'
+inventory_records=125
+last_processed_record=125
+application_status=active
+EOF
+
+
+This simulates persistent application state.
+
+In a real application, this could represent information maintained by a database or another state-management component.
+
+Inspect:
+cat demo-root/var/lib/inventory-api/application-state.db
+
+
+11.7 Step 6: Create application logs
+Execute:
+cat > demo-root/var/log/inventory-api/application.log <<'EOF'
+2026-11-13 10:00:00 INFO Application initialized
+2026-11-13 10:01:00 INFO Database connection established
+2026-11-13 10:02:00 INFO HTTP server started on port 8080
+2026-11-13 10:03:00 INFO Health check completed successfully
+EOF
+
+
+Inspect:
+cat demo-root/var/log/inventory-api/application.log
+
+
+Explain that application events belong to the logging area, rather than the configuration area.
+11.8 Step 7: Create served website content
+Execute:
+cat > demo-root/srv/inventory-api/public/index.html <<'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventory API</title>
+</head>
+<body>
+    <h1>Inventory API</h1>
+    <p>Linux filesystem demonstration.</p>
+</body>
+</html>
+EOF
+
+
+This is a simple example of content that a web service might serve.
+11.9 Step 8: Verify the entire filesystem tree
+Run:
+find demo-root -print
+
+
+This displays the directory and file hierarchy.
+
+A clearer file-only listing:
+find demo-root -type f
+
+
+Expected structure:
+demo-root/etc/inventory-api/config.yaml
+demo-root/usr/local/bin/inventory-api
+demo-root/var/lib/inventory-api/application-state.db
+demo-root/var/log/inventory-api/application.log
+demo-root/srv/inventory-api/public/index.html
+
+
+The directories created for temporary and runtime data will exist even though we have not created files inside them.
+11.10 Step 9: Inspect directory sizes
+Run:
+du -sh demo-root/*
+
+
+This displays the approximate storage used by each immediate child directory.
+
+The sizes will depend on the files created and filesystem allocation.
+
+Now:
+du -sh demo-root/var/*
+
+
+Explain the difference between:
+var/lib
+var/log
+var/cache
+
+
+They each represent different types of changing application data.
+11.11 Step 10: Produce a deployment inventory
+Execute:
+find demo-root -type f -printf '%p\n' | sort
+
+
+This produces a sorted listing of the files.
+
+The command introduces another useful idea:
+
+The filesystem hierarchy can be inspected programmatically.
+
+Administrators can use shell commands to audit deployments, check expected files and investigate unexpected changes.
+11.12 Step 11: Explain the deployment architecture
+The learner should now be able to map the files:
+Created file	What it represents
+etc/inventory-api/config.yaml	Application configuration
+usr/local/bin/inventory-api	Locally installed executable
+var/lib/.../application-state.db	Persistent application state
+var/log/.../application.log	Operational logs
+srv/.../public/index.html	Served content
+
+The learner has built a miniature representation of a real Linux deployment.
+Success criteria
+The lab is complete when:
+- The hierarchy has been created correctly.
+- The configuration file exists.
+- The executable placeholder exists.
+- Persistent application data is stored separately.
+- Logs are stored separately from configuration.
+- Served content is organized independently.
+- The learner can explain why these files belong in different locations.
+- The learner understands that all changes occurred inside a simulation, not the actual Linux system directories.
+Cleanup
+The lab can safely remain in the learning directory for future demonstrations.
+
+When it is no longer needed, first inspect:
+pwd
+
+
+Then confirm the target:
+ls -la ~/linux-learning/lab-02/
+
+
+The exact lab directory can be removed using:
+rm -r ~/linux-learning/lab-02
+
+
+Destructive command
+This removes the lab directory and everything inside it. Verify the exact path before executing. Do not substitute /, /etc, /var or any real system directory.
+
+Part 12 — Common mistakes and misconceptions
+These should be emphasized when teaching because they are common sources of Linux administration failures.
+Mistake	Correct understanding
+Treating /root as the root filesystem	/ is filesystem root; /root is the root user's home
+Storing application logs in /etc	Logs ordinarily belong under /var/log
+Treating /tmp as permanent storage	Temporary files may be cleaned automatically
+Treating /proc like an ordinary disk directory	It is a virtual kernel interface
+Treating /sys as a normal data directory	It exposes device and kernel subsystem interfaces
+Assuming /bin is always a physical directory	It can be a symbolic link to /usr/bin
+Assuming /usr contains personal documents	It primarily contains installed software and shared resources
+Deleting large files under /var without investigation	First identify the application and purpose of the data
+Assuming /mnt/c is the native Linux filesystem	It represents Windows storage mounted into Linux
+Assuming every application puts data in /var/lib	Application storage locations depend on implementation and configuration
+Assuming all Linux machines have identical directory layouts	The filesystem hierarchy allows distribution and system-specific differences
+
+
+Part 13 — WSL-specific limitations and operational advice
+For this lesson, almost everything is demonstrable in WSL 2. However, several distinctions are important.
+Topic	WSL classification	Explanation
+/, /etc, /home, /usr, /var	READY	Normal directory inspection
+/proc	READY	Real Linux procfs, with virtualized environment details
+/sys	LIMITED	Real sysfs, but hardware and device visibility are restricted
+/dev	LIMITED	Virtual and integrated device interfaces
+/boot	VM REQUIRED	Traditional guest bootloader administration is not represented by WSL
+/mnt/c	READY	Windows drive integration
+/run	LIMITED	Runtime behavior depends on WSL and systemd configuration
+/tmp	READY	Temporary files work normally, but cleanup behavior can differ
+Separate disk mounts	LIMITED	WSL supports disk mounting, but this requires careful configuration
+
+Recommended WSL storage practice
+For the entire learning curriculum, use:
+/home/<username>/linux-learning/
+
+
+For projects primarily operated with Linux commands, use:
+/home/<username>/projects/
+
+
+Use /mnt/c for situations requiring direct Windows filesystem interaction.
+
+Microsoft's WSL documentation explains the storage and performance implications of crossing between Windows and Linux filesystems. 
+
+Microsoft Learn+1
+
+
+
+Part 14 — Teaching demonstration: Walk through a real Linux system
+This is the final guided demonstration. It combines the important concepts into one inspection session.
+
+The learner should execute these commands in Ubuntu, in order.
+Demonstration 1: Inspect the hierarchy
+ls -la /
+
+
+Explain how everything begins under /.
+Demonstration 2: Inspect configuration
+ls -la /etc/
+
+
+Then:
+cat /etc/os-release
+
+
+Explain that configuration and operating-system identity live in this area.
+Demonstration 3: Inspect installed software
+ls /usr/bin | head -n 20
+
+
+Explain that /usr/bin contains many installed executable programs.
+Demonstration 4: Inspect variable data
+ls -la /var/
+
+
+Then:
+ls -la /var/log/
+
+
+Explain how the system maintains logs and variable application data.
+Demonstration 5: Inspect user storage
+echo "$HOME"
+
+
+Then:
+ls -la "$HOME"
+
+
+Explain the relationship between /home and user-specific files.
+Demonstration 6: Inspect kernel information
+head -n 15 /proc/meminfo
+
+
+Explain that the information is provided through the kernel's procfs interface.
+Demonstration 7: Inspect device information
+ls -la /dev/
+
+
+Explain device nodes and special files.
+Demonstration 8: Inspect network interfaces through sysfs
+ls /sys/class/net/
+
+
+Explain how the kernel exposes network-interface information.
+Demonstration 9: Inspect mounted filesystems
+findmnt
+
+
+Then:
+df -hT
+
+
+Explain that Linux presents multiple filesystems through one directory hierarchy.
+Demonstration 10: Inspect Windows integration
+ls /mnt/c/
+
+
+Explain that Windows storage is integrated into the Linux namespace through mounting.
+
+Part 15 — Mastery standard
+This topic should not be considered complete merely because the learner has executed the commands.
+
+The goal is to understand the architecture.
+15.1 Conceptual mastery
+The learner should now understand:
+1. What a filesystem is.
+2. What a filesystem hierarchy is.
+3. Why Linux has a unified root directory.
+4. The difference between / and /root.
+5. Why configuration lives in /etc.
+6. Why software lives in /usr.
+7. Why variable data lives in /var.
+8. The purpose of /home.
+9. The difference between /tmp and /run.
+10. Why /proc and /sys are virtual filesystems.
+11. Why /dev contains special interfaces.
+12. What a mount point is.
+13. How WSL integrates Windows storage.
+14. Why filesystem organization matters for backups and troubleshooting.
+15.2 Practical administration mastery
+The learner should independently demonstrate the ability to:
+Skill	Evidence of implementation
+Inspect root	Use ls -la /
+Identify configuration	Locate relevant files under /etc
+Find installed commands	Inspect /usr/bin
+Identify user storage	Locate $HOME
+Inspect logs	Explore /var/log
+Inspect application state	Understand /var/lib
+Inspect runtime files	Explore /run
+Inspect virtual kernel information	Explore /proc
+Inspect device information	Explore /dev and /sys
+Inspect mounts	Use findmnt
+Inspect storage utilization	Use df and du
+Understand WSL paths	Distinguish /home and /mnt/c
+
+15.3 Mastery gate
+Build and explain a production-style application layout
+
+The learner must be able to independently create a Linux application directory structure, explain the purpose of each location, and identify where to investigate when:
+- Configuration is missing.
+- Logs are consuming excessive storage.
+- Persistent data disappears.
+- A runtime socket is missing.
+- An executable cannot be found.
+- A filesystem has run out of capacity.
+Standard: Explain the design, implement it without copying a tutorial, and diagnose at least one realistic filesystem problem using evidence.
+
+
+Part 16 — Teaching summary and reference sheet
+16.1 Filesystem hierarchy cheat sheet
+Directory	Primary purpose
+/	Root of the filesystem hierarchy
+/bin	Common executables; may link to /usr/bin
+/boot	Boot-related files
+/dev	Device nodes and special interfaces
+/etc	System configuration
+/home	Ordinary user home directories
+/lib	Essential libraries and related files
+/media	Removable media mount locations
+/mnt	Temporary or manually managed mount points
+/opt	Add-on application packages
+/proc	Process and kernel information
+/root	Root user's home directory
+/run	Runtime state
+/sbin	System administration executable locations
+/srv	Data served by system services
+/sys	Kernel device and subsystem interfaces
+/tmp	Temporary files
+/usr	Installed software, libraries and shared resources
+/var	Variable application and system data
+
+16.2 Important subdirectories
+Path	Purpose
+/usr/bin	Most executable programs
+/usr/sbin	System administration programs
+/usr/lib	Libraries and software components
+/usr/share	Shared architecture-independent data
+/usr/local/bin	Locally installed commands
+/var/log	Logs
+/var/lib	Persistent application state
+/var/cache	Application cache
+/var/tmp	Longer-lived temporary files
+/var/spool	Queued application work
+/etc/ssh	SSH configuration
+/etc/apt	APT configuration
+/etc/systemd	systemd configuration
+/sys/class/net	Network-interface information
+
+16.3 Important commands
+Command	Purpose
+ls -la /	Inspect root directory
+ls -ld /etc	Inspect directory metadata
+find /usr -maxdepth 1 -type d	Inspect directory structure
+readlink -f /bin	Resolve symbolic links
+cat /etc/os-release	Identify distribution
+cat /proc/meminfo	Inspect memory information
+cat /proc/uptime	Inspect uptime
+ls /sys/class/net/	Inspect network interfaces
+findmnt	Display mounted filesystems
+findmnt -T /home	Identify filesystem containing a path
+df -hT	Inspect filesystem capacity
+du -sh /var/log	Estimate directory space usage
+explorer.exe .	Open current WSL directory in Windows Explorer
+wslpath -w /home/student	Convert a Linux path to Windows path syntax
+
+16.4 Important files
+File	Purpose
+/etc/os-release	Operating system identity
+/etc/hostname	Configured hostname
+/etc/hosts	Local hostname mapping
+/etc/passwd	User account records
+/etc/shadow	Protected password-related information
+/etc/group	Group records
+/etc/fstab	Filesystem mount configuration
+/proc/cpuinfo	CPU information
+/proc/meminfo	Memory information
+/proc/uptime	System uptime information
+
+16.5 Important concepts
+Concept	Meaning
+Root directory	Starting point of the filesystem hierarchy
+Mount point	Directory where a filesystem is attached
+Virtual filesystem	Filesystem interface to kernel or other dynamic data
+procfs	Process and kernel information interface
+sysfs	Kernel device and subsystem interface
+Device node	Special file representing a device interface
+Shared library	Reusable code used by executable programs
+Merged-/usr	Filesystem layout that unifies traditional executable/library directories under /usr
+Persistent state	Information that must survive normal system restarts
+Runtime state	Information relevant to currently running processes and services
+
+
+Part 17 — Commonly used official documentation
+These are useful references for the teacher to keep alongside the lesson.
+Filesystem standards
+
+Filesystem Hierarchy Standard 3.0
+
+Official current FHS specificationDefines the conventions and responsibilities of major Linux filesystem directories.
+
+Linux manual pages
+hier(7) — Linux filesystem hierarchyproc(5) — Process information pseudo-filesystemsysfs documentationUseful for understanding actual Linux system interfaces and the differences between conventional directories and virtual filesystems.
+
+Microsoft WSL
+Working across Windows and Linux filesystemsManaging WSL disk spaceMounting disks in WSL 2
+For additional documentation directly in Ubuntu, the learner can use:
+man 7 hier
+
+
+man 5 proc
+
+
+man 5 sysfs
+
+
+Some manual pages may require the relevant documentation packages to be installed.
+
+Final teaching takeaway
+The learner should finish this topic understanding one fundamental idea:
+
+Linux does not organize the operating system randomly. Each part of the filesystem has a responsibility.
+
+When administering a Linux server:
+- /etc tells you how the system is configured.
+- /usr contains installed software and shared resources.
+- /var shows what changes while the system operates.
+- /home contains ordinary users' personal environments.
+- /run exposes runtime state.
+- /proc and /sys expose information from the kernel.
+- /dev provides device interfaces.
+- /mnt and other mount points connect storage into the unified filesystem.
+Once a learner understands this architecture, troubleshooting becomes much more systematic.
+
+They no longer ask, "Where should I search for this file?"
+
+They start understanding which subsystem owns the information and where an experienced administrator would investigate.
+MODULE 01 · SHELL & FILESYSTEM
+Topic 02 complete
+
+Next: Topic 03
+Absolute and relative paths
+
+The next lesson builds directly on today's filesystem hierarchy.
+
+It will cover:
+- What a path actually represents.
+- Absolute paths versus relative paths.
+- Current working directory.
+- . and ...
+- The meaning of ~.
+- Linux path resolution.
+- Working directory changes.
+- Path behavior inside scripts.
+- Windows versus Linux path differences.
+- Practical troubleshooting with missing paths and incorrect working directories.

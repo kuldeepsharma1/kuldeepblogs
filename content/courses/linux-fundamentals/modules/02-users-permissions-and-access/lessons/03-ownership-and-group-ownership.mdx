@@ -1,0 +1,755 @@
+title: "Ownership and Group Ownership"
+description: "Inspect and manage file ownership, group ownership, UID/GID metadata, and recursive ownership safely."
+slug: "03-ownership-and-group-ownership"
+courseSlug: "linux-fundamentals"
+moduleSlug: "02-users-permissions-and-access"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 3
+readingTime: "11 min"
+tags: ["linux", "ownership", "chown", "chgrp", "uid", "gid"]
+toc: true
+---
+
+## **1. Introduction**
+
+Every ordinary Linux file and directory has an owner and a group.
+
+For example:
+
+```
+-rw-r----- 1 alice developers 2048 Nov 15 17:00 application.conf
+```
+
+The important information is:
+
+```
+Owner: alice
+Group: developers
+```
+
+This means:
+
+- Alice is the owning user.
+- `developers` is the owning group.
+- Alice receives owner permissions.
+- Members of the owning group are evaluated against group permissions.
+- Other users are evaluated against other permissions.
+
+Consider a development server:
+
+```
+Application server
+│
+├── Alice (developer)
+├── Bob (developer)
+├── Charlie (operations)
+│
+└── /var/www/application
+    ├── application.conf
+    ├── index.php
+    └── logs/
+```
+
+The administrator might make Alice the owner of application files and assign them to the `developers` group.
+
+This enables collaboration without granting every local user access.
+
+**The important distinction:**
+
+- Permissions answer: What can an identity do?
+- Ownership answers: Which identity is the owner, and which group is associated with the resource?
+
+## **2. Conceptual Foundation**
+
+### **2.1 Understanding user ownership**
+
+When a user creates a file, Linux normally assigns the file to the user identity of the creating process.
+
+For example, Alice creates:
+
+```
+touch application.txt
+```
+
+The file will normally be owned by Alice.
+
+Inspect it:
+
+```
+ls -l application.txt
+```
+
+Example:
+
+```
+-rw-r--r-- 1 alice alice 0 Nov 15 17:00 application.txt
+```
+
+The first `alice` is the owner.
+
+The second `alice` is the group.
+
+### **2.2 Understanding group ownership**
+
+The file also belongs to a group.
+
+The group is normally derived from the creating process's effective group identity, unless directory inheritance rules or other mechanisms change the result.
+
+For a basic example:
+
+```
+User: alice
+
+Primary group: developers
+
+Supplementary groups:
+- deployment
+- monitoring
+```
+
+If Alice creates a file in an ordinary directory, its initial group will commonly be `developers`.
+
+But if the parent directory has SGID enabled, the new file will inherit the parent directory's group instead.
+
+We will demonstrate that in Topic 04.
+
+### **2.3 UID and GID are the underlying identities**
+
+Linux stores ownership numerically.
+
+For example:
+
+```
+-rw-r--r-- 1 alice developers 2048 application.conf
+```
+
+Internally, the file might have:
+
+```
+UID: 1001
+GID: 2001
+```
+
+The names are resolved from numeric IDs.
+
+Use:
+
+```
+stat application.conf
+```
+
+Look for:
+
+```
+Uid: (1001/alice)
+Gid: (2001/developers)
+```
+
+This is important when working with backups, containers, shared filesystems and servers that use different account databases.
+
+## **3. Windows-to-Linux Comparison**
+
+Windows NTFS also has ownership, but it uses a different security model.
+
+| Windows                                | Linux                    |
+| -------------------------------------- | ------------------------ |
+| File owner                             | Owning user              |
+| Group or security principal            | Owning group             |
+| SID                                    | UID/GID identity mapping |
+| NTFS permissions                       | Linux mode bits and ACLs |
+| Change owner through security settings | `chown`                  |
+| Change group                           | `chgrp`                  |
+
+In Windows, you might open a folder's Properties → Security → Advanced to inspect ownership and permissions.
+
+In Linux, we commonly use:
+
+```
+ls -l
+stat
+chown
+chgrp
+```
+
+The Linux basic permission model is especially useful for server administration because ownership and permissions can be inspected and changed directly from the terminal.
+
+## **4. Inspecting Ownership**
+
+Let's begin with the commands you'll use regularly.
+
+### **4.1&#x20;**`ls -l`
+
+```
+ls -l
+```
+
+Example:
+
+```
+-rw-r--r-- 1 alice developers 1200 config.json
+drwxr-xr-x 2 bob   operations 4096 logs
+```
+
+The ownership fields are:
+
+```
+-rw-r--r-- 1 alice developers 1200 config.json
+                 │       │
+                 │       └── Group owner
+                 └────────── User owner
+```
+
+### **4.2&#x20;**`stat`
+
+```
+stat config.json
+```
+
+For compact ownership information:
+
+```
+stat -c '%U %G %u %g %a %n' config.json
+```
+
+| Format | Meaning                 |
+| ------ | ----------------------- |
+| `%U`   | Owner username          |
+| `%G`   | Group name              |
+| `%u`   | Owner UID               |
+| `%g`   | Group GID               |
+| `%a`   | Numeric permission mode |
+| `%n`   | Filename                |
+
+Example:
+
+```
+alice developers 1001 2001 644 config.json
+```
+
+### **4.3 Inspect a complete directory**
+
+```
+ls -ld /var/www
+```
+
+The `-d` option displays the directory itself rather than listing its contents.
+
+This distinction matters when investigating directory ownership.
+
+## **5. Linux Implementation: Changing Ownership**
+
+Linux provides two main ownership commands:
+
+- `chown` — Change user ownership and optionally group ownership.
+- `chgrp` — Change group ownership.
+
+These commands are essential for production administration.
+
+### **5.1 Change the owner with&#x20;**`chown`
+
+Suppose a file is owned by Alice:
+
+```
+-rw-r--r-- 1 alice alice 1200 application.conf
+```
+
+You want Bob to own it.
+
+Run:
+
+```
+sudo chown bob application.conf
+```
+
+Inspect:
+
+```
+ls -l application.conf
+```
+
+The owner should now be `bob`.
+
+The `chown` command normally requires administrative privileges to change a file's owner to another user.
+
+A normal owner can usually change permissions on their file, but cannot freely transfer ownership to arbitrary users.
+
+### **5.2 Change the owner and group together**
+
+General syntax:
+
+```
+sudo chown USER:GROUP FILE
+```
+
+Example:
+
+```
+sudo chown alice:developers application.conf
+```
+
+This sets:
+
+```
+Owner: alice
+Group: developers
+```
+
+Verify:
+
+```
+stat -c '%U:%G %n' application.conf
+```
+
+Expected:
+
+```
+alice:developers application.conf
+```
+
+### **5.3 Change only the group using&#x20;**`chown`
+
+You can leave the owner unchanged:
+
+```
+sudo chown :developers application.conf
+```
+
+The colon indicates that the user component is omitted and only the group is specified.
+
+This is useful when you need to change group ownership without changing the owner.
+
+### **5.4 Change the group using&#x20;**`chgrp`
+
+The equivalent dedicated command is:
+
+```
+sudo chgrp developers application.conf
+```
+
+It changes the group owner.
+
+Inspect:
+
+```
+ls -l application.conf
+```
+
+### **5.5 Change ownership recursively**
+
+Suppose a deployment directory contains:
+
+```
+application/
+├── index.php
+├── config/
+│   └── app.php
+├── public/
+│   └── styles.css
+└── logs/
+    └── application.log
+```
+
+You want to change ownership throughout the directory:
+
+```
+sudo chown -R deploy:developers application/
+```
+
+The `-R` option means recursive.
+
+It applies ownership changes to the directory and its contents.
+
+Production caution
+
+Recursive ownership changes can affect thousands of files.
+
+Never run a command like:
+
+```
+sudo chown -R deploy:developers /
+```
+
+This could damage the operating system.
+
+Before using recursion, inspect the exact target:
+
+```
+pwd
+ls -ld application/
+find application/ -maxdepth 2 -printf '%u:%g %p\n'
+```
+
+Use a specific directory rather than a broad system path.
+
+### **5.6 Change ownership to match another file**
+
+Linux also supports:
+
+```
+sudo chown --reference=reference.txt target.txt
+```
+
+This makes `target.txt` use the same owner and group as `reference.txt`.
+
+This can be convenient in scripts when you need to copy ownership metadata from a known reference.
+
+### **5.7 Symbolic links and ownership**
+
+A symbolic link has its own ownership metadata, although normal ownership operations through a link generally follow the target.
+
+For example:
+
+```
+ln -s application.conf application-link
+```
+
+Inspect:
+
+```
+ls -l application-link
+```
+
+To change ownership of the symlink itself rather than following its target, use `-h`:
+
+```
+sudo chown -h alice:developers application-link
+```
+
+This distinction is useful when managing release symlinks or filesystem structures.
+
+## **6. Internal Working: How Ownership Is Stored**
+
+A simplified view of Linux filesystem metadata:
+
+```
+Filesystem
+│
+├── Directory entry
+│   └── Filename → inode reference
+│
+└── Inode
+    ├── File type
+    ├── Permission bits
+    ├── UID
+    ├── GID
+    ├── File size
+    ├── Timestamps
+    └── Data block references
+```
+
+The inode stores the numeric owner UID, group GID and permission metadata.
+
+The filename itself lives in the directory structure and points to the inode.
+
+When you run:
+
+```
+chown alice:developers application.conf
+```
+
+Linux updates the ownership metadata associated with the file.
+
+It does not need to rewrite the file's contents.
+
+This is one reason ownership changes are generally metadata operations rather than content-copying operations.
+
+### **How ownership relates to access checks**
+
+Suppose the file has:
+
+```
+Owner: Alice
+Group: developers
+Permissions: 640
+```
+
+The permission interpretation is:
+
+```
+Owner:    rw-   (6)
+Group:    r--   (4)
+Others:   ---   (0)
+```
+
+| Process identity             | Access         |
+| ---------------------------- | -------------- |
+| Alice                        | Read and write |
+| Bob, member of `developers`  | Read only      |
+| Charlie, not in `developers` | No access      |
+
+This is the combined effect of ownership and permissions.
+
+## **7. Practical Demonstration — Ownership Lab**
+
+Works in WSL2 Ubuntu
+
+We will use the disposable `labuser` account and the `linuxlab` group from the earlier lesson.
+
+If you already cleaned them up, recreate them.
+
+### **Step 1 — Prepare the lab**
+
+```
+mkdir -p ~/linux-learning/lab-13-ownership
+cd ~/linux-learning/lab-13-ownership
+```
+
+Check whether the group and user exist:
+
+```
+getent group linuxlab
+getent passwd labuser
+```
+
+When either entry is missing, recreate it:
+
+```
+sudo groupadd linuxlab
+sudo useradd -m -s /bin/bash -g linuxlab labuser
+```
+
+Run the relevant creation command only when its account or group is missing.
+
+### **Step 2 — Create a file**
+
+```
+echo "Application configuration" > application.conf
+```
+
+Inspect:
+
+```
+ls -l application.conf
+```
+
+Your current WSL user should normally own this file.
+
+### **Step 3 — Change ownership**
+
+```
+sudo chown labuser:linuxlab application.conf
+```
+
+Verify:
+
+```
+stat -c '%U:%G %u:%g %a %n' application.conf
+```
+
+Expected structure:
+
+```
+labuser:linuxlab 1001:2001 644 application.conf
+```
+
+The numeric IDs may differ.
+
+### **Step 4 — Change only the group**
+
+Create a second group:
+
+```
+sudo groupadd linux-operations
+```
+
+Change the group:
+
+```
+sudo chgrp linux-operations application.conf
+```
+
+Verify:
+
+```
+stat -c '%U:%G %n' application.conf
+```
+
+The owner should still be `labuser`, but the group should now be `linux-operations`.
+
+### **Step 5 — Restore the original group**
+
+```
+sudo chown :linuxlab application.conf
+```
+
+Verify:
+
+```
+ls -l application.conf
+```
+
+### **Step 6 — Change ownership recursively**
+
+Create some nested files:
+
+```
+mkdir -p application/config application/logs
+touch application/config/app.conf
+touch application/logs/app.log
+```
+
+Inspect:
+
+```
+find application -printf '%u:%g %p\n'
+```
+
+Change ownership recursively:
+
+```
+sudo chown -R labuser:linuxlab application/
+```
+
+Verify:
+
+```
+find application -printf '%u:%g %p\n'
+```
+
+The application directory, subdirectories and files should now be owned by `labuser:linuxlab`.
+
+### **Step 7 — Test access**
+
+```
+sudo -u labuser cat application.conf
+```
+
+Expected:
+
+```
+Application configuration
+```
+
+If access is denied, inspect the permissions on the file and each parent directory.
+
+### **Step 8 — Clean up**
+
+```
+sudo userdel -r labuser
+sudo groupdel linuxlab
+sudo groupdel linux-operations
+```
+
+Run the deletion commands only for the disposable accounts and groups created for this lab.
+
+## **8. Real-World Production Scenario — Deploying a Web Application**
+
+Suppose you have a Laravel application:
+
+```
+/var/www/myapp
+```
+
+You have two identities:
+
+```
+deploy
+www-data
+```
+
+A possible design is:
+
+- `deploy` handles application deployment.
+- `www-data` runs the web server.
+- Both can access files that need to be shared.
+- Sensitive application files should not be writable by unrelated users.
+
+An illustrative ownership setup:
+
+```
+sudo chown -R deploy:www-data /var/www/myapp
+```
+
+Possible basic permission choices:
+
+```
+sudo find /var/www/myapp -type d -exec chmod 755 {} \;
+sudo find /var/www/myapp -type f -exec chmod 644 {} \;
+```
+
+However, this is only a starting point.
+
+A real Laravel installation may require carefully selected write access for directories such as:
+
+```
+storage/
+bootstrap/cache/
+```
+
+You should not make the entire application writable by the web server just to fix permission errors.
+
+The correct configuration depends on the deployment model, write requirements and whether the deployment user and web-server process share a group.
+
+We will use SGID in the next topic to understand one way to maintain consistent group ownership in shared directories.
+
+## **9. Troubleshooting Ownership**
+
+| Problem                                         | Possible cause                                                                   | Diagnostic                            |
+| ----------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------- |
+| `Operation not permitted`                       | Insufficient privilege to change ownership                                       | `id`, `stat file`                     |
+| User does not exist                             | Username not found through configured identity lookup                            | `getent passwd username`              |
+| Group does not exist                            | Group name is invalid                                                            | `getent group groupname`              |
+| Application cannot read file                    | Incorrect permissions or parent-directory traversal                              | `namei -l /path/file`                 |
+| Some nested files have different ownership      | Recursive operation incomplete or excluded content                               | `find directory -printf '%u:%g %p\n'` |
+| Ownership changes unexpectedly after deployment | Build, extraction or deployment process creates files under a different identity | `stat`, inspect deployment process    |
+
+### **WSL-specific considerations**
+
+Ownership and group changes work normally inside the WSL2 Linux filesystem, for example:
+
+```
+/home/your-user/
+```
+
+On Windows-mounted directories, such as:
+
+```
+/mnt/c/
+```
+
+ownership and permission behavior can differ according to WSL mount options and Windows filesystem integration.
+
+For this curriculum, keep ownership exercises inside the Linux filesystem.
+
+## **10. Advanced Notes**
+
+### **Ownership and file deletion**
+
+A common misconception is that only the file owner can delete a file.
+
+Ordinarily, deletion depends on the write and execute permissions of the containing directory. Special rules, such as the sticky bit, can restrict deletion further.
+
+We will demonstrate this shortly.
+
+### **Ownership and hard links**
+
+Hard links reference the same underlying inode.
+
+Therefore, changing ownership of a file through one hard-link name changes the ownership of the same underlying file seen through the other hard-link names.
+
+### **Ownership and containers**
+
+Container processes can use numeric UID/GID values that do not match the host's username database.
+
+A file may therefore appear as:
+
+```
+-rw-r--r-- 1 10001 10001 1000 app.log
+```
+
+This is not necessarily an error. It may simply mean the host cannot resolve those numeric IDs into local usernames and group names.
+
+## **11. Teaching Summary**
+
+**Topic 03 — Key concepts**
+
+- Every file has a numeric owner UID.
+- Every file has a numeric group GID.
+- `ls -l` displays user and group ownership.
+- `stat` displays detailed ownership metadata.
+- `chown` changes the owner and optionally the group.
+- `chgrp` changes group ownership.
+- `chown -R` changes ownership recursively.
+- `chown -h` can change symlink ownership itself.
+- Linux access decisions combine process identity, ownership and permissions.

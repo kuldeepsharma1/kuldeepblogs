@@ -1,0 +1,1841 @@
+---
+title: "Environment Variables"
+description: "Understand shell variables, exported environment variables and how processes inherit configuration."
+slug: "06-environment-variables"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 6
+readingTime: "25 min"
+tags: ['linux', 'linux-fundamentals', 'bash', 'wsl', 'shell', 'filesystem']
+toc: true
+---
+
+## **1. Introduction**
+
+Environment variables are one of the most important parts of Linux application configuration.
+
+Whenever you run a command, start a program, execute a Bash script, or launch a server application, that process may receive a collection of environment variables.
+
+For example:
+
+```
+echo "$HOME"
+echo "$USER"
+echo "$PATH"
+echo "$SHELL"
+```
+
+Possible output:
+
+```
+/home/kuldeep
+kuldeep
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+/bin/bash
+```
+
+These variables help programs understand:
+
+- Which user is running them.
+- Where the user's home directory is.
+- Where executable commands are located.
+- Which language or timezone to use.
+- Where application configuration is stored.
+- Which environment the application is running in.
+
+Consider a Node.js application:
+
+```
+NODE_ENV=production
+PORT=3000
+DATABASE_HOST=localhost
+```
+
+The application can read these values without hardcoding them into its source code.
+
+**Why this matters in production:** Linux servers frequently run multiple applications with different configurations. Environment variables provide a standard way to pass configuration into processes.
+
+## **2. Conceptual Foundation**
+
+### **2.1 What is a variable?**
+
+A variable is a named value.
+
+In Bash:
+
+```
+APP_NAME="My Application"
+```
+
+Here:
+
+| Part               | Meaning             |
+| ------------------ | ------------------- |
+| `APP_NAME`         | Variable name       |
+| `=`                | Assignment operator |
+| `"My Application"` | Variable value      |
+
+Read its value using `$`:
+
+```
+echo "$APP_NAME"
+```
+
+Output:
+
+```
+My Application
+```
+
+Important: There must be no spaces around `=` when assigning a Bash variable.
+
+Correct:
+
+```
+APP_NAME="My Application"
+```
+
+Incorrect:
+
+```
+APP_NAME = "My Application"
+```
+
+Bash interprets the incorrect version as a command named `APP_NAME` with arguments.
+
+### **2.2 Shell variables versus environment variables**
+
+This is the most important distinction in this lesson.
+
+A shell variable exists inside the current shell.
+
+An environment variable is a variable that has been exported so that child processes can inherit it.
+
+Let's demonstrate.
+
+First, create a normal shell variable:
+
+```
+APP_NAME="Hytek"
+```
+
+Read it:
+
+```
+echo "$APP_NAME"
+```
+
+Output:
+
+```
+Hytek
+```
+
+Now inspect the environment:
+
+```
+printenv APP_NAME
+```
+
+It produces no output because `APP_NAME` has not been exported.
+
+Export it:
+
+```
+export APP_NAME
+```
+
+Now:
+
+```
+printenv APP_NAME
+```
+
+Output:
+
+```
+Hytek
+```
+
+You can also assign and export in one command:
+
+```
+export APP_NAME="Hytek"
+```
+
+**The difference**
+
+**Shell variable**
+
+# **Bash only**
+
+Exists in the current shell, but is not automatically passed to child processes.
+
+**Exported environment variable**
+
+# **Bash + child processes**
+
+Passed to child processes when they are created.
+
+### **2.3 Understanding parent and child processes**
+
+A shell can start other processes.
+
+For example:
+
+```
+bash
+```
+
+This starts another Bash process.
+
+The original shell is the parent. The newly started shell is its child.
+
+```
+Original Bash (Parent)
+       |
+       | starts
+       v
+New Bash (Child)
+       |
+       | starts
+       v
+Another command (Child process)
+```
+
+Exported variables are included in the environment passed to a newly started child process.
+
+Let's test this.
+
+```
+APP_NORMAL="Not exported"
+export APP_EXPORTED="Available to children"
+```
+
+Start another Bash:
+
+```
+bash
+```
+
+Inside the new shell, run:
+
+```
+echo "$APP_NORMAL"
+echo "$APP_EXPORTED"
+```
+
+Expected output:
+
+```
+
+Available to children
+```
+
+The first variable is empty. The second is available.
+
+Exit the child shell:
+
+```
+exit
+```
+
+You return to your original shell.
+
+**Important internal detail:** The child receives a copy of the parent's exported environment when it starts. Changing a variable in the child does not change the parent variable.
+
+For example:
+
+```
+export APP_MODE="development"
+
+bash
+```
+
+Inside the child:
+
+```
+export APP_MODE="production"
+echo "$APP_MODE"
+```
+
+Output:
+
+```
+production
+```
+
+Exit:
+
+```
+exit
+```
+
+Back in the parent:
+
+```
+echo "$APP_MODE"
+```
+
+Output:
+
+```
+development
+```
+
+This is process isolation at the environment level.
+
+## **3. Windows-to-Linux Comparison**
+
+Windows also has environment variables.
+
+For example, open PowerShell:
+
+```
+$env:USERNAME
+$env:USERPROFILE
+$env:PATH
+```
+
+Set a variable for the current PowerShell process:
+
+```
+$env:APP_NAME = "Hytek"
+```
+
+Read it:
+
+```
+$env:APP_NAME
+```
+
+Linux Bash equivalent:
+
+```
+export APP_NAME="Hytek"
+echo "$APP_NAME"
+```
+
+Comparison:
+
+| Concept                | Windows PowerShell         | Linux Bash                |
+| ---------------------- | -------------------------- | ------------------------- |
+| Read variable          | `$env:PATH`                | `$PATH`                   |
+| Set variable           | `$env:APP_NAME = "Hytek"`  | `export APP_NAME="Hytek"` |
+| Remove variable        | `Remove-Item Env:APP_NAME` | `unset APP_NAME`          |
+| List environment       | `Get-ChildItem Env:`       | `env`                     |
+| Executable search path | `PATH`                     | `PATH`                    |
+
+One important difference: Windows and Linux have different process-launching and shell semantics. Do not assume a PowerShell environment variable assignment behaves exactly like a Bash assignment.
+
+Also, WSL has its own Linux process environment. Windows environment variables may be imported into WSL depending on WSL configuration, but Linux processes and Windows processes do not share one universal environment.
+
+## **4. Linux Implementation**
+
+### **4.1 Inspect existing environment variables**
+
+Run:
+
+```
+env
+```
+
+This displays the current process environment.
+
+You might see:
+
+```
+HOME=/home/kuldeep
+USER=kuldeep
+SHELL=/bin/bash
+LANG=C.UTF-8
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+```
+
+Your exact output will differ.
+
+`env` is an external executable that displays or modifies the environment for a command.
+
+To inspect a particular variable:
+
+```
+printenv HOME
+```
+
+Output:
+
+```
+/home/kuldeep
+```
+
+Multiple variables:
+
+```
+printenv HOME USER SHELL PATH
+```
+
+To inspect all exported variables using Bash:
+
+```
+export -p
+```
+
+This is a Bash built-in.
+
+### **4.2 Understand the difference between&#x20;**`env`**,&#x20;**`printenv`**, and&#x20;**`set`
+
+These commands are related but not interchangeable.
+
+| Command     | What it displays                              |
+| ----------- | --------------------------------------------- |
+| `env`       | Exported environment variables                |
+| `printenv`  | Environment variables                         |
+| `set`       | Shell variables, functions and shell settings |
+| `export -p` | Exported variables in Bash                    |
+
+Try:
+
+```
+MY_LOCAL_VAR="hello"
+export MY_EXPORTED_VAR="world"
+```
+
+Now:
+
+```
+set | grep '^MY_'
+```
+
+You should find both variables in the current shell.
+
+Next:
+
+```
+env | grep '^MY_'
+```
+
+You should find only:
+
+```
+MY_EXPORTED_VAR=world
+```
+
+This is a practical way to understand the distinction.
+
+### **4.3 Important standard Linux environment variables**
+
+| Variable   | Purpose                                                  |
+| ---------- | -------------------------------------------------------- |
+| `HOME`     | Current user's home directory                            |
+| `USER`     | User identity in many login environments                 |
+| `LOGNAME`  | Login name, when supplied                                |
+| `SHELL`    | Usually the user's configured login shell                |
+| `PATH`     | Directories searched for executable commands             |
+| `PWD`      | Current working directory maintained by the shell        |
+| `OLDPWD`   | Previous working directory                               |
+| `LANG`     | Default locale                                           |
+| `LC_ALL`   | Overrides locale category settings                       |
+| `TERM`     | Terminal type                                            |
+| `EDITOR`   | Preferred text editor for programs that honor it         |
+| `HOSTNAME` | Hostname, when set in the environment                    |
+| `TMPDIR`   | Preferred temporary directory for programs that honor it |
+
+Inspect them:
+
+```
+echo "$HOME"
+echo "$USER"
+echo "$SHELL"
+echo "$PWD"
+echo "$OLDPWD"
+echo "$LANG"
+echo "$TERM"
+```
+
+Some variables may be empty or absent. That is not necessarily an error.
+
+**Important:** These names are conventions. Not every program must use them, and some can be set to misleading values manually.
+
+## **5. Understanding PATH — One of the Most Important Variables**
+
+When you type:
+
+```
+ls
+```
+
+How does Linux know where the `ls` executable is?
+
+The shell uses `PATH` to search for commands when you provide a command name without a path.
+
+Inspect it:
+
+```
+echo "$PATH"
+```
+
+Example:
+
+```
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+```
+
+Each directory is separated by a colon (`:`).
+
+Conceptually:
+
+```
+PATH
+ |
+ +-- /usr/local/sbin
+ |
+ +-- /usr/local/bin
+ |
+ +-- /usr/sbin
+ |
+ +-- /usr/bin
+ |
+ +-- /sbin
+ |
+ +-- /bin
+```
+
+When you type:
+
+```
+ls
+```
+
+Bash searches the directories in PATH, in order, for an executable named `ls`.
+
+### **5.1 Find where a command comes from**
+
+Use:
+
+```
+command -v ls
+```
+
+Possible output:
+
+```
+/usr/bin/ls
+```
+
+`command` is a Bash built-in. The `-v` option asks it to identify how a command name resolves.
+
+Another useful command:
+
+```
+type ls
+```
+
+Possible output:
+
+```
+ls is aliased to `ls --color=auto'
+```
+
+Or:
+
+```
+ls is /usr/bin/ls
+```
+
+`type` is a Bash built-in. It can identify aliases, functions, built-ins and executable commands.
+
+You may also see:
+
+```
+which ls
+```
+
+This commonly searches PATH for an executable, but it is not as comprehensive as Bash's own command-resolution tools. Prefer `command -v` when investigating how Bash will resolve a command.
+
+### **5.2 Create a custom executable directory**
+
+We will create a directory for personal scripts.
+
+```
+mkdir -p "$HOME/bin"
+```
+
+Create a script:
+
+```
+cat > "$HOME/bin/hello-linux" <<'EOF'
+#!/usr/bin/env bash
+echo "Hello from my personal command!"
+EOF
+```
+
+Make it executable:
+
+```
+chmod +x "$HOME/bin/hello-linux"
+```
+
+Run it using its full path:
+
+```
+"$HOME/bin/hello-linux"
+```
+
+Output:
+
+```
+Hello from my personal command!
+```
+
+Now try:
+
+```
+hello-linux
+```
+
+It will probably fail with:
+
+```
+hello-linux: command not found
+```
+
+Why? Because `$HOME/bin` is not yet in PATH.
+
+Add it for the current shell:
+
+```
+export PATH="$HOME/bin:$PATH"
+```
+
+Now:
+
+```
+hello-linux
+```
+
+Output:
+
+```
+Hello from my personal command!
+```
+
+Verify:
+
+```
+command -v hello-linux
+```
+
+Output:
+
+```
+/home/kuldeep/bin/hello-linux
+```
+
+Your actual home directory will determine the path.
+
+### **5.3 Why append the existing PATH?**
+
+Correct:
+
+```
+export PATH="$HOME/bin:$PATH"
+```
+
+This places your personal directory first while retaining the existing search directories.
+
+Be careful with:
+
+```
+export PATH="$HOME/bin"
+```
+
+This replaces PATH entirely. Many standard commands may stop resolving because `/usr/bin`, `/bin`, and other directories are no longer searched.
+
+For this reason, do not overwrite PATH casually.
+
+## **6. Variable Expansion and Quoting**
+
+Bash expands variables before executing a command.
+
+Example:
+
+```
+APP_NAME="Linux Server"
+
+echo "$APP_NAME"
+```
+
+Output:
+
+```
+Linux Server
+```
+
+### **6.1 Double quotes**
+
+Double quotes allow variable expansion:
+
+```
+NAME="Linux"
+echo "Hello $NAME"
+```
+
+Output:
+
+```
+Hello Linux
+```
+
+### **6.2 Single quotes**
+
+Single quotes prevent variable expansion:
+
+```
+NAME="Linux"
+echo 'Hello $NAME'
+```
+
+Output:
+
+```
+Hello $NAME
+```
+
+### **6.3 Why quoting matters**
+
+Consider:
+
+```
+PROJECT_DIR="$HOME/my project"
+```
+
+Without quotes:
+
+```
+echo $PROJECT_DIR
+```
+
+Bash performs word splitting, potentially treating the value as multiple arguments.
+
+With quotes:
+
+```
+echo "$PROJECT_DIR"
+```
+
+The value is passed as one argument.
+
+Use this general rule:
+
+> Quote variable expansions unless you deliberately need word splitting or glob expansion.
+
+### **6.4 Braces around variables**
+
+You can use braces to clearly identify where a variable name ends.
+
+```
+APP="linux"
+
+echo "${APP}_server"
+```
+
+Output:
+
+```
+linux_server
+```
+
+Without braces:
+
+```
+echo "$APP_server"
+```
+
+Bash looks for a variable named `APP_server`, not `APP`.
+
+Braces are especially useful when joining values with other text.
+
+### **6.5 Default values**
+
+Bash supports parameter expansion for defaults.
+
+```
+unset APP_PORT
+
+echo "${APP_PORT:-3000}"
+```
+
+Output:
+
+```
+3000
+```
+
+This means: use `3000` if `APP_PORT` is unset or empty.
+
+Another form:
+
+```
+echo "${APP_PORT-3000}"
+```
+
+This uses the default only if `APP_PORT` is unset, not merely empty.
+
+Assign a default if the variable is unset or empty:
+
+```
+: "${APP_PORT:=3000}"
+
+echo "$APP_PORT"
+```
+
+Output:
+
+```
+3000
+```
+
+The `:` command is a Bash built-in that does nothing successfully. Here, it triggers the parameter expansion assignment.
+
+### **6.6 Check whether a variable is set**
+
+```
+if [[ -v APP_PORT ]]; then
+    echo "APP_PORT is set"
+else
+    echo "APP_PORT is not set"
+fi
+```
+
+`[[ ... ]]` is a Bash conditional expression. `-v` checks whether the variable is set.
+
+### **6.7 Remove variables**
+
+```
+unset APP_NAME
+```
+
+Verify:
+
+```
+echo "$APP_NAME"
+```
+
+It should print an empty line.
+
+`unset` is a Bash built-in. It removes the variable from the current shell.
+
+### **6.8 Read-only variables**
+
+```
+readonly APP_VERSION="1.0"
+```
+
+Attempting to change it:
+
+```
+APP_VERSION="2.0"
+```
+
+Bash reports an error because the variable is read-only.
+
+This is useful for values that should not be changed accidentally during a script's execution.
+
+## **7. How Child Processes Receive Environment Variables**
+
+Let's look deeper at what happens internally.
+
+When Bash starts a child process, it prepares an environment consisting of exported variables and passes it to the new program.
+
+At the operating-system level, process creation and execution are separate concepts:
+
+- `fork()` creates a child process.
+- `execve()` replaces a process image with a new program and can pass an environment array.
+
+Simplified view:
+
+```
+Parent Bash
+    |
+    | Environment:
+    | APP_ENV=production
+    | PORT=3000
+    |
+    | starts a program
+    v
+Child Process
+    |
+    | Receives exported environment
+    |
+    +-- APP_ENV=production
+    +-- PORT=3000
+```
+
+A normal shell variable is not included in that exported environment.
+
+### **Demonstration**
+
+Create two variables:
+
+```
+LOCAL_VALUE="private to shell"
+export PUBLIC_VALUE="passed to children"
+```
+
+Run:
+
+```
+bash -c 'echo "LOCAL=$LOCAL_VALUE"; echo "PUBLIC=$PUBLIC_VALUE"'
+```
+
+Expected output:
+
+```
+LOCAL=
+PUBLIC=passed to children
+```
+
+The `-c` option tells Bash to execute the supplied command string.
+
+This demonstrates how a new Bash process sees the environment passed to it.
+
+**Production connection:** When a web server starts a Node.js application, the Node.js process receives the environment provided by its launcher. The application can read those values through `process.env`.
+
+## **8. Temporary and Persistent Environment Variables**
+
+There are several ways to set environment variables. Understanding their scope is essential.
+
+### **8.1 Set a variable for the current shell**
+
+```
+export APP_ENV="development"
+```
+
+It remains available in the current shell and its subsequently launched child processes.
+
+When you close that shell, this assignment does not automatically survive into a new independent login session.
+
+### **8.2 Set a variable for one command only**
+
+```
+APP_ENV=production bash -c 'echo "$APP_ENV"'
+```
+
+Output:
+
+```
+production
+```
+
+After the command:
+
+```
+echo "$APP_ENV"
+```
+
+It will be empty if it was not already set in the shell.
+
+This syntax sets an environment variable specifically for the command being launched.
+
+A real-world example:
+
+```
+NODE_ENV=production npm run build
+```
+
+This runs the command with `NODE_ENV` set to `production`.
+
+### **8.3 Set multiple temporary variables**
+
+```
+APP_ENV=production PORT=3000 bash -c 'echo "$APP_ENV on port $PORT"'
+```
+
+Output:
+
+```
+production on port 3000
+```
+
+This is useful for running applications with different configurations without permanently changing your shell.
+
+### **8.4 Persistent variables using Bash startup files**
+
+If you want a variable to be available automatically in future shell sessions, you can configure an appropriate startup file.
+
+Common files include:
+
+| File                  | Typical role                                                     |
+| --------------------- | ---------------------------------------------------------------- |
+| `/etc/environment`    | System-wide environment assignments managed by PAM/login tooling |
+| `/etc/profile`        | System-wide login-shell initialization                           |
+| `/etc/profile.d/*.sh` | Additional system-wide shell initialization scripts              |
+| `~/.profile`          | User login initialization                                        |
+| `~/.bash_profile`     | User Bash login initialization, if present                       |
+| `~/.bashrc`           | Interactive non-login Bash initialization                        |
+
+The precise file loaded depends on how the shell is started.
+
+For Ubuntu and WSL, interactive terminals commonly start interactive non-login Bash shells, which read `~/.bashrc`. Login shells follow a different startup path.
+
+We will study shell startup behavior in the next topic. For now, use `~/.bashrc` for this practical example.
+
+First, create a backup:
+
+```
+cp "$HOME/.bashrc" "$HOME/.bashrc.backup"
+```
+
+Append an environment variable:
+
+```
+printf '\nexport APP_ENV="development"\n' >> "$HOME/.bashrc"
+```
+
+Reload the file in the current shell:
+
+```
+source "$HOME/.bashrc"
+```
+
+Now:
+
+```
+echo "$APP_ENV"
+```
+
+Output:
+
+```
+development
+```
+
+`source` is a Bash built-in. It executes the file in the current shell rather than starting a separate child shell.
+
+Verify persistence by opening a new WSL terminal and running:
+
+```
+echo "$APP_ENV"
+```
+
+Expected:
+
+```
+development
+```
+
+**Important:** Be careful when appending lines repeatedly. Repeatedly adding the same export can clutter your configuration. For this demonstration, one addition is sufficient.
+
+## **9.&#x20;**`.env`**&#x20;Files Versus Environment Variables**
+
+This is particularly important for web developers.
+
+You may have seen files like:
+
+```
+.env
+.env.local
+.env.production
+```
+
+Example:
+
+```
+APP_NAME="My Application"
+APP_ENV=production
+APP_PORT=3000
+DATABASE_URL=postgresql://localhost:5432/mydb
+```
+
+A common misconception is that Linux automatically loads `.env` files.
+
+It does not.
+
+A `.env` file is simply a text file following a convention. An application framework, library, or explicit shell command must load it.
+
+### **9.1 Load a simple&#x20;**`.env`**&#x20;file into Bash**
+
+For a controlled file containing valid Bash-compatible assignments:
+
+```
+cat > "$HOME/demo.env" <<'EOF'
+APP_NAME="Hytek"
+APP_ENV="development"
+APP_PORT="3000"
+EOF
+```
+
+Load it:
+
+```
+set -a
+source "$HOME/demo.env"
+set +a
+```
+
+What happened?
+
+- `set -a` tells Bash to automatically export variables created or modified afterward.
+- `source` reads the file into the current shell.
+- `set +a` disables automatic exporting again.
+
+Verify:
+
+```
+echo "$APP_NAME"
+printenv APP_NAME
+```
+
+Both should display:
+
+```
+Hytek
+```
+
+This works because the file contains valid shell assignment syntax.
+
+**Security warning:** Do not blindly `source` arbitrary `.env` files. Sourcing executes shell code, not merely data assignments. A malicious file could run commands.
+
+Also, real `.env` formats can support syntax that is not identical to Bash. Use the application's proper dotenv loader when working with a framework.
+
+### **9.2 How Node.js applications use environment variables**
+
+Example:
+
+```
+const port = process.env.PORT ?? "3000";
+
+console.log(`Server running on port ${port}`);
+```
+
+Run it with:
+
+```
+PORT=4000 node app.js
+```
+
+The Node.js process receives `PORT=4000` through its environment.
+
+For frameworks using dotenv, the framework or library reads the `.env` file and makes the values available to the application. The operating system itself does not automatically parse `.env`.
+
+### **9.3 Never commit secrets to Git**
+
+A `.env` file may contain:
+
+```
+DATABASE_PASSWORD=secret-value
+API_KEY=secret-value
+```
+
+These are sensitive values.
+
+A typical project should exclude such files from Git:
+
+```
+.env
+.env.local
+.env.production
+```
+
+Commit a safe example instead:
+
+```
+.env.example
+```
+
+Example:
+
+```
+APP_ENV=
+APP_PORT=
+DATABASE_URL=
+```
+
+Never paste production credentials into terminal screenshots, public logs, source repositories, or support requests.
+
+## **10. Environment Variables and Linux Services**
+
+A production application often runs as a service.
+
+For example:
+
+```
+Linux Server
+    |
+    +-- systemd
+          |
+          +-- Node.js service
+                 |
+                 +-- NODE_ENV=production
+                 +-- PORT=3000
+                 +-- DATABASE_URL=...
+```
+
+A service manager can provide environment variables when launching an application.
+
+Later, in Module 03, we will study systemd service configuration, including:
+
+```
+[Service]
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+```
+
+The service process receives these values when systemd starts it.
+
+For now, remember this distinction:
+
+- A variable exported in your terminal belongs to that shell and its child processes.
+- A systemd service is not normally a child of your interactive terminal.
+- Therefore, exporting a variable in your terminal does not automatically configure an independently managed service.
+
+This is an extremely common source of deployment confusion.
+
+## **11. Internal Working: What Is an Environment?**
+
+At the Linux process level, an environment is represented as a collection of strings passed when a new program is executed.
+
+Conceptually:
+
+```
+NAME=value
+APP_ENV=production
+PORT=3000
+PATH=/usr/bin:/bin
+```
+
+Programs can access their environment through operating-system interfaces.
+
+In C, for example:
+
+```
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void)
+{
+    const char *port = getenv("PORT");
+
+    if (port != NULL) {
+        printf("Port: %s\n", port);
+    }
+
+    return 0;
+}
+```
+
+`getenv()` reads a variable from the process environment.
+
+The key point is that environment variables are not global operating-system settings automatically visible to every process. They are process-specific data inherited or explicitly supplied at process execution.
+
+### **11.1 Inspect your current process environment**
+
+Run:
+
+```
+echo "$$"
+```
+
+This displays the current Bash process ID.
+
+Then:
+
+```
+ls -l "/proc/$$/environ"
+```
+
+This shows the environment file associated with the current process.
+
+You can inspect its contents with:
+
+```
+tr '\0' '\n' < "/proc/$$/environ"
+```
+
+Why `tr`?
+
+Linux process environment entries are represented as NUL-separated strings in this interface. `tr` replaces NUL characters with newline characters so the entries are readable.
+
+Note that `/proc/PID/environ` has subtleties: it reflects the environment memory region associated with process execution and is not a general-purpose live variable inspector for every later change made by a process.
+
+Also, do not expose this output publicly. Environment variables may contain credentials or tokens.
+
+## **12. Practical Demonstration — Complete Walkthrough**
+
+Works in WSL2 Ubuntu
+
+Create a dedicated lab directory:
+
+```
+mkdir -p "$HOME/linux-learning/lab-06-environment-variables"
+cd "$HOME/linux-learning/lab-06-environment-variables"
+```
+
+### **Step 1 — Create a shell variable**
+
+```
+APP_NAME="Linux Training"
+echo "$APP_NAME"
+```
+
+Expected:
+
+```
+Linux Training
+```
+
+### **Step 2 — Check whether it is exported**
+
+```
+printenv APP_NAME
+```
+
+Expected: no output.
+
+### **Step 3 — Export it**
+
+```
+export APP_NAME
+printenv APP_NAME
+```
+
+Expected:
+
+```
+Linux Training
+```
+
+### **Step 4 — Start a child process**
+
+```
+bash -c 'echo "$APP_NAME"'
+```
+
+Expected:
+
+```
+Linux Training
+```
+
+### **Step 5 — Test an unexported variable**
+
+```
+LOCAL_ONLY="Not inherited"
+bash -c 'echo "Value: $LOCAL_ONLY"'
+```
+
+Expected:
+
+```
+Value:
+```
+
+### **Step 6 — Inspect PATH**
+
+```
+echo "$PATH"
+command -v bash
+command -v ls
+```
+
+Expected executable paths will commonly be:
+
+```
+/usr/bin/bash
+/usr/bin/ls
+```
+
+Exact paths can differ.
+
+### **Step 7 — Create a custom command**
+
+```
+mkdir -p "$HOME/bin"
+
+cat > "$HOME/bin/show-env" <<'EOF'
+#!/usr/bin/env bash
+
+echo "Application: ${APP_NAME:-Not configured}"
+echo "Environment: ${APP_ENV:-Not configured}"
+echo "User: ${USER:-Unknown}"
+echo "Home: ${HOME:-Unknown}"
+EOF
+
+chmod +x "$HOME/bin/show-env"
+```
+
+Add the directory to PATH:
+
+```
+export PATH="$HOME/bin:$PATH"
+```
+
+Set configuration:
+
+```
+export APP_NAME="Linux Training"
+export APP_ENV="development"
+```
+
+Run:
+
+```
+show-env
+```
+
+Expected:
+
+```
+Application: Linux Training
+Environment: development
+User: your-linux-username
+Home: /home/your-linux-username
+```
+
+### **Step 8 — Run with temporary configuration**
+
+```
+APP_ENV=production show-env
+```
+
+Expected:
+
+```
+Application: Linux Training
+Environment: production
+User: your-linux-username
+Home: /home/your-linux-username
+```
+
+Now run:
+
+```
+echo "$APP_ENV"
+```
+
+Expected:
+
+```
+development
+```
+
+The temporary setting did not replace the current shell's value.
+
+### **Step 9 — Inspect environment safely**
+
+```
+env | grep -E '^(APP_NAME|APP_ENV|USER|HOME)='
+```
+
+Expected output includes your exported variables.
+
+### **Step 10 — Clean up lab variables**
+
+```
+unset APP_NAME APP_ENV LOCAL_ONLY
+```
+
+The `show-env` script remains in your home directory, as does the custom `bin` directory.
+
+You can remove the lab directory later if desired, but there is no need to remove anything from the Windows host.
+
+## **13. Real-World Production Scenarios**
+
+### **Scenario A — Running the same application in different environments**
+
+Development:
+
+```
+APP_ENV=development node app.js
+```
+
+Production:
+
+```
+APP_ENV=production node app.js
+```
+
+The same application can behave differently based on configuration.
+
+### **Scenario B — Selecting a different application port**
+
+```
+PORT=8080 node app.js
+```
+
+The application can use the supplied port instead of a hardcoded default.
+
+### **Scenario C — Custom executable tools**
+
+An administrator might install personal scripts in:
+
+```
+/home/admin/bin
+```
+
+Adding this directory to PATH allows those commands to run without typing their full paths.
+
+### **Scenario D — A service works in the terminal but fails under systemd**
+
+An administrator runs:
+
+```
+export DATABASE_URL="postgresql://..."
+npm start
+```
+
+The application works.
+
+But when systemd launches it, the application cannot find `DATABASE_URL`.
+
+Why?
+
+Because the variable was exported only in the interactive shell. The systemd service has its own process environment.
+
+The solution is to configure the service environment appropriately, which we will cover in Module 03.
+
+## **14. Troubleshooting**
+
+| Problem                                   | Likely cause                          | What to do                                                          |
+| ----------------------------------------- | ------------------------------------- | ------------------------------------------------------------------- |
+| Variable prints empty                     | Not set or unset                      | Check with `set` or `printenv`                                      |
+| Child Bash cannot see variable            | Variable not exported                 | Use `export`                                                        |
+| Command not found                         | Executable directory absent from PATH | Inspect PATH and use `command -v`                                   |
+| Standard commands stop working            | PATH accidentally replaced            | Restore a valid PATH                                                |
+| Variable works in one terminal only       | Set only in that shell                | Configure an appropriate startup file                               |
+| `.env` values are missing                 | File not loaded                       | Use the framework's dotenv loader or explicitly load a trusted file |
+| App works manually but not as a service   | Different process environment         | Configure service environment                                       |
+| Variable value contains unexpected spaces | Unquoted expansion or assignment      | Quote variable expansions                                           |
+
+### **Useful diagnostic commands**
+
+```
+printenv APP_ENV
+declare -p APP_ENV
+export -p | grep APP_ENV
+type -a node
+command -v node
+echo "$PATH"
+```
+
+`declare -p` is a Bash built-in that displays a variable's declaration and attributes.
+
+`type -a` shows all command resolutions Bash finds, rather than only the first one.
+
+## **15. WSL-Specific Notes**
+
+The demonstrations in this lesson work in WSL2 Ubuntu.
+
+However, keep these differences in mind:
+
+1. Linux environment variables belong to Linux processes.
+2. WSL can import selected Windows environment variables depending on its configuration.
+3. Windows PowerShell and Linux Bash have different variable assignment syntax.
+4. WSL terminal startup behavior depends on whether Bash starts as a login or non-login shell.
+5. A WSL terminal's environment is not automatically the same as a production server's systemd service environment.
+6. WSL is sufficient for learning environment variables, process inheritance, PATH and Bash scripting. No disposable VM is needed for this lesson.
+
+To inspect whether Windows paths are present in WSL:
+
+```
+echo "$PATH"
+```
+
+You may see entries under `/mnt/c/...`. These are Windows filesystem paths exposed to the Linux environment.
+
+Do not assume every Windows executable will behave like a native Linux executable.
+
+## **16. Advanced Notes**
+
+### **16.1 Start a process with a clean environment**
+
+The `env` command can start a program with a controlled environment.
+
+```
+env -i bash --noprofile --norc
+```
+
+This starts a Bash process with an initially empty environment and skips its normal profile and rc-file processing.
+
+Inside it, inspect:
+
+```
+env
+```
+
+You should see very few or no environment variables.
+
+Exit:
+
+```
+exit
+```
+
+This technique is useful for reproducing configuration problems and testing whether applications depend on inherited environment variables.
+
+### **16.2 Environment variables are strings**
+
+Environment variables are fundamentally strings.
+
+For example:
+
+```
+PORT=3000
+```
+
+The value is the text `"3000"`, not a native integer.
+
+An application must convert it to an integer if numerical operations are required.
+
+### **16.3 Environment variables are not a secret vault**
+
+Environment variables are convenient configuration mechanisms, but they are not inherently secure.
+
+Depending on system permissions, process settings, diagnostic tools and deployment practices, values may be exposed through process inspection, logs, crash reports or application debugging.
+
+For sensitive production credentials, use an appropriate secrets-management solution and restrict access.
+
+### **16.4 Variable naming conventions**
+
+Common conventions:
+
+```
+APP_NAME="MyApp"
+APP_ENV="production"
+DATABASE_HOST="localhost"
+DATABASE_PORT="5432"
+```
+
+Environment variable names are conventionally uppercase with underscores.
+
+Bash variable names are case-sensitive:
+
+```
+APP_ENV="production"
+app_env="development"
+```
+
+These are two different variables.
+
+## **17. Practical Lab — Environment Configuration System**
+
+
+
+Main exercise
+
+WSL2 compatible
+
+
+
+Now build a small environment-driven configuration script.
+
+### **Objective**
+
+Create a script that reads application configuration from environment variables and provides safe defaults.
+
+### **Step 1 — Create the project**
+
+```
+mkdir -p "$HOME/linux-learning/lab-06-environment-variables/config-demo"
+cd "$HOME/linux-learning/lab-06-environment-variables/config-demo"
+```
+
+### **Step 2 — Create the application script**
+
+```
+cat > app-config.sh <<'EOF'
+#!/usr/bin/env bash
+
+APP_NAME="${APP_NAME:-Linux Demo}"
+APP_ENV="${APP_ENV:-development}"
+APP_PORT="${APP_PORT:-3000}"
+
+echo "============================"
+echo " Application Configuration"
+echo "============================"
+
+echo "Name:        $APP_NAME"
+echo "Environment: $APP_ENV"
+echo "Port:        $APP_PORT"
+echo "User:        ${USER:-unknown}"
+echo "Home:        ${HOME:-unknown}"
+
+if [[ "$APP_ENV" == "production" ]]; then
+    echo "Production configuration detected."
+else
+    echo "Non-production configuration detected."
+fi
+EOF
+```
+
+### **Step 3 — Make executable**
+
+```
+chmod +x app-config.sh
+```
+
+### **Step 4 — Run with defaults**
+
+```
+./app-config.sh
+```
+
+Expected:
+
+```
+============================
+ Application Configuration
+============================
+Name:        Linux Demo
+Environment: development
+Port:        3000
+User:        your-linux-username
+Home:        /home/your-linux-username
+Non-production configuration detected.
+```
+
+### **Step 5 — Run with custom variables**
+
+```
+APP_NAME="Hytek Platform" APP_ENV=production APP_PORT=8080 ./app-config.sh
+```
+
+Expected:
+
+```
+============================
+ Application Configuration
+============================
+Name:        Hytek Platform
+Environment: production
+Port:        8080
+User:        your-linux-username
+Home:        /home/your-linux-username
+Production configuration detected.
+```
+
+### **Step 6 — Verify defaults still work**
+
+```
+./app-config.sh
+```
+
+The script should still use its default values. The previous command did not permanently modify your shell.
+
+### **Step 7 — Inspect the script**
+
+```
+cat app-config.sh
+```
+
+Notice these expressions:
+
+```
+APP_NAME="${APP_NAME:-Linux Demo}"
+APP_ENV="${APP_ENV:-development}"
+APP_PORT="${APP_PORT:-3000}"
+```
+
+They provide defaults when variables are unset or empty.
+
+### **What this lab teaches**
+
+- How applications receive configuration.
+- How environment variables control program behavior.
+- How to provide default values.
+- How to run the same program with different configurations.
+- How to avoid hardcoding deployment-specific settings.
+
+## **18. Teaching Summary**
+
+The most important concepts from this lesson:
+
+| Concept              | Remember                                                           |
+| -------------------- | ------------------------------------------------------------------ |
+| Shell variable       | Exists in the current shell                                        |
+| Environment variable | Exported to child processes                                        |
+| `export`             | Marks a variable for inheritance                                   |
+| `unset`              | Removes a variable                                                 |
+| `env`                | Displays or launches with an environment                           |
+| `printenv`           | Displays environment variables                                     |
+| `set`                | Displays shell variables and other shell state                     |
+| `PATH`               | Directories searched for executable commands                       |
+| `command -v`         | Identifies how Bash resolves a command                             |
+| `source`             | Executes a file in the current shell                               |
+| `VAR=value command`  | Sets a variable for one command                                    |
+| `.env`               | A configuration-file convention, not automatically loaded by Linux |
+
+### **Essential commands to remember**
+
+```
+# Create a variable
+APP_NAME="Linux"
+
+# Export it
+export APP_NAME
+
+# Create and export in one command
+export APP_ENV="production"
+
+# Read it
+echo "$APP_NAME"
+
+# Inspect the environment
+env
+
+# Inspect one environment variable
+printenv APP_NAME
+
+# Inspect Bash variables
+set
+
+# Find an executable
+command -v ls
+
+# Inspect PATH
+echo "$PATH"
+
+# Temporarily configure one command
+APP_ENV=production command
+
+# Remove a variable
+unset APP_NAME
+
+# Load a trusted shell configuration file
+source ~/.bashrc
+```
+
+### **Mastery checklist**
+
+Use this as a teaching progress tracker, not a quiz.
+
+- Understand shell variables versus environment variables.
+- Understand `export`.
+- Understand parent and child process inheritance.
+- Understand standard variables such as `HOME`, `USER`, and `PATH`.
+- Understand how Linux searches for executable commands.
+- Understand variable expansion and quoting.
+- Understand temporary versus persistent configuration.
+- Understand why `.env` files are not automatically loaded.
+- Understand how applications receive environment variables.
+- Complete the configuration-system practical lab.
+
+## **19. Official Documentation**
+
+- [GNU Bash — Shell Parameters](https://www.gnu.org/software/bash/manual/html_node/Shell-Parameters.html?utm_source=chatgpt.com)
+- [GNU Bash — Environment](https://www.gnu.org/software/bash/manual/html_node/Environment.html?utm_source=chatgpt.com)
+- [GNU Bash — Bash Startup Files](https://www.gnu.org/software/bash/manual/html_node/Bash-Startup-Files.html?utm_source=chatgpt.com)
+- [Linux `environ(7)` manual](https://man7.org/linux/man-pages/man7/environ.7.html?utm_source=chatgpt.com)
+- [Linux `execve(2)` manual](https://man7.org/linux/man-pages/man2/execve.2.html?utm_source=chatgpt.com)
+
+**Module 01 Progress**
+
+Topic 06 complete
+
+# **6 / 10**
+
+Next: Topic 07 — Shell Startup Files and Profiles
+
+**Next lesson:** We will examine what happens when Bash starts, why `.bashrc` and `.profile` exist, login versus non-login shells, interactive versus non-interactive shells, and how Linux loads shell configuration.&#x20;

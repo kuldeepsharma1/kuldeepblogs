@@ -1,0 +1,4790 @@
+---
+title: "File and Directory Operations"
+description: "Create, inspect, copy, move, link and remove filesystem objects safely."
+slug: "04-file-and-directory-operations"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 4
+readingTime: "1 hr 12 min"
+tags: ['linux', 'linux-fundamentals', 'bash', 'wsl', 'shell', 'filesystem']
+toc: true
+---
+
+# **Part 1 — Introduction: Why file and directory operations matter**
+
+Every Linux system constantly creates, reads, modifies, copies, moves and removes files.
+
+Consider a normal application server.
+
+An administrator might need to:
+
+- Create a directory for an application.
+- Copy configuration files.
+- Deploy a new application version.
+- Rename an old configuration file.
+- Move archived logs.
+- Create symbolic links to application versions.
+- Inspect an unknown file.
+- Find large files consuming disk space.
+- Remove outdated temporary data.
+- Restore files from a backup.
+
+These are ordinary activities in production Linux administration.
+
+However, there is an important difference between knowing a command and understanding its consequences.
+
+For example:
+
+```
+rm -rf application/
+```
+
+This command can recursively remove a directory and its contents.
+
+A beginner may think it is just another way to clean up a folder.
+
+An experienced administrator understands that the command can permanently remove thousands of files, including application data, configuration and files needed by running services.
+
+**The objective of this lesson is not simply to learn file commands. It is to learn how to manipulate filesystem objects safely and predictably.**
+
+## **1.1 What is a file in Linux?**
+
+In everyday computer usage, people think of a file as a document, image, program or video.
+
+Linux uses a broader filesystem model.
+
+A filesystem can contain several kinds of objects:
+
+| Object type      | Purpose                                   | Example                    |
+| ---------------- | ----------------------------------------- | -------------------------- |
+| Regular file     | Stores data or program contents           | `config.yaml`              |
+| Directory        | Organizes names and filesystem entries    | `/etc/`                    |
+| Symbolic link    | Refers to another pathname                | `current -> releases/v2`   |
+| Hard link        | Another directory name for the same inode | `report-copy.txt`          |
+| Character device | Provides character-oriented device access | `/dev/tty`                 |
+| Block device     | Provides block-oriented storage access    | `/dev/sda` on some systems |
+| FIFO             | Named pipe for interprocess communication | A named pipe               |
+| Socket           | Communication endpoint                    | Unix domain socket         |
+
+The important idea:
+
+**Linux filesystems manage filesystem objects, not merely documents and folders.**
+
+This is why commands such as `ls`, `stat`, `find` and `file` are so useful. They help administrators identify what an object actually is.
+
+## **1.2 What happens when a file is created?**
+
+Imagine the learner executes:
+
+```
+touch report.txt
+```
+
+What happens internally?
+
+Conceptually:
+
+```
+User enters command
+       |
+       v
+Bash resolves touch
+       |
+       v
+External touch program executes
+       |
+       v
+Program requests file creation
+       |
+       v
+Kernel checks directory access
+       |
+       v
+Filesystem creates a directory entry
+and a new inode
+       |
+       v
+File is available at report.txt
+```
+
+There is an important distinction between the file's name and its underlying filesystem object.
+
+On traditional Unix-style filesystems such as ext4, the directory contains a name-to-inode mapping.
+
+The inode stores metadata about the object, including information such as:
+
+- File type.
+- Permissions.
+- Owner and group.
+- Size.
+- Timestamps.
+- Link count.
+- References to the data blocks used by the file.
+
+The filename itself is stored as a directory entry, not as the inode's identity.
+
+We will explore this in detail when discussing inodes and hard links.
+
+## **1.3 File content versus file metadata**
+
+Imagine this file:
+
+```
+/home/student/report.txt
+```
+
+It has two broad types of information.
+
+**A filesystem object**
+
+**File contents**
+
+The actual data stored in the file
+
+```
+Linux is an operating system.
+```
+
+**File metadata**
+
+Information describing the filesystem object
+
+| Property          | Example            |
+| ----------------- | ------------------ |
+| Name              | report.txt         |
+| Owner             | student            |
+| Group             | student            |
+| Permissions       | rw-r--r--          |
+| Size              | 32 bytes           |
+| Inode             | 123456             |
+| Modification time | Recorded timestamp |
+
+This distinction matters because many Linux commands modify metadata without changing the actual file contents.
+
+For example:
+
+```
+chmod 600 report.txt
+```
+
+Changes permission metadata.
+
+It does not change the text inside the file.
+
+Similarly:
+
+```
+mv report.txt final-report.txt
+```
+
+On the same filesystem, this generally changes the directory entry rather than rewriting all file contents.
+
+This is an important difference between manipulating a file's name and manipulating its data.
+
+## **1.4 Linux file operations fall into five categories**
+
+For teaching, group the commands rather than introducing them randomly.
+
+| Category             | Operations                           | Main commands                 |
+| -------------------- | ------------------------------------ | ----------------------------- |
+| Creation             | Create files and directories         | `touch`, `mkdir`, `install`   |
+| Inspection           | Identify and inspect objects         | `ls`, `file`, `stat`, `find`  |
+| Copying              | Duplicate files and directories      | `cp`                          |
+| Moving and renaming  | Change filesystem names or locations | `mv`                          |
+| Deletion and linking | Remove entries or create references  | `rm`, `rmdir`, `ln`, `unlink` |
+
+We will cover them in that order.
+
+# **Part 2 — Understanding the environment before performing operations**
+
+The learner is working in Windows with WSL 2.
+
+All experiments in this lesson should take place inside the Linux filesystem, not inside real system directories.
+
+Use this location:
+
+```
+/home/student/linux-learning/
+```
+
+The actual username can differ.
+
+## **2.1 Prepare the working environment**
+
+Open Ubuntu and execute:
+
+```
+mkdir -p ~/linux-learning/lab-04
+cd ~/linux-learning/lab-04
+pwd
+```
+
+Expected output pattern:
+
+```
+/home/student/linux-learning/lab-04
+```
+
+This is our isolated learning workspace.
+
+The commands in this lesson will create and manipulate files under this directory.
+
+**Environment classification**
+
+**WSL 2**
+
+READY
+
+Normal file and directory creation, copying, moving, inspection, recursive deletion, hard links and symbolic links can be demonstrated inside the Linux filesystem.
+
+**Windows-mounted storage**
+
+LIMITED
+
+Permissions, ownership, symbolic links and hard-link behavior can differ when operating under `/mnt/c`. Keep this lesson's filesystem experiments under `/home`.
+
+**Real hardware and storage**
+
+VM REQUIRED
+
+Real block-device manipulation, partitioning, filesystem repair and destructive storage experiments belong in a disposable Linux VM, not this WSL lab.
+
+WSL 2 uses a Linux filesystem inside its virtual disk, while Windows drives are exposed through filesystem interoperability. This is why our choice of learning location matters.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+# **Part 3 — Creating files:&#x20;**`touch`
+
+## **3.1 What is&#x20;**`touch`**?**
+
+`touch` is a standard Linux command used to update file timestamps.
+
+It also creates an empty file if the specified file does not already exist.
+
+Syntax:
+
+```
+touch [OPTIONS] FILE
+```
+
+Basic example:
+
+```
+touch report.txt
+```
+
+What happens?
+
+1. The command checks the requested pathname.
+2. If the file does not exist, it attempts to create it.
+3. If the file already exists, it normally updates its access and modification timestamps.
+4. It does not truncate the existing file's contents.
+
+That final point is important.
+
+`touch`**&#x20;is not a command for emptying an existing file.**
+
+## **3.2 Demonstration: Create an empty file**
+
+Execute:
+
+```
+touch report.txt
+```
+
+Inspect:
+
+```
+ls -l report.txt
+```
+
+Representative output:
+
+```
+-rw-r--r-- 1 student student 0 Nov 15 14:00 report.txt
+```
+
+The values vary with the learner's user, permissions, locale and system time.
+
+Notice:
+
+```
+0
+```
+
+The file has zero bytes because it is empty.
+
+Inspect it using:
+
+```
+stat report.txt
+```
+
+This provides more detailed metadata.
+
+## **3.3 Create multiple files at once**
+
+Execute:
+
+```
+touch first.txt second.txt third.txt
+```
+
+This creates three empty files in the current directory, assuming they do not already exist.
+
+Verify:
+
+```
+ls -l *.txt
+```
+
+The shell expands the `*.txt` pattern to matching filenames before executing `ls`.
+
+This introduces a concept called **pathname expansion**, which we will explore later.
+
+## **3.4 Update the timestamp of an existing file**
+
+Create content:
+
+```
+echo "Original content" > existing.txt
+```
+
+Inspect:
+
+```
+stat existing.txt
+```
+
+Wait is not necessary; timestamps can have sufficient resolution for comparing operations, but very rapid changes can be difficult to distinguish.
+
+Execute:
+
+```
+touch existing.txt
+```
+
+Inspect again:
+
+```
+stat existing.txt
+```
+
+The modification time is updated.
+
+The file's content remains:
+
+```
+cat existing.txt
+```
+
+Expected:
+
+```
+Original content
+```
+
+### **Important options**
+
+| Option         | Purpose                                    |
+| -------------- | ------------------------------------------ |
+| `-a`           | Change access time only                    |
+| `-m`           | Change modification time only              |
+| `-c`           | Do not create a file if it does not exist  |
+| `-r FILE`      | Use timestamps from another reference file |
+| `-t TIMESTAMP` | Set a specified timestamp                  |
+
+These options are useful in automation, backup processing and testing.
+
+## **3.5 What does&#x20;**`touch`**&#x20;change internally?**
+
+On a conventional Linux filesystem, creating a new file involves filesystem operations that allocate an inode and add a directory entry.
+
+Updating an existing file's timestamps changes metadata associated with that object.
+
+The contents need not change.
+
+The `touch` utility uses filesystem APIs that update file timestamps.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+GNU+1
+
+
+
+## **3.6 Production scenario**
+
+A deployment script checks whether a required marker file exists:
+
+```
+/var/lib/myapp/deployment-ready
+```
+
+An administrator may use `touch` to create the marker file.
+
+However, an experienced engineer first confirms that the application actually uses that marker and understands its meaning.
+
+Creating arbitrary marker files in production can accidentally make automation believe that a task completed when it did not.
+
+**Rule:** A file's existence can be operationally significant. Do not create marker files casually.
+
+# **Part 4 — Creating directories:&#x20;**`mkdir`
+
+## **4.1 What is&#x20;**`mkdir`**?**
+
+`mkdir` means *make directory*.
+
+It creates directory entries in the filesystem.
+
+Syntax:
+
+```
+mkdir [OPTIONS] DIRECTORY
+```
+
+Example:
+
+```
+mkdir projects
+```
+
+Creates a directory called `projects` inside the current working directory.
+
+## **4.2 Create a directory**
+
+Execute:
+
+```
+mkdir projects
+```
+
+Verify:
+
+```
+ls -ld projects
+```
+
+Representative output:
+
+```
+drwxr-xr-x 2 student student 4096 Nov 15 14:00 projects
+```
+
+Important:
+
+- `d` identifies a directory.
+- Permission bits describe directory access.
+- The owner and group identify who owns it.
+- The link count is generally associated with directory entries.
+- The name identifies the directory.
+
+We will examine directory permissions and link counts more thoroughly later.
+
+## **4.3 Create nested directories with&#x20;**`-p`
+
+Suppose we want:
+
+```
+projects/
+└── inventory/
+    └── backend/
+        └── config/
+```
+
+Trying:
+
+```
+mkdir projects/inventory/backend/config
+```
+
+will fail if the parent directories do not exist.
+
+A typical error:
+
+```
+mkdir: cannot create directory ...:
+No such file or directory
+```
+
+Why?
+
+By default, `mkdir` does not automatically create all missing parent directories.
+
+Use:
+
+```
+mkdir -p projects/inventory/backend/config
+```
+
+The `-p` option:
+
+- Creates missing parent directories.
+- Creates the final requested directory.
+- Does not report an error if the directories already exist and are directories.
+
+This is extremely useful in automation because it makes directory setup repeatable.
+
+## **4.4 Create multiple directories**
+
+```
+mkdir logs backups uploads
+```
+
+This creates three directories.
+
+Or create them under a common parent:
+
+```
+mkdir -p application/{config,data,logs,cache}
+```
+
+The curly-brace syntax is **Bash brace expansion**.
+
+Bash expands this:
+
+```
+application/{config,data,logs,cache}
+```
+
+into:
+
+```
+application/config
+application/data
+application/logs
+application/cache
+```
+
+Brace expansion happens inside Bash before the command runs.
+
+It is not a special feature of the `mkdir` program itself.
+
+## **4.5 Directory creation and permissions**
+
+The permissions of a newly created directory are influenced by the process's `umask`.
+
+For example:
+
+```
+mkdir private-data
+ls -ld private-data
+```
+
+A typical directory may have:
+
+```
+drwxr-xr-x
+```
+
+The exact result depends on the active umask.
+
+We will cover how `umask` controls default permissions in Module 02.
+
+## **4.6 Internal behavior**
+
+Conceptually:
+
+```
+mkdir command
+    |
+    v
+Request directory creation
+    |
+    v
+Kernel checks parent directory access
+    |
+    v
+Filesystem allocates directory object
+    |
+    v
+Directory entries are initialized
+    |
+    v
+New directory becomes accessible
+```
+
+On Linux, directory creation is implemented through filesystem operations exposed by system calls such as `mkdir()` and `mkdirat()`.
+
+## **4.7 Production scenario**
+
+An application deployment requires:
+
+```
+/var/lib/inventory-api
+/var/log/inventory-api
+/etc/inventory-api
+```
+
+A script can use:
+
+```
+sudo mkdir -p /var/lib/inventory-api
+sudo mkdir -p /var/log/inventory-api
+sudo mkdir -p /etc/inventory-api
+```
+
+This is better than manually creating every parent directory.
+
+However, directory creation is only one part of deployment.
+
+The administrator must still configure the correct owners, permissions, application files and service behavior.
+
+# **Part 5 — Copying files and directories:&#x20;**`cp`
+
+## **5.1 What is&#x20;**`cp`**?**
+
+`cp` means *copy*.
+
+It creates another filesystem object containing a copy of the original file's data.
+
+Example:
+
+```
+cp original.txt backup.txt
+```
+
+This copies the contents of `original.txt` into a new file named `backup.txt`.
+
+Unlike a hard link, the resulting regular files are normally independent filesystem objects with separate inodes.
+
+The GNU Coreutils documentation defines `cp` as the utility for copying files and, optionally, directories.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+GNU+1
+
+
+
+## **5.2 Copy a single file**
+
+Prepare a source file:
+
+```
+echo "Linux file operations" > original.txt
+```
+
+Copy it:
+
+```
+cp original.txt copy.txt
+```
+
+Verify:
+
+```
+ls -l original.txt copy.txt
+```
+
+Read both:
+
+```
+cat original.txt
+cat copy.txt
+```
+
+Both should contain:
+
+```
+Linux file operations
+```
+
+The original and copy have the same initial contents, but they are separate regular files.
+
+Inspect their inodes:
+
+```
+ls -i original.txt copy.txt
+```
+
+You should normally see different inode numbers.
+
+This demonstrates that copying a file and creating a hard link are fundamentally different operations.
+
+## **5.3 Copy a file to another directory**
+
+Assume the following structure:
+
+```
+lab/
+├── original.txt
+└── backups/
+```
+
+Create the backup directory:
+
+```
+mkdir -p backups
+```
+
+Copy:
+
+```
+cp original.txt backups/
+```
+
+The new file becomes:
+
+```
+backups/original.txt
+```
+
+The destination was a directory, so `cp` retained the source filename.
+
+Verify:
+
+```
+ls -l backups/
+```
+
+## **5.4 Copy and rename simultaneously**
+
+You can provide a new destination filename.
+
+```
+cp original.txt backups/original-backup.txt
+```
+
+This performs two operations conceptually:
+
+- Read from `original.txt`.
+- Create or replace `backups/original-backup.txt`.
+
+The source file remains unchanged.
+
+## **5.5 Copy multiple files**
+
+```
+cp original.txt second.txt backups/
+```
+
+This copies two files into the destination directory.
+
+The destination must exist as a directory.
+
+More generally:
+
+```
+cp SOURCE... DESTINATION_DIRECTORY
+```
+
+You can also use shell patterns:
+
+```
+cp *.txt backups/
+```
+
+Bash expands `*.txt` to matching filenames before `cp` executes.
+
+Be aware that the shell pattern only matches names in the current directory unless the pattern includes another path.
+
+## **5.6 Copy directories recursively**
+
+Suppose:
+
+```
+application/
+├── config/
+│   └── app.conf
+├── data/
+│   └── records.txt
+└── scripts/
+    └── deploy.sh
+```
+
+A normal `cp` command without recursive options cannot copy a directory tree.
+
+This fails:
+
+```
+cp application application-backup
+```
+
+Use:
+
+```
+cp -r application application-backup
+```
+
+The `-r` option means recursive.
+
+It copies the directory and descends into its subdirectories.
+
+Result:
+
+```
+application/
+application-backup/
+├── config/
+│   └── app.conf
+├── data/
+│   └── records.txt
+└── scripts/
+    └── deploy.sh
+```
+
+Verify:
+
+```
+find application-backup -print
+```
+
+## **5.7 Understand&#x20;**`cp -r`**&#x20;versus&#x20;**`cp -a`
+
+This is an important production distinction.
+
+### **Recursive copy**
+
+```
+cp -r source/ destination/
+```
+
+Copies the directory tree recursively.
+
+### **Archive copy**
+
+```
+cp -a source/ destination/
+```
+
+For GNU `cp`, `-a` is intended to preserve the source tree's attributes and structure, including timestamps, modes, ownership where permitted, symbolic links and other supported attributes.
+
+It is effectively an archive-style recursive copy.
+
+This is useful when preserving a directory tree matters.
+
+| Option | Meaning                                                 |
+| ------ | ------------------------------------------------------- |
+| `-r`   | Copy directories recursively                            |
+| `-a`   | Archive mode; recursive copy with preservation          |
+| `-p`   | Preserve mode, ownership and timestamps where possible  |
+| `-v`   | Verbose; display operations                             |
+| `-i`   | Ask before overwriting                                  |
+| `-n`   | Do not overwrite existing destination files             |
+| `-u`   | Copy when the source is newer or destination is missing |
+
+Some preservation operations require elevated privileges and may depend on filesystem support.
+
+**Practical recommendation:** Use `cp -a` when you need to preserve a Linux directory tree, but verify the destination and the resulting metadata.
+
+## **5.8 Safer copying: Avoid accidental overwrite**
+
+Suppose `backup.txt` already exists.
+
+This command:
+
+```
+cp original.txt backup.txt
+```
+
+normally replaces the destination contents.
+
+That may destroy data.
+
+A safer interactive option:
+
+```
+cp -i original.txt backup.txt
+```
+
+The `-i` option prompts before overwriting an existing destination.
+
+Example prompt:
+
+```
+cp: overwrite 'backup.txt'?
+```
+
+The actual prompt wording can vary.
+
+This is useful during manual administration, although scripts should use explicit logic rather than depend on interactive prompts.
+
+## **5.9 Understand copy verification**
+
+After copying, do not assume success merely because the command returned to the prompt.
+
+Inspect:
+
+```
+ls -l original.txt copy.txt
+```
+
+Compare contents:
+
+```
+cmp original.txt copy.txt
+```
+
+If the files are identical, `cmp` produces no output and returns a success status.
+
+Another option:
+
+```
+diff -u original.txt copy.txt
+```
+
+`diff` shows the textual differences between files.
+
+For binary files, `cmp` is generally more appropriate.
+
+## **5.10 Production scenario: Backing up configuration**
+
+An administrator is about to change:
+
+```
+/etc/myapp/config.yaml
+```
+
+They first preserve a copy:
+
+```
+sudo cp -a /etc/myapp/config.yaml \
+    /etc/myapp/config.yaml.backup
+```
+
+Then they verify:
+
+```
+sudo stat /etc/myapp/config.yaml
+sudo stat /etc/myapp/config.yaml.backup
+```
+
+They compare contents:
+
+```
+sudo cmp /etc/myapp/config.yaml \
+    /etc/myapp/config.yaml.backup
+```
+
+If no differences are reported, the contents match.
+
+Important considerations:
+
+- The backup should be stored somewhere appropriate.
+- File ownership and permissions matter.
+- A backup on the same filesystem does not protect against disk failure.
+- A copy of an actively modified application file may not represent a consistent application backup.
+
+This is configuration backup, not a complete disaster-recovery strategy.
+
+# **Part 6 — Moving and renaming files:&#x20;**`mv`
+
+## **6.1 What is&#x20;**`mv`**?**
+
+`mv` means *move*.
+
+It can move a filesystem name to another directory or rename it.
+
+Examples:
+
+```
+mv old.txt new.txt
+```
+
+Renames a file.
+
+```
+mv report.txt backups/
+```
+
+Moves a file into another directory.
+
+The GNU Coreutils documentation describes `mv` as the command used to move or rename files.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+GNU+1
+
+
+
+## **6.2 Rename a file**
+
+Create:
+
+```
+touch draft.txt
+```
+
+Rename:
+
+```
+mv draft.txt final.txt
+```
+
+Verify:
+
+```
+ls -l
+```
+
+The original name should no longer appear; the new name should exist.
+
+On the same filesystem, a normal rename generally changes the directory entry rather than copying all file contents.
+
+## **6.3 Move a file to another directory**
+
+Prepare:
+
+```
+mkdir -p archive
+touch report.txt
+```
+
+Move:
+
+```
+mv report.txt archive/
+```
+
+The resulting location:
+
+```
+archive/report.txt
+```
+
+Verify:
+
+```
+ls -l archive/
+```
+
+## **6.4 Move and rename simultaneously**
+
+```
+mv archive/report.txt archive/final-report.txt
+```
+
+The file has both moved within the directory and been renamed.
+
+The new name is:
+
+```
+archive/final-report.txt
+```
+
+## **6.5 Move a directory**
+
+```
+mv application application-old
+```
+
+This renames the directory.
+
+Alternatively:
+
+```
+mv application archive/
+```
+
+This moves the entire directory tree under `archive`.
+
+## **6.6 Important options**
+
+| Option | Purpose                                        |
+| ------ | ---------------------------------------------- |
+| `-i`   | Ask before overwriting an existing destination |
+| `-n`   | Do not overwrite an existing destination       |
+| `-f`   | Do not prompt before replacement               |
+| `-v`   | Display the operation                          |
+
+Example:
+
+```
+mv -i old-config.yaml new-config.yaml
+```
+
+This asks before replacing an existing destination.
+
+For manual operations, `-i` can prevent accidental overwrites.
+
+However, command-line options should not be treated as a complete safety system. Always verify the source and destination.
+
+## **6.7 How does&#x20;**`mv`**&#x20;work internally?**
+
+This is an important systems concept.
+
+### **Same filesystem**
+
+Suppose the source and destination are on the same filesystem.
+
+```
+mv old.txt new.txt
+```
+
+The operation can generally be implemented using the filesystem's rename operation.
+
+The directory entry changes, while the underlying inode and file contents remain associated with the renamed file.
+
+This is why renaming a very large file on the same filesystem is usually fast.
+
+### **Different filesystems**
+
+Now suppose:
+
+```
+Source:      /home/student/file.txt
+Destination: /mnt/another-filesystem/file.txt
+```
+
+The source and destination belong to different filesystems.
+
+A filesystem-level rename generally cannot operate across filesystem boundaries.
+
+GNU `mv` handles this by falling back to copying the data to the destination and then removing the original, subject to successful operations and error handling.
+
+This may take significant time for large files.
+
+It may also involve different behavior for metadata, permissions and special files depending on the filesystems involved.
+
+### **Comparison**
+
+| Operation        | Same filesystem                         | Different filesystems                    |
+| ---------------- | --------------------------------------- | ---------------------------------------- |
+| Rename/move      | Normally directory-entry rename         | Usually copy followed by removal         |
+| Large file       | Usually fast                            | Can take considerable time               |
+| Underlying inode | Usually preserved                       | Destination gets a new filesystem object |
+| Atomic rename    | Available under normal rename semantics | Not provided across filesystems          |
+
+The atomicity distinction is especially important for deployments.
+
+A rename within one filesystem is generally atomic with respect to pathname visibility: observers see the old name or the new name, rather than a partially renamed directory entry.
+
+A cross-filesystem copy-and-remove sequence does not provide the same guarantee.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+GNU+1
+
+
+
+## **6.8 Production scenario: Deploying a new application version**
+
+A team uses:
+
+```
+/var/www/releases/
+├── v1/
+├── v2/
+└── v3/
+```
+
+They maintain a symbolic link:
+
+```
+/var/www/current -> /var/www/releases/v2
+```
+
+To switch to version 3, the deployment process can prepare a new link and replace the existing one.
+
+A carefully implemented deployment may use a temporary symbolic link and an atomic rename within the same filesystem.
+
+This reduces the chance of exposing a partially updated application path.
+
+We will study symbolic links next and revisit release-management strategies in Stage 04.
+
+# **Part 7 — Deleting files:&#x20;**`rm`
+
+High operational risk
+
+## **7.1 What is&#x20;**`rm`**?**
+
+`rm` means *remove*.
+
+It removes filesystem names.
+
+The command is powerful because it can remove files and directory trees, and ordinary use does not provide a recycle bin.
+
+Syntax:
+
+```
+rm [OPTIONS] FILE...
+```
+
+Example:
+
+```
+rm report.txt
+```
+
+This removes the directory entry named `report.txt`.
+
+The GNU Coreutils manual documents the behavior and options of `rm`.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+GNU
+
+
+
+## **7.2 Remove one file**
+
+Create:
+
+```
+touch temporary.txt
+```
+
+Verify:
+
+```
+ls -l temporary.txt
+```
+
+Remove:
+
+```
+rm temporary.txt
+```
+
+Verify:
+
+```
+ls -l temporary.txt
+```
+
+Expected behavior:
+
+```
+ls: cannot access 'temporary.txt': No such file or directory
+```
+
+The filename is no longer present.
+
+## **7.3 Remove several files**
+
+```
+touch one.txt two.txt three.txt
+```
+
+Remove:
+
+```
+rm one.txt two.txt three.txt
+```
+
+This removes the three directory entries.
+
+## **7.4 Remove using shell patterns**
+
+Example:
+
+```
+rm *.tmp
+```
+
+This asks Bash to expand `*.tmp` into matching filenames in the current directory.
+
+Then `rm` receives those names.
+
+Important:
+
+If no filenames match, Bash's usual behavior is to pass the literal pattern `*.tmp` to the command, unless shell options change the behavior. `rm` then reports that the path does not exist.
+
+### **Dangerous example**
+
+```
+rm *
+```
+
+This may remove every non-hidden entry matched by `*` in the current directory.
+
+Do not use it without inspecting exactly what the pattern matches.
+
+Safer inspection:
+
+```
+printf '%s\n' ./*
+```
+
+This shows the expansion of `./*` before acting on it.
+
+You can also inspect:
+
+```
+find . -maxdepth 1 -mindepth 1 -print
+```
+
+## **7.5 The&#x20;**`-i`**&#x20;option: Interactive removal**
+
+```
+rm -i temporary.txt
+```
+
+The command asks for confirmation.
+
+Example:
+
+```
+rm: remove regular empty file 'temporary.txt'?
+```
+
+This is useful when removing individual important files manually.
+
+However, interactive confirmation does not replace correct path verification.
+
+## **7.6 The&#x20;**`-f`**&#x20;option: Force removal**
+
+```
+rm -f temporary.txt
+```
+
+The `-f` option:
+
+- Ignores nonexistent files.
+- Avoids prompting for certain removals.
+- Attempts to suppress some errors.
+
+It is useful in controlled scripts where the absence of a temporary file is not considered an error.
+
+It is also dangerous when the path has been constructed incorrectly.
+
+**Never use&#x20;**`-f`**&#x20;merely to make an unexplained error disappear.**
+
+## **7.7 Remove directories**
+
+An ordinary `rm` command does not remove a non-empty directory.
+
+For an empty directory:
+
+```
+rmdir empty-directory
+```
+
+For non-empty directories, recursive removal is required:
+
+```
+rm -r old-project
+```
+
+The `-r` option means recursive.
+
+It descends into subdirectories and removes their contents.
+
+Example:
+
+```
+old-project/
+├── config/
+│   └── app.conf
+├── logs/
+│   └── application.log
+└── data/
+    └── records.txt
+```
+
+Running:
+
+```
+rm -r old-project
+```
+
+attempts to remove the entire directory tree.
+
+That includes all files and subdirectories inside it.
+
+## **7.8 Understand&#x20;**`rm -rf`
+
+The combination:
+
+```
+rm -rf directory/
+```
+
+means:
+
+- `-r`: Recursively remove the directory tree.
+- `-f`: Force removal without normal interactive prompting.
+
+This is one of the most dangerous routinely used Linux commands.
+
+It can delete large amounts of information quickly.
+
+**Production safety warning**
+
+Never casually execute:
+
+```
+sudo rm -rf /some/path
+```
+
+Before any recursive deletion:
+
+1. Identify the current directory.
+2. Print the exact target path.
+3. List the target's contents.
+4. Confirm the path is the intended one.
+5. Confirm no application depends on those files.
+6. Confirm backups or recovery procedures where necessary.
+
+### **Why can a small path mistake be catastrophic?**
+
+Consider:
+
+```
+rm -rf "$TARGET_DIR"/*
+```
+
+If `TARGET_DIR` is not what the administrator expects, the operation can affect the wrong directory.
+
+An empty variable or incorrectly constructed path can lead to unexpected behavior.
+
+In production scripts, validate paths explicitly before destructive operations.
+
+For example:
+
+```
+TARGET_DIR="/home/student/linux-learning/lab-04/temporary"
+
+case "$TARGET_DIR" in
+    /home/student/linux-learning/lab-04/temporary)
+        printf 'Approved cleanup target: %s\n' "$TARGET_DIR"
+        ;;
+    *)
+        echo "Refusing unexpected cleanup path" >&2
+        exit 1
+        ;;
+esac
+```
+
+This is an illustrative safety check, not a universal production deletion guard. Real scripts need robust validation, correct quoting and appropriate application-specific controls.
+
+## **7.9 What actually happens when Linux removes a file?**
+
+This is one of the most important filesystem concepts.
+
+When `rm` removes a file, Linux typically removes a name from a directory.
+
+The kernel's `unlink()` operation removes a directory entry.
+
+It does not necessarily erase the underlying file data immediately.
+
+The file's inode remains while references to it still exist.
+
+The file's storage becomes eligible for reclamation when its link count reaches zero and no process still has it open.
+
+The `unlink(2)` documentation explains this behavior.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.linuxman7.org\&sz=32)
+
+Linux manual page
+
+
+
+Conceptually:
+
+```
+Before removal:
+
+Directory
+   |
+   +---- report.txt
+             |
+             v
+           Inode
+             |
+             v
+         File data
+
+
+After rm:
+
+Directory
+   |
+   +---- [name removed]
+
+Inode still exists if:
+   - Another hard link exists, OR
+   - A process still has the file open.
+
+Otherwise:
+   |
+   v
+Filesystem can reclaim storage.
+```
+
+This explains an important production issue.
+
+A deleted log file may continue consuming disk space when a running process still has that file open.
+
+We will revisit this during Stage 02 when diagnosing file descriptors and storage usage.
+
+# **Part 8 — Removing directories:&#x20;**`rmdir`
+
+## **8.1 What is&#x20;**`rmdir`**?**
+
+`rmdir` removes empty directories.
+
+Syntax:
+
+```
+rmdir DIRECTORY
+```
+
+Example:
+
+```
+mkdir empty-folder
+rmdir empty-folder
+```
+
+The directory is created and then removed.
+
+## **8.2 Why does&#x20;**`rmdir`**&#x20;only remove empty directories?**
+
+This is a deliberate safety property.
+
+Suppose:
+
+```
+project/
+├── config.yaml
+└── logs/
+    └── application.log
+```
+
+Now execute:
+
+```
+rmdir project
+```
+
+Linux reports:
+
+```
+rmdir: failed to remove 'project': Directory not empty
+```
+
+The operation fails because deleting the directory would leave its contents without their parent directory entry.
+
+To remove the entire hierarchy, use an explicitly recursive removal operation such as:
+
+```
+rm -r project
+```
+
+This separation helps distinguish simple empty-directory removal from destructive recursive deletion.
+
+## **8.3 Remove nested empty directories with&#x20;**`-p`
+
+Example:
+
+```
+a/
+└── b/
+    └── c/
+```
+
+If all three directories are empty:
+
+```
+rmdir -p a/b/c
+```
+
+This attempts to remove `c`, then `b`, then `a`.
+
+It stops when it encounters a directory that cannot be removed.
+
+The `-p` option is useful for cleaning up empty directory chains.
+
+# **Part 9 — The&#x20;**`unlink`**&#x20;command and what deletion really means**
+
+## **9.1 What is&#x20;**`unlink`**?**
+
+`unlink` removes a single filesystem name.
+
+Example:
+
+```
+touch temporary.txt
+unlink temporary.txt
+```
+
+The filename is removed from its parent directory.
+
+Unlike `rm`, the basic `unlink` utility does not provide recursive directory removal.
+
+It is closely related to the Linux `unlink()` system call.
+
+## **9.2 Difference between&#x20;**`rm`**&#x20;and&#x20;**`unlink`
+
+| `rm`                                 | `unlink`                                              |
+| ------------------------------------ | ----------------------------------------------------- |
+| General-purpose removal utility      | Removes a single name                                 |
+| Supports multiple operands           | Normally one operand in its basic utility interface   |
+| Supports recursive removal           | Does not recursively remove directories               |
+| Offers options such as `-i` and `-f` | Simpler interface                                     |
+| Common administration command        | Useful for understanding underlying deletion behavior |
+
+Example:
+
+```
+rm file1.txt file2.txt
+```
+
+Removes multiple files.
+
+```
+unlink file1.txt
+```
+
+Removes one name.
+
+The underlying behavior is related to directory-entry removal, but the interfaces and supported operations differ.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.linuxman7.org\&sz=32)
+
+Linux manual page+1
+
+
+
+## **9.3 Important: Deleting a symbolic link versus its target**
+
+Suppose:
+
+```
+application.conf -> /etc/myapp/application.conf
+```
+
+If you execute:
+
+```
+rm application.conf
+```
+
+Linux removes the symbolic link itself.
+
+The target file normally remains.
+
+This behavior will become especially clear in the symbolic-link section.
+
+# **Part 10 — The&#x20;**`install`**&#x20;command: Deploying files with attributes**
+
+## **10.1 What is&#x20;**`install`**?**
+
+`install` is a GNU Coreutils utility used to copy files into specified locations while setting attributes such as permissions.
+
+It is commonly used in software installation and deployment scripts.
+
+It can also create destination directories.
+
+Unlike `cp`, it is specifically designed to combine copying with installation-oriented attribute settings.
+
+The GNU Coreutils manual documents `install` as a file-copying utility that can set permissions and related attributes.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+GNU+1
+
+
+
+## **10.2 Basic usage**
+
+Syntax:
+
+```
+install [OPTIONS] SOURCE DESTINATION
+```
+
+Example:
+
+```
+install application.sh /tmp/application.sh
+```
+
+This copies the file to the destination.
+
+## **10.3 Set file permissions during installation**
+
+Example:
+
+```
+install -m 755 application.sh /tmp/application.sh
+```
+
+Explanation:
+
+- `install` copies the source.
+- `-m` specifies the file mode.
+- `755` sets permissions to `rwxr-xr-x`.
+- `application.sh` is the source.
+- `/tmp/application.sh` is the destination.
+
+Verify:
+
+```
+stat /tmp/application.sh
+```
+
+We will study permissions and octal modes in Module 02.
+
+## **10.4 Create parent directories automatically**
+
+Consider a nested application directory that does not exist:
+
+```
+/tmp/deployment/bin/
+```
+
+You can execute:
+
+```
+install -D -m 755 application.sh /tmp/deployment/bin/application
+```
+
+The `-D` option creates the necessary destination parent directories before copying.
+
+This is useful in deployment automation.
+
+## **10.5 Install a file without setting its executable mode**
+
+Example:
+
+```
+install -m 640 application.conf /tmp/application.conf
+```
+
+This creates a destination copy with the requested permissions, subject to the filesystem and user's privileges.
+
+It is useful for deploying configuration files with controlled access.
+
+## **10.6 Install a directory structure**
+
+To create a directory with a particular mode:
+
+```
+install -d -m 750 /tmp/application-data
+```
+
+Breakdown:
+
+- `-d` tells `install` to create a directory.
+- `-m 750` specifies directory permissions.
+- `/tmp/application-data` is the destination.
+
+This is a convenient alternative to combining `mkdir` and `chmod` in some installation scripts.
+
+## **10.7 Production scenario**
+
+A package installation process needs to place an administrative script at:
+
+```
+/usr/local/bin/health-check
+```
+
+A deployment procedure could use:
+
+```
+sudo install -D -m 755 health-check \
+    /usr/local/bin/health-check
+```
+
+This:
+
+1. Creates the necessary destination directory if needed.
+2. Copies the executable.
+3. Assigns the requested mode.
+
+The result is an installed command that can be invoked by pathname, and potentially by its short name if `/usr/local/bin` is included in `PATH`.
+
+# **Part 11 — Identifying files:&#x20;**`file`
+
+## **11.1 What is the&#x20;**`file`**&#x20;command?**
+
+A filename extension is not reliable proof of the underlying file type.
+
+For example:
+
+```
+report.txt
+image.jpg
+application.zip
+database.sqlite
+```
+
+A file could be named `image.jpg` while actually containing text.
+
+Linux provides the `file` utility to identify file types.
+
+It examines information such as file metadata and contents, including recognized file signatures.
+
+Syntax:
+
+```
+file [OPTIONS] FILE
+```
+
+## **11.2 Identify a text file**
+
+Create:
+
+```
+echo "Linux learning" > report.txt
+```
+
+Execute:
+
+```
+file report.txt
+```
+
+Representative output:
+
+```
+report.txt: ASCII text
+```
+
+The exact identification may differ based on the file contents and utility version.
+
+## **11.3 Identify a shell script**
+
+Create:
+
+```
+cat > script.sh <<'EOF'
+#!/usr/bin/env bash
+echo "Hello from Linux"
+EOF
+```
+
+Run:
+
+```
+file script.sh
+```
+
+Representative output:
+
+```
+script.sh: Bourne-Again shell script, ASCII text executable
+```
+
+The file does not need executable permission merely for `file` to identify its contents as a shell script.
+
+## **11.4 Identify an empty file**
+
+```
+touch empty-file
+file empty-file
+```
+
+Representative result:
+
+```
+empty-file: empty
+```
+
+## **11.5 Identify binary files**
+
+For example, on a machine where PNG files are available:
+
+```
+file picture.png
+```
+
+The output may identify a PNG image and its dimensions.
+
+The utility uses file-type identification rules rather than trusting the filename extension.
+
+## **11.6 Why is&#x20;**`file`**&#x20;useful?**
+
+Imagine an administrator receives:
+
+```
+backup.tar
+```
+
+But the backup extraction fails.
+
+Rather than assuming it is a valid TAR archive, the administrator checks:
+
+```
+file backup.tar
+```
+
+The file might turn out to be:
+
+- Plain text.
+- HTML returned by a failed download.
+- Gzip-compressed data.
+- Another archive format.
+- An empty file.
+
+This makes `file` a useful first inspection tool.
+
+**Important:** `file` provides a classification based on available evidence. It does not prove that the file is valid, safe or free from corruption.
+
+# **Part 12 — Inspecting filesystem metadata:&#x20;**`stat`
+
+## **12.1 What is&#x20;**`stat`**?**
+
+`stat` displays information about a filesystem object.
+
+Syntax:
+
+```
+stat [OPTIONS] FILE
+```
+
+Example:
+
+```
+stat report.txt
+```
+
+It can display:
+
+- File type.
+- File size.
+- Number of allocated blocks.
+- Inode number.
+- Link count.
+- Ownership.
+- Permissions.
+- Access time.
+- Modification time.
+- Metadata change time.
+
+## **12.2 Understand the important fields**
+
+Representative output:
+
+```
+  File: report.txt
+  Size: 32         Blocks: 8       IO Block: 4096 regular file
+Device: 8,1        Inode: 123456   Links: 1
+Access: (0644/-rw-r--r--)  Uid: (1000/student) Gid: (1000/student)
+Access: 2026-11-15 14:00:00
+Modify: 2026-11-15 14:00:00
+Change: 2026-11-15 14:00:00
+ Birth: 2026-11-15 14:00:00
+```
+
+All values are illustrative.
+
+### **A. File size**
+
+```
+Size: 32
+```
+
+This reports the file's logical size in bytes.
+
+### **B. Blocks**
+
+```
+Blocks: 8
+```
+
+Reports the number of allocated blocks using filesystem-specific accounting conventions.
+
+The allocated storage may differ from logical file size.
+
+### **C. Inode**
+
+```
+Inode: 123456
+```
+
+Identifies the inode within its filesystem.
+
+We will use this field when studying hard links.
+
+### **D. Links**
+
+```
+Links: 1
+```
+
+For a regular file on a conventional filesystem, this usually reports the number of hard links to the inode.
+
+### **E. Owner and group**
+
+```
+Uid: (1000/student)
+Gid: (1000/student)
+```
+
+Identify the file owner and group.
+
+### **F. Time fields**
+
+Three important timestamps:
+
+| Timestamp                   | Meaning                               |
+| --------------------------- | ------------------------------------- |
+| Access time (`atime`)       | Time associated with the last access  |
+| Modification time (`mtime`) | Time file contents were last modified |
+| Change time (`ctime`)       | Time inode metadata last changed      |
+
+A file's `ctime` is not its creation time.
+
+This is one of the most common misunderstandings in Linux filesystem administration.
+
+A birth/creation time may be available on some filesystems and through some interfaces, but it is not universally available.
+
+## **12.3 Compare&#x20;**`stat`**&#x20;and&#x20;**`ls`
+
+`ls -l` gives a compact directory listing.
+
+`stat` provides more detailed metadata about an individual filesystem object.
+
+Example:
+
+```
+ls -l report.txt
+```
+
+Then:
+
+```
+stat report.txt
+```
+
+Both are useful, but they answer different levels of detail.
+
+## **12.4 Inspect symbolic-link metadata**
+
+By default, `stat` follows a symbolic link and reports on its target.
+
+Use:
+
+```
+stat -c '%F %n' link-name
+```
+
+To inspect the link itself, GNU `stat` supports:
+
+```
+stat -c '%F %n' -L link-name
+```
+
+Actually, `-L` follows the symbolic link, while `-c` selects the output format. To inspect the link itself, use the default behavior without `-L`:
+
+```
+stat -c '%F %n' link-name
+```
+
+This distinction is useful when troubleshooting a broken or dangling symbolic link.
+
+# **Part 13 — Searching filesystem objects:&#x20;**`find`
+
+## **13.1 What is&#x20;**`find`**?**
+
+`find` searches for filesystem objects under a specified starting directory.
+
+It can search based on:
+
+- Name.
+- Type.
+- Size.
+- Modification time.
+- Ownership.
+- Permissions.
+- Other filesystem attributes.
+
+Syntax:
+
+```
+find STARTING_PATH CONDITIONS ACTIONS
+```
+
+This is one of the most useful Linux administration commands.
+
+The GNU Findutils documentation describes `find` as a tool for searching directory trees and applying tests and actions to matching objects.
+
+Official manual: [GNU Findutils manual](https://www.gnu.org/software/findutils/manual/html_mono/find.html?utm_source=chatgpt.com).
+
+## **13.2 Find a file by exact name**
+
+Create:
+
+```
+mkdir -p project/config
+touch project/config/app.yaml
+```
+
+Search:
+
+```
+find project -name "app.yaml"
+```
+
+Expected:
+
+```
+project/config/app.yaml
+```
+
+Explanation:
+
+- `find` starts searching.
+- `project` specifies the starting directory.
+- `-name` matches the filename.
+- `"app.yaml"` is the exact pattern.
+
+## **13.3 Search without case sensitivity**
+
+```
+find project -iname "APP.YAML"
+```
+
+The `-iname` option matches names without case sensitivity.
+
+This can be useful when filenames have inconsistent capitalization.
+
+However, the actual filesystem lookup remains case-sensitive on typical Linux filesystems.
+
+`find -iname` only makes the search comparison case-insensitive.
+
+## **13.4 Search by object type**
+
+Use:
+
+```
+find project -type f
+```
+
+Find regular files.
+
+```
+find project -type d
+```
+
+Find directories.
+
+```
+find project -type l
+```
+
+Find symbolic links.
+
+These three object types are particularly important.
+
+## **13.5 Search for empty files**
+
+```
+find project -type f -empty
+```
+
+This finds empty regular files.
+
+This can be useful when investigating failed downloads or incomplete application outputs.
+
+## **13.6 Search by file size**
+
+Examples:
+
+```
+find project -type f -size +1M
+```
+
+Find regular files larger than approximately 1 MiB in the context of GNU `find` size units.
+
+```
+find project -type f -size -100k
+```
+
+Find files smaller than approximately 100 KiB.
+
+```
+find project -type f -size 0
+```
+
+Find empty files.
+
+The size units and rounding behavior should be understood when using exact thresholds in production.
+
+## **13.7 Search by modification time**
+
+Example:
+
+```
+find project -type f -mtime -1
+```
+
+This searches for files modified within the preceding day according to `find`'s time-rounding rules.
+
+Another:
+
+```
+find project -type f -mtime +7
+```
+
+Searches for files modified more than seven full 24-hour periods ago under the command's day-count semantics.
+
+For precise timestamp windows, GNU `find` also provides options such as `-newermt`.
+
+Example:
+
+```
+find project -type f -newermt "2026-11-01"
+```
+
+This finds files modified after the specified date.
+
+## **13.8 Search and execute another command**
+
+Suppose the administrator wants to inspect every `.log` file.
+
+```
+find project -type f -name "*.log" -exec file {} \;
+```
+
+Explanation:
+
+- `-exec` executes another command for each matching object.
+- `file` identifies the file type.
+- `{}` is replaced with the pathname found.
+- `\;` terminates the `-exec` action.
+
+This can also be used for `stat`, `du` and many other utilities.
+
+Be careful when designing destructive `-exec` actions.
+
+## **13.9 Safe handling of filenames containing spaces**
+
+This is an advanced but essential scripting detail.
+
+A filename might contain:
+
+```
+report final.txt
+```
+
+A command that splits the result of `find` using spaces could incorrectly treat it as multiple filenames.
+
+Use null-delimited output.
+
+Example:
+
+```
+find project -type f -print0
+```
+
+This separates names with a NUL character rather than a newline.
+
+To pass the results safely to another command:
+
+```
+find project -type f -print0 | xargs -0 file
+```
+
+Explanation:
+
+- `-print0` separates results using NUL delimiters.
+- `xargs -0` reads NUL-delimited filenames.
+- `file` identifies each pathname.
+
+This is a robust pattern for processing filenames that may contain spaces, tabs or newline characters.
+
+## **13.10 Production scenario: Find large files**
+
+An administrator receives:
+
+```
+Disk usage: 94%
+```
+
+Instead of deleting random files, they investigate.
+
+For a known application area:
+
+```
+sudo find /var/log/myapp \
+    -type f \
+    -size +100M \
+    -print
+```
+
+This lists files larger than approximately 100 MiB under the specified directory.
+
+The administrator then inspects each match.
+
+They do not immediately delete them.
+
+They first determine whether they represent:
+
+- Expected application logs.
+- Repeated error output.
+- Unrotated archives.
+- Unexpected application data.
+- Files that must be retained for auditing.
+
+The objective is to diagnose why the files exist, not just to free space.
+
+# **Part 14 — Viewing directory trees:&#x20;**`tree`
+
+## **14.1 What is&#x20;**`tree`**?**
+
+`tree` displays files and directories as a visual hierarchy.
+
+It is not included in every minimal Ubuntu installation, so the learner may need to install it.
+
+WSL READY
+
+Install:
+
+```
+sudo apt update
+sudo apt install tree
+```
+
+The first command refreshes package metadata. The second installs the `tree` utility.
+
+Run:
+
+```
+tree
+```
+
+Example:
+
+```
+.
+├── archive
+├── backups
+├── project
+│   ├── config
+│   │   └── app.yaml
+│   ├── data
+│   └── scripts
+│       └── deploy.sh
+└── report.txt
+```
+
+The output depends on the current directory contents.
+
+## **14.2 Important options**
+
+| Option        | Purpose                              |
+| ------------- | ------------------------------------ |
+| `-L 2`        | Limit output to two directory levels |
+| `-a`          | Include hidden entries               |
+| `-d`          | Display directories only             |
+| `-f`          | Display full pathname prefixes       |
+| `-h`          | Display human-readable file sizes    |
+| `-s`          | Display file sizes                   |
+| `--dirsfirst` | Show directories before files        |
+
+Examples:
+
+```
+tree -L 2
+```
+
+Displays a limited-depth tree.
+
+```
+tree -a
+```
+
+Includes hidden files.
+
+```
+tree -d
+```
+
+Displays directories only.
+
+```
+tree -sh
+```
+
+Shows a tree with sizes in human-readable form.
+
+## **14.3 When is&#x20;**`tree`**&#x20;useful?**
+
+It is especially useful when:
+
+- Reviewing project layouts.
+- Inspecting deployment directories.
+- Understanding application structures.
+- Comparing backups.
+- Preparing documentation.
+
+However, large directory trees can produce enormous output.
+
+Use `-L` when inspecting systems with many nested directories.
+
+# **Part 15 — Understanding inodes**
+
+Important operating-system concept
+
+This section is one of the most important engineering concepts in the entire filesystem module.
+
+## **15.1 What is an inode?**
+
+An inode is a filesystem data structure representing a filesystem object on filesystems such as ext4.
+
+It stores metadata about that object.
+
+Typical inode information includes:
+
+- File type.
+- Permission bits.
+- Owner UID.
+- Group GID.
+- File size.
+- Link count.
+- Timestamps.
+- Pointers or references to file data, according to the filesystem's implementation.
+
+An inode does not ordinarily store the filename.
+
+The filename is associated with the inode through a directory entry.
+
+This distinction is the foundation of hard links.
+
+## **15.2 How a filename relates to an inode**
+
+Imagine:
+
+```
+report.txt
+```
+
+A simplified relationship looks like this:
+
+**Directory entry**
+
+**Filename: report.txt**
+
+Directory maps this name to inode 12001
+
+**Inode 12001**
+
+Metadata · Owner · Permissions · Size · Timestamps · Data references
+
+**File data**
+
+Actual contents stored by the filesystem
+
+The filename is not the identity of the file's underlying inode.
+
+Different directory entries can refer to the same inode.
+
+This is exactly how hard links work.
+
+## **15.3 Find inode numbers using&#x20;**`ls -i`
+
+Create:
+
+```
+echo "Important Linux data" > report.txt
+```
+
+Execute:
+
+```
+ls -i report.txt
+```
+
+Representative output:
+
+```
+12001 report.txt
+```
+
+The first number is the inode number.
+
+Inspect using `stat`:
+
+```
+stat report.txt
+```
+
+You should find the same inode number in the output.
+
+A useful command is:
+
+```
+stat -c 'Name: %n | Inode: %i | Links: %h' report.txt
+```
+
+This prints selected metadata.
+
+Explanation:
+
+- `%n` = filename.
+- `%i` = inode number.
+- `%h` = number of hard links.
+
+These are GNU `stat` formatting directives.
+
+## **15.4 Inode numbers are not globally unique**
+
+An inode number is meaningful within its filesystem.
+
+Two different filesystems can both contain an inode numbered `12001`.
+
+To identify an inode more completely, also consider its filesystem or device identity.
+
+For administration, this distinction matters when examining mount points or filesystems containing multiple objects with coincidentally equal inode numbers.
+
+## **15.5 Why should an administrator understand inodes?**
+
+Consider these symptoms:
+
+- A file has multiple names.
+- A file was deleted but disk space was not released.
+- A filesystem has run out of inodes.
+- Two paths appear to refer to the same file.
+- A backup tool needs to distinguish hard links from independent copies.
+
+All these situations become easier to understand once the learner knows what an inode represents.
+
+# **Part 16 — Hard links**
+
+## **16.1 What is a hard link?**
+
+A hard link is another directory entry referring to the same inode as an existing file.
+
+The hard link does not normally duplicate the file's data.
+
+Instead, two different names identify the same underlying filesystem object.
+
+For example:
+
+```
+report.txt
+report-backup.txt
+```
+
+Both could refer to inode `12001`.
+
+**Hard-link architecture**
+
+**report.txt**
+
+Directory entry A
+
+**report-backup.txt**
+
+Directory entry B
+
+**Same inode**
+
+# **12001**
+
+One filesystem object, one set of file data
+
+The two names are different, but they refer to the same underlying inode.
+
+## **16.2 Create a hard link**
+
+First create a file:
+
+```
+echo "Shared file data" > original.txt
+```
+
+Create a hard link:
+
+```
+ln original.txt hardlink.txt
+```
+
+Notice:
+
+There is no `-s` option.
+
+By default, `ln` creates a hard link for an ordinary file.
+
+Inspect:
+
+```
+ls -li original.txt hardlink.txt
+```
+
+Representative output:
+
+```
+12001 -rw-r--r-- 2 student student 17 original.txt
+12001 -rw-r--r-- 2 student student 17 hardlink.txt
+```
+
+The inode number is identical.
+
+The link count is now:
+
+```
+2
+```
+
+Both entries refer to the same inode.
+
+## **16.3 Modify one name and inspect the other**
+
+Execute:
+
+```
+echo "New information" >> original.txt
+```
+
+Now read the other name:
+
+```
+cat hardlink.txt
+```
+
+Output:
+
+```
+Shared file data
+New information
+```
+
+Why?
+
+Both names refer to the same inode and therefore to the same underlying file contents.
+
+The second name is not a separate backup.
+
+This is a common misconception.
+
+**A hard link is another name for the same file, not an independent copy.**
+
+## **16.4 Remove one hard link**
+
+Execute:
+
+```
+rm original.txt
+```
+
+Now:
+
+```
+ls -l hardlink.txt
+```
+
+The file still exists.
+
+Read it:
+
+```
+cat hardlink.txt
+```
+
+The contents remain.
+
+Why?
+
+The inode still has another directory entry referring to it.
+
+The link count becomes:
+
+```
+1
+```
+
+Inspect:
+
+```
+stat hardlink.txt
+```
+
+The file is still accessible.
+
+## **16.5 When is the actual data removed?**
+
+The filesystem can reclaim the inode and its data blocks when:
+
+1. The final hard-link reference is removed.
+2. No process still has an open file descriptor referring to the object.
+
+Until both conditions are satisfied, the file object may continue to exist.
+
+This explains why removing one filename does not necessarily remove the underlying file.
+
+The Linux `unlink(2)` documentation describes this relationship between link count, file removal and open file descriptors.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.linuxman7.org\&sz=32)
+
+Linux manual page+1
+
+
+
+## **16.6 Limitations of hard links**
+
+Linux hard links have important restrictions.
+
+**1. They cannot normally cross filesystem boundaries.**
+
+Suppose:
+
+```
+/home
+```
+
+and:
+
+```
+/mnt/data
+```
+
+are separate filesystems.
+
+A hard link cannot connect a regular file across these two filesystems.
+
+**2. Creating hard links to directories is normally prohibited for unprivileged users and ordinary administration.**
+
+Allowing arbitrary directory hard links could create cycles in the filesystem hierarchy.
+
+**3. A hard link does not identify which filename is the original.**
+
+Both names refer to the same inode.
+
+The concept of original versus copy does not apply.
+
+## **16.7 When are hard links useful?**
+
+They can be useful for:
+
+- Avoiding duplicate data within one filesystem.
+- Filesystem-level deduplication-like arrangements.
+- Certain backup implementations.
+- Versioned backup directories using shared unchanged files.
+
+However, hard links must be understood carefully.
+
+Modifying one hard-linked file changes what is seen through every other name.
+
+Never use a hard link when you need an independent backup copy.
+
+# **Part 17 — Symbolic links**
+
+Important production concept
+
+## **17.1 What is a symbolic link?**
+
+A symbolic link, also called a symlink or soft link, is a filesystem object containing a pathname that refers to another object.
+
+For example:
+
+```
+current -> releases/v2
+```
+
+The symbolic link does not directly share the target's inode like a hard link.
+
+Instead, pathname resolution follows the link to its target.
+
+The Linux manual describes symbolic links as objects containing pathnames that are interpreted during pathname resolution.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://man7.org\&sz=32)
+
+Linux manual page+1
+
+
+
+## **17.2 Create a symbolic link**
+
+Create a file:
+
+```
+echo "Application configuration" > config.txt
+```
+
+Create a symbolic link:
+
+```
+ln -s config.txt config-link.txt
+```
+
+Syntax:
+
+```
+ln -s TARGET LINK_NAME
+```
+
+Breakdown:
+
+- `ln` creates a link.
+- `-s` requests a symbolic link.
+- `config.txt` is the target pathname.
+- `config-link.txt` is the new symbolic-link name.
+
+Inspect:
+
+```
+ls -l config-link.txt
+```
+
+Representative output:
+
+```
+lrwxrwxrwx 1 student student 10 ... config-link.txt -> config.txt
+```
+
+Important observations:
+
+- The first character `l` indicates a symbolic link.
+- `->` indicates the link target.
+- The link itself is a separate filesystem object.
+
+## **17.3 Read through the symbolic link**
+
+Execute:
+
+```
+cat config-link.txt
+```
+
+Output:
+
+```
+Application configuration
+```
+
+Linux follows the symbolic link during pathname resolution and accesses the target.
+
+The application does not need to know that it used a symlink.
+
+## **17.4 Change the target's contents**
+
+Execute:
+
+```
+echo "Updated configuration" > config.txt
+```
+
+Now:
+
+```
+cat config-link.txt
+```
+
+Output:
+
+```
+Updated configuration
+```
+
+Why?
+
+The symbolic link still points to `config.txt`.
+
+When the link is followed, Linux accesses the updated target.
+
+## **17.5 The difference between hard and symbolic links**
+
+This is one of the most important comparison tables in the filesystem module.
+
+| Feature                         | Hard link                                                   | Symbolic link               |
+| ------------------------------- | ----------------------------------------------------------- | --------------------------- |
+| Refers to                       | Same inode                                                  | Target pathname             |
+| Separate inode                  | No, for the linked regular-file names                       | Yes                         |
+| Cross-filesystem support        | No                                                          | Yes                         |
+| Can point to directory          | Generally restricted                                        | Yes                         |
+| Can point to nonexistent target | No, ordinary hard-link creation requires an existing target | Yes                         |
+| If target filename is removed   | Other hard link still works                                 | Link may become dangling    |
+| Target contents modified        | All names see the change                                    | Link sees changes to target |
+| Independent backup              | No                                                          | No                          |
+| Created using                   | `ln`                                                        | `ln -s`                     |
+
+## **17.6 Visual comparison**
+
+**Hard link**
+
+**file-A.txt**
+
+**file-B.txt**
+
+**Same inode and same data**
+
+**Symbolic link**
+
+**file-link.txt**
+
+Contains target pathname
+
+**Target file inode**
+
+Separate from the symbolic link's inode
+
+## **17.7 Create a symbolic link to a directory**
+
+Suppose:
+
+```
+application/
+└── releases/
+    ├── v1/
+    └── v2/
+```
+
+Create a link pointing to version 2:
+
+```
+ln -s releases/v2 current
+```
+
+Now the directory structure is:
+
+```
+application/
+├── releases/
+│   ├── v1/
+│   └── v2/
+└── current -> releases/v2
+```
+
+Access the directory through the link:
+
+```
+ls current
+```
+
+It displays the contents of:
+
+```
+application/releases/v2
+```
+
+This is common in application deployment architectures.
+
+## **17.8 Relative versus absolute symbolic-link targets**
+
+Consider:
+
+```
+ln -s /home/student/application/releases/v2 current
+```
+
+This creates a link containing an absolute target pathname.
+
+Alternatively:
+
+```
+ln -s releases/v2 current
+```
+
+This creates a link with a relative target.
+
+A relative symlink target is interpreted relative to the directory containing the symlink, not the shell's current directory at the time the link is later accessed.
+
+For example:
+
+```
+/home/student/application/
+├── releases/
+│   └── v2/
+└── current -> releases/v2
+```
+
+The `releases/v2` target is resolved relative to:
+
+```
+/home/student/application/
+```
+
+This is why relative symlinks can make application directory trees more portable.
+
+## **17.9 What is a dangling symbolic link?**
+
+A dangling symbolic link points to a pathname that does not currently resolve to an existing target.
+
+Example:
+
+```
+ln -s missing-file.txt broken-link.txt
+```
+
+Inspect:
+
+```
+ls -l broken-link.txt
+```
+
+The link exists, but its target does not.
+
+Try:
+
+```
+cat broken-link.txt
+```
+
+A typical error is:
+
+```
+No such file or directory
+```
+
+The error occurs because pathname resolution follows the link and cannot find its target.
+
+Check:
+
+```
+readlink broken-link.txt
+```
+
+This displays the target pathname stored in the link.
+
+Use:
+
+```
+test -L broken-link.txt && echo "Symbolic link exists"
+```
+
+And:
+
+```
+test -e broken-link.txt && echo "Target exists"
+```
+
+The first checks whether the pathname itself is a symbolic link.
+
+The second checks whether the link resolves to an existing target.
+
+This distinction is useful when troubleshooting deployment links.
+
+## **17.10 Removing a symbolic link safely**
+
+Suppose:
+
+```
+current -> releases/v2
+```
+
+Execute:
+
+```
+rm current
+```
+
+The symbolic link is removed.
+
+The target directory:
+
+```
+releases/v2
+```
+
+remains.
+
+This is normally the desired behavior.
+
+Do not use recursive directory deletion on a symlink without understanding exactly how the command handles the target.
+
+For a link to a directory, `rm link-name` removes the link itself, not the target directory tree.
+
+## **17.11 Why are symbolic links used in production?**
+
+Imagine an application deployment:
+
+```
+/var/www/myapp/
+├── releases/
+│   ├── v1/
+│   ├── v2/
+│   └── v3/
+└── current -> releases/v3
+```
+
+The web server uses:
+
+```
+/var/www/myapp/current
+```
+
+Instead of directly referencing one release directory.
+
+When deploying another release, the administrator can update the `current` link.
+
+This provides a stable application pathname while allowing release versions to change.
+
+Advantages:
+
+- Cleaner release management.
+- Easier rollback.
+- Separation of release directories.
+- Stable deployment paths.
+
+However, the application still needs a proper deployment strategy. Updating a link alone does not guarantee database compatibility, session continuity or application health.
+
+# **Part 18 — Advanced filesystem behavior**
+
+Now connect the commands to actual filesystem behavior.
+
+## **18.1 Why does copying create a different inode but renaming often preserves it?**
+
+Consider:
+
+```
+echo "Linux" > original.txt
+```
+
+Inspect:
+
+```
+ls -i original.txt
+```
+
+Now copy it:
+
+```
+cp original.txt copy.txt
+```
+
+Inspect both:
+
+```
+ls -i original.txt copy.txt
+```
+
+For ordinary files on a conventional filesystem, the two inode numbers should differ.
+
+Why?
+
+`cp` creates another filesystem object with separate file contents.
+
+Now rename the original:
+
+```
+mv original.txt renamed.txt
+```
+
+Inspect:
+
+```
+ls -i renamed.txt
+```
+
+On the same filesystem, the inode generally remains the same because the name was changed rather than the underlying file being copied.
+
+### **Comparison**
+
+| Operation                           | Creates a separate file object? | Typical inode result |
+| ----------------------------------- | ------------------------------- | -------------------- |
+| `touch new.txt`                     | Yes, if new                     | New inode            |
+| `cp a.txt b.txt`                    | Yes                             | Different inode      |
+| `mv a.txt b.txt` on same filesystem | Normally no                     | Same inode           |
+| `ln a.txt b.txt`                    | No                              | Same inode           |
+| `ln -s a.txt b.txt`                 | Yes, creates a symlink object   | Different inode      |
+
+This table applies to ordinary files and conventional filesystem operations. Filesystem-specific details and special cases can affect behavior.
+
+## **18.2 What happens when a process deletes a file that is still open?**
+
+This is a particularly important server-administration problem.
+
+Imagine:
+
+1. A web application opens a log file.
+2. The application continues writing to it.
+3. An administrator deletes its filename.
+4. The application still has the file open.
+
+The pathname has been removed, but the process still references the underlying file through an open file descriptor.
+
+Therefore, the file may continue consuming disk space.
+
+Conceptually:
+
+```
+Before deletion:
+
+/var/log/myapp/application.log
+             |
+             v
+          Inode
+             |
+             v
+          File data
+
+
+Application process
+       |
+       v
+Open file descriptor
+       |
+       +-----------> Same inode
+
+
+Administrator removes filename:
+
+/var/log/myapp/application.log
+             |
+             X  Directory entry removed
+
+
+Application still holds descriptor
+       |
+       v
+Inode and data remain allocated
+```
+
+The kernel reclaims the file object when its final link is removed and the last open reference is closed.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.linuxman7.org\&sz=32)
+
+Linux manual page
+
+
+
+### **How does an administrator investigate this?**
+
+On a conventional Linux server, install or use `lsof`, which lists open files.
+
+Example:
+
+```
+sudo lsof +L1
+```
+
+This identifies open files with a link count below one, including files that have been deleted but remain open.
+
+Representative output might identify:
+
+```
+COMMAND    PID   USER   FD   TYPE  NAME
+myapp     1234  app    5w   REG   /var/log/myapp/application.log (deleted)
+```
+
+The exact output and availability of `lsof` depend on the system.
+
+### **How do you correct the problem?**
+
+The administrator should identify the process and use an application-appropriate method to reopen its log file.
+
+Possible methods include:
+
+- Gracefully reloading the application.
+- Using its documented log-reopen signal.
+- Restarting the service during an approved maintenance window.
+- Applying a correct log rotation policy.
+
+Do not randomly kill the process.
+
+**Production lesson:** A deleted pathname does not always mean the associated storage has been released.
+
+## **18.3 File descriptors and inode references**
+
+A file descriptor is a small integer used by a process to refer to an open file or another kernel-managed I/O object.
+
+For example:
+
+```
+0 = Standard input
+1 = Standard output
+2 = Standard error
+```
+
+If a process opens a file, the kernel creates or returns a file descriptor associated with an open-file description and underlying filesystem object.
+
+The process can continue reading or writing through that descriptor even if the pathname is later removed.
+
+This is a direct relationship between filesystem operations and process management.
+
+We will return to this in Stage 02 when studying inode exhaustion and file descriptor limits.
+
+## **18.4 What is directory link count?**
+
+Inspect:
+
+```
+stat project
+```
+
+For ordinary Unix-style filesystem directories, the link count traditionally includes:
+
+- The directory entry that names the directory.
+- The special `.` entry.
+- References from child directories through their `..` entries.
+
+This is why a directory's link count often increases when immediate child directories are created.
+
+Do not treat directory link counts as a reliable recursive count of all files and folders.
+
+Modern filesystems and filesystem abstractions can implement these details differently.
+
+## **18.5 What happens when recursive copy encounters symbolic links?**
+
+This is important for backup and deployment work.
+
+Consider:
+
+```
+project/
+├── config.txt
+└── current -> config.txt
+```
+
+You want to copy the entire project.
+
+GNU `cp` provides different behaviors for symbolic links depending on its options and the context in which the link is encountered.
+
+Important options include:
+
+| Option | General behavior                                                |
+| ------ | --------------------------------------------------------------- |
+| `-P`   | Never follow symbolic links in source operands                  |
+| `-L`   | Follow symbolic links in source operands                        |
+| `-H`   | Follow symbolic links specified as command-line source operands |
+| `-a`   | Archive copy, preserving symbolic-link structure                |
+
+For preserving a deployment directory tree and its links, GNU `cp -a` is a common choice.
+
+Always verify the copied structure:
+
+```
+find destination -type l -print
+```
+
+Then:
+
+```
+find destination -maxdepth 3 -print
+```
+
+## **18.6 Why can a symlink break after moving a directory?**
+
+Suppose:
+
+```
+application/
+├── releases/
+│   └── v2/
+└── current -> releases/v2
+```
+
+The symlink target is relative.
+
+Now move only the symlink somewhere else:
+
+```
+mv application/current /tmp/current
+```
+
+The target string still says:
+
+```
+releases/v2
+```
+
+But Linux now interprets that relative target from `/tmp`, not from the original application directory.
+
+The link may become dangling.
+
+This is a common consequence of moving links independently from their surrounding directory structure.
+
+**Engineering lesson:** Relative symbolic links are meaningful in relation to the directory containing the link.
+
+## **18.7 Hard links and symbolic links are not backups**
+
+This misconception must be eliminated.
+
+Imagine the learner has:
+
+```
+database.db
+database-hardlink.db
+database-symlink.db
+```
+
+All three names might lead to data associated with the same original database file.
+
+None is an independent backup.
+
+If the underlying data is modified, the references can expose the modified contents.
+
+An actual backup requires an independent copy or a backup mechanism designed to preserve recoverable data.
+
+## **18.8 A note about&#x20;**`shred`**&#x20;and secure deletion**
+
+You may encounter:
+
+```
+shred file.txt
+```
+
+This attempts to overwrite a file before removing its name.
+
+Do not teach it as a guaranteed secure-erasure solution.
+
+Modern storage can involve:
+
+- SSD wear leveling.
+- Copy-on-write filesystems.
+- Snapshots.
+- Journaling.
+- Virtual disks.
+- Storage arrays.
+- Cloud block volumes.
+
+These can make overwrite-based deletion unreliable as a guarantee that all physical copies of information have disappeared.
+
+For sensitive data, use an appropriate storage encryption and key-destruction strategy, along with device-specific sanitization procedures.
+
+# **Part 19 — Safe file-management practices for administrators**
+
+These practices should become habits from the very beginning.
+
+## **19.1 Inspect before modifying**
+
+Before copying, moving or deleting:
+
+```
+pwd
+```
+
+Then:
+
+```
+ls -la
+```
+
+When necessary:
+
+```
+stat FILE
+```
+
+Establish exactly what the command will affect.
+
+## **19.2 Quote variable-based paths**
+
+Prefer:
+
+```
+cp "$SOURCE_FILE" "$DESTINATION_FILE"
+```
+
+Instead of:
+
+```
+cp $SOURCE_FILE $DESTINATION_FILE
+```
+
+Quoted variables protect against spaces and unintended word splitting.
+
+## **19.3 Use&#x20;**`--`**&#x20;before filenames that might begin with a dash**
+
+Linux filenames can begin with `-`.
+
+Example:
+
+```
+touch -- -report.txt
+```
+
+To remove it safely:
+
+```
+rm -- -report.txt
+```
+
+The `--` marks the end of command options.
+
+Without it, some commands could interpret the filename as an option.
+
+## **19.4 Use interactive options when manually replacing files**
+
+For example:
+
+```
+cp -i source.txt destination.txt
+```
+
+And:
+
+```
+mv -i source.txt destination.txt
+```
+
+These prompt before overwriting.
+
+## **19.5 Use recursive operations only when necessary**
+
+Prefer:
+
+```
+rmdir empty-folder
+```
+
+when the directory is expected to be empty.
+
+Use recursive removal only when the full directory tree is intentionally being removed.
+
+## **19.6 Avoid unnecessary&#x20;**`sudo`
+
+Do not run every file operation as root.
+
+For example:
+
+```
+sudo rm -r ~/projects
+```
+
+is usually unnecessary when the learner owns the project.
+
+Elevated privileges increase the damage that a mistaken path can cause.
+
+We will study this principle deeply in Module 02.
+
+## **19.7 Verify after important operations**
+
+After copying:
+
+```
+cmp source.txt destination.txt
+```
+
+After moving:
+
+```
+ls -l destination/
+```
+
+After linking:
+
+```
+ls -l link-name
+readlink link-name
+```
+
+After installing:
+
+```
+stat installed-file
+```
+
+After deletion:
+
+```
+test ! -e deleted-file && echo "Removal verified"
+```
+
+A completed command is not the same as verified success.
+
+# **Part 20 — Real-world production scenarios**
+
+The goal is to connect file operations to actual Linux server responsibilities.
+
+## **Scenario 1: Deploying a new application release**
+
+A company maintains a web application.
+
+Its filesystem layout:
+
+```
+/var/www/myapp/
+├── releases/
+│   ├── v1/
+│   ├── v2/
+│   └── v3/
+│
+└── current -> releases/v2
+```
+
+The current production version is v2.
+
+A new release, v3, has passed testing.
+
+The deployment process is:
+
+**Step 1 — Create a release directory**
+
+```
+sudo mkdir -p /var/www/myapp/releases/v3
+```
+
+**Step 2 — Copy the new application files**
+
+```
+sudo cp -a /tmp/myapp-build/. \
+    /var/www/myapp/releases/v3/
+```
+
+Notice the `/.` source notation.
+
+It copies the contents of `myapp-build` into the destination, including hidden entries, rather than creating an additional nested `myapp-build` directory.
+
+**Step 3 — Verify the release**
+
+```
+sudo find /var/www/myapp/releases/v3 -maxdepth 2 -print
+```
+
+Check important files and permissions before activation.
+
+**Step 4 — Prepare a new symbolic link**
+
+From the application directory:
+
+```
+cd /var/www/myapp
+sudo ln -s releases/v3 current.new
+```
+
+**Step 5 — Switch the release**
+
+If `current` is an existing symbolic link and both links are on the same filesystem, an administrator can use a carefully controlled rename operation to replace it:
+
+```
+sudo mv -Tf current.new current
+```
+
+For GNU `mv`:
+
+- `-T` treats the destination as a normal file rather than a target directory.
+- `-f` permits replacement without an interactive overwrite prompt.
+
+The intended deployment must be reviewed before using this command because incorrect source or destination paths can cause unintended changes.
+
+**Step 6 — Verify**
+
+```
+readlink current
+```
+
+Expected:
+
+```
+releases/v3
+```
+
+Inspect the application through the new link:
+
+```
+ls -la current/
+```
+
+A full production deployment must also verify service health, application compatibility, database migrations and rollback readiness.
+
+**Why this design is valuable:** The application's active pathname remains stable, while the release directory can change.
+
+## **Scenario 2: A configuration file was accidentally overwritten**
+
+An administrator executes:
+
+```
+cp new-config.yaml /etc/myapp/config.yaml
+```
+
+But the original configuration contained production settings.
+
+Now the application behaves incorrectly.
+
+### **What went wrong?**
+
+The ordinary `cp` command replaced the destination file's contents.
+
+The administrator should have preserved the existing configuration first.
+
+### **A safer procedure**
+
+Before changing the configuration:
+
+```
+sudo cp -a /etc/myapp/config.yaml \
+    /etc/myapp/config.yaml.backup
+```
+
+Then install or copy the new configuration.
+
+For a reviewed replacement:
+
+```
+sudo install -m 640 new-config.yaml \
+    /etc/myapp/config.yaml.new
+```
+
+Validate the new file using the application's configuration validation command, when available.
+
+Only after validation should the administrator replace the active configuration.
+
+### **Recovery**
+
+```
+sudo cp -a /etc/myapp/config.yaml.backup \
+    /etc/myapp/config.yaml
+```
+
+Then reload or restart the application using its supported procedure.
+
+**Engineering lesson:** Configuration replacement should include backup, validation, controlled activation and verification.
+
+## **Scenario 3: Disk space remains full after deleting logs**
+
+The administrator runs:
+
+```
+sudo rm /var/log/myapp/application.log
+```
+
+But the disk still shows nearly the same usage.
+
+### **What happened?**
+
+The application may still have the deleted log file open.
+
+The directory entry has been removed, but the running process retains an open file descriptor.
+
+### **Investigation**
+
+```
+sudo lsof +L1
+```
+
+Inspect any deleted file still held open.
+
+Identify:
+
+- The process.
+- Its PID.
+- The deleted file.
+- Whether the application supports reopening its log.
+
+### **Corrective action**
+
+Use the service's documented log-reopen or restart procedure.
+
+Then recheck:
+
+```
+df -hT
+```
+
+**Engineering lesson:** Removing a filename and releasing storage are related but not always immediate or identical events.
+
+## **Scenario 4: Symbolic link breaks after a deployment**
+
+The application previously used:
+
+```
+/var/www/myapp/current -> releases/v2
+```
+
+An administrator moves the `current` link into another directory without changing its relative target.
+
+Now the application cannot find its files.
+
+### **Diagnosis**
+
+```
+ls -l /var/www/myapp/current
+```
+
+Then:
+
+```
+readlink /var/www/myapp/current
+```
+
+And:
+
+```
+test -e /var/www/myapp/current \
+    && echo "Target exists" \
+    || echo "Target is missing"
+```
+
+The administrator discovers that the relative target is now resolved from a different directory.
+
+### **Correction**
+
+Recreate the link from the intended parent directory with the correct relative or absolute target.
+
+**Engineering lesson:** Symbolic-link targets are pathnames. Their context matters.
+
+## **Scenario 5: Too many files are causing filesystem problems**
+
+A production application generates millions of small temporary files.
+
+The server reports that file creation is failing, even though the storage capacity does not appear completely used.
+
+One possible problem is inode exhaustion.
+
+### **Investigation**
+
+```
+df -hT
+```
+
+Then:
+
+```
+df -i
+```
+
+`df -i` displays inode usage.
+
+Important columns include:
+
+- Inodes: total inode capacity.
+- IUsed: number of inodes in use.
+- IFree: number of free inodes.
+- IUse%: percentage of inodes used.
+
+### **Why does this matter?**
+
+A filesystem has limits on how many filesystem objects can be represented by its available inodes or equivalent metadata resources.
+
+Millions of tiny files can exhaust inode capacity without necessarily consuming all available storage bytes.
+
+### **Locate areas containing large numbers of files**
+
+For a known application directory:
+
+```
+find /var/lib/myapp -xdev -type f | wc -l
+```
+
+Explanation:
+
+- `find` searches the directory tree.
+- `-xdev` stays on the same filesystem.
+- `-type f` selects regular files.
+- `wc -l` counts output lines.
+
+This is a simplified count; filenames containing newlines can make line counting inaccurate. For robust counting, use a null-delimited approach.
+
+An administrator must identify why the files accumulate, determine their retention requirements and apply appropriate cleanup or application changes.
+
+**Engineering lesson:** Disk capacity and inode capacity are different resources.
+
+# **Part 21 — Troubleshooting reference**
+
+| Symptom                              | Possible cause                                   | Useful investigation                         |
+| ------------------------------------ | ------------------------------------------------ | -------------------------------------------- |
+| `File exists`                        | Destination already exists                       | `ls -l`, `stat`                              |
+| `Directory not empty`                | `rmdir` target contains entries                  | `find DIRECTORY -maxdepth 1`                 |
+| `No such file or directory`          | Wrong source/destination or dangling symlink     | `realpath`, `readlink`, `find`               |
+| `Permission denied`                  | Insufficient directory or file permissions       | `ls -ld`, `stat`                             |
+| Copy misses hidden files             | Shell glob did not match dotfiles                | `ls -la`, use `cp -a`                        |
+| Copying a directory fails            | Recursive option missing                         | `cp -r` or `cp -a`                           |
+| Destination unexpectedly overwritten | Existing destination replaced                    | Use `cp -i` or reviewed replacement workflow |
+| Relative link is broken              | Target is resolved from link's parent directory  | `readlink`, `test -e`                        |
+| Hard link creation fails             | Cross-filesystem operation or unsupported target | `df -T` and `stat`                           |
+| Deleted file still consumes space    | Process has it open                              | `lsof +L1`                                   |
+| File type is unexpected              | Extension does not match actual content          | `file`                                       |
+| Too many files cannot be created     | Inode exhaustion                                 | `df -i`                                      |
+| `rm` option error                    | Filename begins with `-`                         | Use `--`                                     |
+| Script cannot find configuration     | Incorrect working-directory assumption           | `pwd`, resolve script directory              |
+
+## **21.1 A safe investigation sequence**
+
+When a file operation fails, use this procedure:
+
+```
+Operation fails
+      |
+      v
+Check exact source and destination
+      |
+      v
+Inspect current working directory
+      |
+      v
+Check whether target exists
+      |
+      v
+Identify filesystem object type
+      |
+      v
+Inspect permissions and ownership
+      |
+      v
+Check symlinks and mount boundaries
+      |
+      v
+Perform corrective action
+      |
+      v
+Verify metadata and contents
+```
+
+Commands that support this process include:
+
+```
+pwd
+ls -la
+stat
+file
+find
+readlink
+findmnt
+df -hT
+df -i
+```
+
+The aim is to identify the actual cause, not simply retry the command with `sudo` or `-f`.
+
+# **Part 22 — Practical Lab: Linux file operations and filesystem links**
+
+**LAB 04 — File Operations**
+
+WSL READY
+
+## **Build and manage a Linux application deployment**
+
+**Objective:** Practice creating, inspecting, copying, renaming, moving, deleting and linking filesystem objects.
+
+Difficulty: Beginner → Intermediate · Estimated hands-on time: 45–60 minutes
+
+**Environment:** Ubuntu on WSL 2.
+
+**Safety:** All operations take place under the learner's home directory. No real operating-system files are modified.
+
+## **22.1 Starting state**
+
+Create the lab:
+
+```
+mkdir -p ~/linux-learning/lab-04-operations
+cd ~/linux-learning/lab-04-operations
+```
+
+Set a variable for the lab path:
+
+```
+LAB="$HOME/linux-learning/lab-04-operations"
+```
+
+Verify:
+
+```
+pwd
+```
+
+Expected:
+
+```
+/home/student/linux-learning/lab-04-operations
+```
+
+The username will vary.
+
+## **22.2 Task 1 — Create the application structure**
+
+Execute:
+
+```
+mkdir -p "$LAB/application"/{config,src,logs,data,archive,scripts}
+```
+
+The structure becomes:
+
+```
+application/
+├── archive/
+├── config/
+├── data/
+├── logs/
+├── scripts/
+└── src/
+```
+
+Verify:
+
+```
+find "$LAB/application" -type d
+```
+
+## **22.3 Task 2 — Create application files**
+
+Configuration:
+
+```
+cat > "$LAB/application/config/app.conf" <<'EOF'
+APP_NAME=inventory-api
+APP_ENV=development
+APP_PORT=8080
+EOF
+```
+
+Application source placeholder:
+
+```
+cat > "$LAB/application/src/server.py" <<'EOF'
+print("Inventory API demonstration")
+print("Application started")
+EOF
+```
+
+Application log:
+
+```
+cat > "$LAB/application/logs/application.log" <<'EOF'
+2026-11-15 INFO Application initialized
+2026-11-15 INFO Configuration loaded
+2026-11-15 INFO Server started
+EOF
+```
+
+Application data:
+
+```
+cat > "$LAB/application/data/records.txt" <<'EOF'
+1001,Keyboard,10
+1002,Mouse,15
+1003,Monitor,5
+EOF
+```
+
+## **22.4 Task 3 — Inspect the files**
+
+Execute:
+
+```
+ls -la "$LAB/application/config"
+```
+
+Then:
+
+```
+file "$LAB/application/config/app.conf"
+```
+
+Inspect metadata:
+
+```
+stat "$LAB/application/config/app.conf"
+```
+
+Inspect the application tree:
+
+```
+find "$LAB/application" -print
+```
+
+Optional, after installing `tree`:
+
+```
+tree "$LAB/application"
+```
+
+Explain the difference between the three inspection commands:
+
+- `ls`: directory-entry listing.
+- `file`: content-based file identification.
+- `stat`: filesystem metadata inspection.
+
+## **22.5 Task 4 — Copy a configuration file**
+
+Copy:
+
+```
+cp "$LAB/application/config/app.conf" \
+   "$LAB/application/archive/app.conf.backup"
+```
+
+Verify:
+
+```
+cmp "$LAB/application/config/app.conf" \
+    "$LAB/application/archive/app.conf.backup"
+```
+
+No output means the contents match.
+
+Inspect:
+
+```
+ls -li "$LAB/application/config/app.conf" \
+       "$LAB/application/archive/app.conf.backup"
+```
+
+The two regular files should normally have different inode numbers.
+
+This demonstrates that a copy creates a separate file object.
+
+## **22.6 Task 5 — Copy a directory recursively**
+
+Execute:
+
+```
+cp -a "$LAB/application/config" \
+      "$LAB/application/config-backup"
+```
+
+Inspect:
+
+```
+find "$LAB/application/config-backup" -print
+```
+
+Explain that `-a` preserves the directory tree and supported attributes.
+
+## **22.7 Task 6 — Move and rename files**
+
+Create a temporary file:
+
+```
+touch "$LAB/application/src/draft.txt"
+```
+
+Rename it:
+
+```
+mv "$LAB/application/src/draft.txt" \
+   "$LAB/application/src/final.txt"
+```
+
+Verify:
+
+```
+ls -l "$LAB/application/src/"
+```
+
+Now move it:
+
+```
+mv "$LAB/application/src/final.txt" \
+   "$LAB/application/archive/"
+```
+
+Verify:
+
+```
+ls -l "$LAB/application/archive/"
+```
+
+For an additional comparison, create a file and record its inode:
+
+```
+touch "$LAB/application/src/rename-test.txt"
+ls -i "$LAB/application/src/rename-test.txt"
+```
+
+Rename it within the same filesystem:
+
+```
+mv "$LAB/application/src/rename-test.txt" \
+   "$LAB/application/src/renamed-test.txt"
+```
+
+Inspect:
+
+```
+ls -i "$LAB/application/src/renamed-test.txt"
+```
+
+On the same filesystem, its inode should normally remain unchanged.
+
+## **22.8 Task 7 — Install a file with specific attributes**
+
+Create an executable placeholder:
+
+```
+cat > "$LAB/application/scripts/health-check" <<'EOF'
+#!/usr/bin/env bash
+echo "Application filesystem is available"
+EOF
+```
+
+Install it:
+
+```
+install -D -m 755 \
+    "$LAB/application/scripts/health-check" \
+    "$LAB/deployed/bin/health-check"
+```
+
+Inspect:
+
+```
+stat "$LAB/deployed/bin/health-check"
+```
+
+Run it:
+
+```
+"$LAB/deployed/bin/health-check"
+```
+
+Expected:
+
+```
+Application filesystem is available
+```
+
+This demonstrates the difference between copying a file and installing it with a specified mode.
+
+## **22.9 Task 8 — Create and test a hard link**
+
+Create a file:
+
+```
+echo "Shared inode demonstration" \
+    > "$LAB/shared-data.txt"
+```
+
+Create a hard link:
+
+```
+ln "$LAB/shared-data.txt" \
+   "$LAB/shared-data-link.txt"
+```
+
+Compare inodes:
+
+```
+ls -li "$LAB"/shared-data*
+```
+
+The inode numbers should be identical.
+
+Inspect the link count:
+
+```
+stat "$LAB/shared-data.txt"
+```
+
+It should show a hard-link count of 2.
+
+Modify one name:
+
+```
+echo "Additional information" >> "$LAB/shared-data.txt"
+```
+
+Read through the second name:
+
+```
+cat "$LAB/shared-data-link.txt"
+```
+
+The additional line should appear.
+
+Now remove the first name:
+
+```
+rm "$LAB/shared-data.txt"
+```
+
+Read the remaining name:
+
+```
+cat "$LAB/shared-data-link.txt"
+```
+
+The contents should still exist.
+
+This proves that the two names referred to the same inode.
+
+## **22.10 Task 9 — Create and test symbolic links**
+
+Create a directory for shortcuts:
+
+```
+mkdir -p "$LAB/shortcuts"
+```
+
+Create a symbolic link:
+
+```
+ln -s ../application/config/app.conf \
+    "$LAB/shortcuts/app-config"
+```
+
+Inspect it:
+
+```
+ls -l "$LAB/shortcuts/app-config"
+```
+
+Read its contents:
+
+```
+cat "$LAB/shortcuts/app-config"
+```
+
+Now inspect the link target:
+
+```
+readlink "$LAB/shortcuts/app-config"
+```
+
+Resolve its target:
+
+```
+readlink -f "$LAB/shortcuts/app-config"
+```
+
+Explain that the relative target is resolved from the directory containing the symbolic link.
+
+## **22.11 Task 10 — Create a dangling symbolic link**
+
+Execute:
+
+```
+ln -s missing-file.txt "$LAB/shortcuts/broken-link"
+```
+
+Check whether the link exists:
+
+```
+test -L "$LAB/shortcuts/broken-link" \
+    && echo "Link exists"
+```
+
+Check whether its target exists:
+
+```
+test -e "$LAB/shortcuts/broken-link" \
+    && echo "Target exists" \
+    || echo "Target is missing"
+```
+
+Expected:
+
+```
+Link exists
+Target is missing
+```
+
+This demonstrates the difference between the existence of a symbolic link and the existence of its target.
+
+## **22.12 Task 11 — Practice&#x20;**`find`
+
+Find every regular file:
+
+```
+find "$LAB/application" -type f
+```
+
+Find every directory:
+
+```
+find "$LAB/application" -type d
+```
+
+Find symbolic links:
+
+```
+find "$LAB" -type l
+```
+
+Find empty files:
+
+```
+find "$LAB" -type f -empty
+```
+
+Find `.log` files:
+
+```
+find "$LAB" -type f -name "*.log"
+```
+
+Inspect every discovered file:
+
+```
+find "$LAB" -type f -exec file {} \;
+```
+
+These commands demonstrate how administrators can search and inspect entire directory trees.
+
+## **22.13 Task 12 — Practice removing files safely**
+
+Create a file:
+
+```
+touch "$LAB/temporary-file.txt"
+```
+
+Inspect it:
+
+```
+ls -l "$LAB/temporary-file.txt"
+```
+
+Remove it:
+
+```
+rm -i "$LAB/temporary-file.txt"
+```
+
+When asked for confirmation, approve the operation.
+
+Verify:
+
+```
+test ! -e "$LAB/temporary-file.txt" \
+    && echo "Removal verified"
+```
+
+Now create an empty directory:
+
+```
+mkdir "$LAB/empty-directory"
+```
+
+Remove it:
+
+```
+rmdir "$LAB/empty-directory"
+```
+
+This demonstrates the normal empty-directory removal procedure.
+
+## **22.14 Task 13 — Practice controlled recursive deletion**
+
+Destructive operation — isolated lab only
+
+Build a disposable directory:
+
+```
+mkdir -p "$LAB/disposable/config"
+mkdir -p "$LAB/disposable/logs"
+
+touch "$LAB/disposable/config/test.conf"
+touch "$LAB/disposable/logs/test.log"
+```
+
+Before removal, inspect the target:
+
+```
+printf 'Deletion target: %s\n' "$LAB/disposable"
+```
+
+Inspect its contents:
+
+```
+find "$LAB/disposable" -print
+```
+
+Only after confirming the displayed path and contents, execute:
+
+```
+rm -r -- "$LAB/disposable"
+```
+
+Verify:
+
+```
+test ! -e "$LAB/disposable" \
+    && echo "Directory tree removed"
+```
+
+This demonstrates recursive deletion without introducing `sudo` or the more aggressive `-f` option.
+
+## **22.15 Task 14 — Inspect the final lab structure**
+
+Execute:
+
+```
+tree -a "$LAB"
+```
+
+Or, without `tree`:
+
+```
+find "$LAB" -print | sort
+```
+
+The remaining structure should demonstrate:
+
+- Application directory organization.
+- Copied configuration.
+- Deployed executable.
+- Shared hard-link data.
+- Symbolic links.
+- Backups.
+- Directory creation and removal.
+
+## **22.16 Lab completion criteria**
+
+**LAB 04 — COMPLETION CHECKLIST**
+
+Practical completion
+
+# **0/14**
+
+Created application directories using mkdir -p
+
+Created files using touch and shell redirection
+
+Inspected objects using ls, file and stat
+
+Copied files and compared their contents
+
+Copied a complete directory tree using cp -a
+
+Moved and renamed files using mv
+
+Installed a file using install with explicit permissions
+
+Created and verified a hard link
+
+Created and verified a relative symbolic link
+
+Identified a dangling symbolic link
+
+Searched files and directories using find
+
+Removed files and empty directories safely
+
+Performed a verified recursive directory removal
+
+Explained inode and link-count behavior
+
+Reset checklist
+
+## **22.17 Lab cleanup**
+
+The lab can remain in place for future lessons.
+
+When it is no longer required, check:
+
+```
+printf 'Lab location: %s\n' "$LAB"
+```
+
+Check its contents:
+
+```
+find "$LAB" -maxdepth 2 -print
+```
+
+To remove the lab:
+
+```
+rm -r -- "$LAB"
+```
+
+This permanently removes the isolated learning directory and its contents.
+
+Do not substitute another path or execute the command against a real system directory.
+
+# **Part 23 — Teaching summary and command reference**
+
+## **23.1 Complete command reference**
+
+| Command                             | Purpose                                           |
+| ----------------------------------- | ------------------------------------------------- |
+| `touch file.txt`                    | Create an empty file or update timestamps         |
+| `mkdir directory`                   | Create a directory                                |
+| `mkdir -p a/b/c`                    | Create nested directories                         |
+| `cp source destination`             | Copy a file                                       |
+| `cp -r source destination`          | Copy directories recursively                      |
+| `cp -a source destination`          | Archive-style copy with attribute preservation    |
+| `mv old new`                        | Rename or move                                    |
+| `rm file`                           | Remove a file                                     |
+| `rm -i file`                        | Ask before removing                               |
+| `rm -r directory`                   | Recursively remove a directory                    |
+| `rmdir directory`                   | Remove an empty directory                         |
+| `unlink file`                       | Remove one filesystem name                        |
+| `install -m 755 source destination` | Copy a file and set its mode                      |
+| `install -D source destination`     | Create destination parent directories and install |
+| `file filename`                     | Identify file type                                |
+| `stat filename`                     | Inspect filesystem metadata                       |
+| `ls -li filename`                   | Display inode number                              |
+| `find path -type f`                 | Find regular files                                |
+| `find path -type d`                 | Find directories                                  |
+| `find path -type l`                 | Find symbolic links                               |
+| `find path -name "*.log"`           | Find matching filenames                           |
+| `tree`                              | Visualize directory structures                    |
+| `ln source link`                    | Create a hard link                                |
+| `ln -s target link`                 | Create a symbolic link                            |
+| `readlink link`                     | Display a symbolic-link target                    |
+| `readlink -f link`                  | Resolve a pathname                                |
+| `basename path`                     | Extract final path component                      |
+| `dirname path`                      | Extract parent directory                          |
+| `cmp file1 file2`                   | Compare file contents                             |
+| `diff file1 file2`                  | Display textual differences                       |
+| `df -hT`                            | Inspect filesystem capacity                       |
+| `df -i`                             | Inspect inode capacity                            |
+
+## **23.2 Important concepts**
+
+| Concept             | What the learner must understand                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------- |
+| Regular file        | Filesystem object storing data                                                                      |
+| Directory           | Organizes names and references to filesystem objects                                                |
+| Inode               | Filesystem metadata structure identifying an object                                                 |
+| Directory entry     | Associates a filename with an inode                                                                 |
+| Hard link           | Another name referring to the same inode                                                            |
+| Symbolic link       | Separate filesystem object containing a target pathname                                             |
+| Link count          | Number of hard-link names associated with an inode                                                  |
+| File descriptor     | Process reference to an open file or I/O object                                                     |
+| Recursive operation | Operation traversing child directories                                                              |
+| Dangling symlink    | Link whose target cannot be resolved                                                                |
+| Atomic rename       | Rename operation that changes pathname visibility atomically under normal same-filesystem semantics |
+| Path traversal      | Navigating outside an intended directory boundary, potentially creating a security vulnerability    |
+| Inode exhaustion    | Running out of filesystem object allocation capacity                                                |
+
+## **23.3 Important engineering distinctions**
+
+These are the distinctions worth reinforcing throughout the course:
+
+**Copy versus move**
+
+`cp`
+
+Creates another file object. Original remains.
+
+`mv`
+
+Changes name or location. Same-filesystem rename usually retains the inode.
+
+**Hard link versus symbolic link**
+
+**Hard link**
+
+Another name for the same inode.
+
+**Symbolic link**
+
+A separate object containing a target pathname.
+
+**Remove a file versus erase its data**
+
+`rm`
+
+Normally removes a directory name.
+
+**Storage reclamation**
+
+Depends on remaining hard links and open references.
+
+**File size versus filesystem capacity**
+
+**Logical size**
+
+The size reported for file contents.
+
+**Allocated storage**
+
+Storage actually allocated by the filesystem.
+
+# **Part 24 — Mastery standard**
+
+The learner should be able to perform and explain these operations without following a command-by-command tutorial.
+
+### **Beginner competency**
+
+- Create and inspect regular files.
+- Create nested directory structures.
+- Copy and rename files.
+- Move directories.
+- Remove files and empty directories.
+- Identify a file's actual type.
+- Understand file metadata.
+
+### **Intermediate competency**
+
+- Perform recursive copies.
+- Preserve attributes when copying.
+- Search directory trees using `find`.
+- Create hard links and symbolic links.
+- Identify dangling symbolic links.
+- Understand inodes and link counts.
+- Safely remove directory trees.
+- Use installation-oriented file operations.
+
+### **Advanced operational competency**
+
+- Explain same-filesystem versus cross-filesystem moves.
+- Understand pathname and inode relationships.
+- Diagnose deleted-but-open files.
+- Identify inode exhaustion.
+- Understand deployment using release directories and symbolic links.
+- Build repeatable filesystem operations into shell scripts.
+- Recognize path traversal risks.
+- Design safe file cleanup procedures.
+
+## **Final mastery gate**
+
+**Build a deployment-ready filesystem layout**
+
+Give the learner a small application and require them to organize:
+
+```
+application/
+├── config/
+├── releases/
+├── current -> releases/v1
+├── backups/
+├── data/
+└── logs/
+```
+
+They should create, copy, rename, link, inspect and remove files correctly.
+
+They should also diagnose a broken symbolic link and explain why a deleted-but-open log file may continue consuming storage.
+
+**Mastery standard:** Understand the design, implement the structure independently, and troubleshoot a realistic file-management failure using filesystem evidence.
+
+# **Part 25 — Official documentation**
+
+These are the primary references for the teacher.
+
+**GNU Coreutils**
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+**GNU Coreutils manual**
+
+[Complete Coreutils documentation](https://www.gnu.org/software/coreutils/manual/coreutils.html?utm_source=chatgpt.com)
+
+Particularly relevant sections:
+
+- Basic operations: `cp`, `mv`, `rm`.
+- Special file types: `ln`, `mkdir`, `rmdir`, `unlink`.
+- File information: `stat`, `du`, `df`.
+
+**GNU Findutils**
+
+[GNU Findutils manual](https://www.gnu.org/software/findutils/manual/html_mono/find.html?utm_source=chatgpt.com)
+
+Detailed documentation for `find`, search predicates, execution actions and safe filename processing.
+
+**Linux kernel documentation and manual pages**
+
+[symlink(7) — Symbolic-link behavior](https://man7.org/linux/man-pages/man7/symlink.7.html?utm_source=chatgpt.com)[symlink(2) — Symbolic-link system call](https://man7.org/linux/man-pages/man2/symlink.2.html?utm_source=chatgpt.com)[unlink(2) — Removing filesystem names](https://man7.org/linux/man-pages/man2/unlink.2.html?utm_source=chatgpt.com)[Linux Virtual Filesystem documentation](https://kernel.org/doc/html/latest/filesystems/vfs.html?utm_source=chatgpt.com)
+
+**Microsoft WSL**
+
+[Windows and Linux filesystem interoperability](https://learn.microsoft.com/en-us/windows/wsl/filesystems?utm_source=chatgpt.com)
+
+# **Final teaching takeaway**
+
+This topic is a major step toward actual Linux administration.
+
+The learner should now understand that a file has more than just a filename and contents.
+
+There is an underlying filesystem object, metadata, inode identity, directory entries and potentially multiple names referring to the same object.
+
+They should also understand why:
+
+- Copying and moving are different.
+- Hard links and symbolic links are different.
+- Removing a filename does not always reclaim storage immediately.
+- Recursive deletion requires extreme care.
+- File extensions cannot be trusted to identify file types.
+- Application deployment requires deliberate filesystem organization.
+
+These concepts will become particularly important when the learner begins managing application services, persistent data, backups, logs and production deployments.
+
+**STAGE 01 · MODULE 01**
+
+Topic 04 complete
+
+# **Next: Topic 05**
+
+**Pipes and redirection**
+
+The next lesson will explain how Linux commands communicate and how their input and output are controlled.
+
+Main subjects:
+
+- Standard input, standard output and standard error.
+- File descriptors `0`, `1` and `2`.
+- Output redirection with `>` and `>>`.
+- Input redirection with `<`.
+- Error redirection with `2>` and `2>&1`.
+- Pipes with `|`.
+- `tee`.
+- Command chaining.
+- `/dev/null`.
+- How Bash connects processes using file descriptors and pipes.
+- Practical log processing and troubleshooting workflows.

@@ -1,0 +1,1101 @@
+title: "SUID, SGID and Sticky Bit"
+description: "Understand special permission bits and how SUID, SGID, and the sticky bit affect execution and directory access."
+slug: "04-suid-sgid-and-sticky-bit"
+courseSlug: "linux-fundamentals"
+moduleSlug: "02-users-permissions-and-access"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 4
+readingTime: "17 min"
+tags: ["linux", "suid", "sgid", "sticky-bit", "permissions"]
+toc: true
+---
+
+## **1. Introduction**
+
+So far, we have covered three basic permission categories:
+
+```
+Owner | Group | Others
+```
+
+Linux also provides three special permission bits:
+
+1. **SUID — Set User ID**
+2. **SGID — Set Group ID**
+3. **Sticky Bit**
+
+These bits change how certain permission and ownership rules work.
+
+They are especially important on multi-user servers.
+
+Consider some common system situations:
+
+- A normal user needs to change their own password.
+- Multiple users need to create files in a shared project directory.
+- Multiple users need to write to `/tmp`, but should not be allowed to delete one another's files.
+
+These are problems that special permission bits help solve.
+
+## **2. Conceptual Foundation**
+
+### **2.1 SUID — Set User ID**
+
+SUID stands for **Set User ID**.
+
+For an executable program, the SUID bit causes the process to use the executable file owner's identity as its effective user ID when it executes, subject to Linux execution and security rules.
+
+Consider a program owned by root:
+
+```
+-rwsr-xr-x 1 root root 12345 /usr/bin/example
+```
+
+The `s` in the owner's permission position represents SUID.
+
+If a normal user executes this program, the process can run with the effective UID of the file owner, which is root in this example.
+
+Conceptually:
+
+```
+User Alice
+    │
+    │ executes program
+    ▼
+SUID-enabled executable
+    │
+    ├── Real UID: Alice
+    │
+    └── Effective UID: root
+             │
+             ▼
+      Can perform operations
+      allowed to its effective identity
+```
+
+**Why is this useful?**
+
+A normal user should be able to change their own password.
+
+But Linux password information is protected. Ordinary users should not be able to modify the protected authentication database directly.
+
+The traditional `passwd` program demonstrates the SUID mechanism.
+
+Inspect it:
+
+```
+ls -l /usr/bin/passwd
+```
+
+On a typical Ubuntu installation, you may see:
+
+```
+-rwsr-xr-x 1 root root ... /usr/bin/passwd
+```
+
+Notice the `s`.
+
+The program can perform the privileged operation required to change password information while the ordinary user remains the caller.
+
+Modern distributions may use additional helpers and PAM components, but this remains a useful illustration of SUID.
+
+### **2.2 Real UID vs Effective UID**
+
+These two terms are important.
+
+| Identity      | Meaning                                     |
+| ------------- | ------------------------------------------- |
+| Real UID      | Identifies the user who started the process |
+| Effective UID | Used for many permission checks             |
+
+For an ordinary process:
+
+```
+Real UID: Alice
+Effective UID: Alice
+```
+
+For a typical root-owned SUID executable launched by Alice:
+
+```
+Real UID: Alice
+Effective UID: root
+```
+
+You may also encounter the saved set-user-ID. It helps programs manage privilege transitions.
+
+For now, understand that SUID changes the effective identity used by the running executable.
+
+### **2.3 Important SUID security warning**
+
+A SUID program is security-sensitive because it can operate with privileges that the invoking user does not normally possess.
+
+A vulnerability in a root-owned SUID executable can potentially become a privilege-escalation vulnerability.
+
+Never make arbitrary programs SUID root.
+
+In particular, do not experiment by adding SUID to:
+
+- Bash or other general-purpose shells.
+- Application scripts.
+- Downloaded programs.
+- Untrusted third-party binaries.
+
+Linux generally ignores SUID behavior on ordinary interpreted scripts because of security concerns.
+
+## **3. SGID — Set Group ID**
+
+SGID stands for **Set Group ID**.
+
+Its behavior depends on whether it is applied to an executable file or a directory.
+
+### **3.1 SGID on executable files**
+
+For an executable with SGID enabled, the process receives the executable file's group as its effective GID, subject to execution rules.
+
+Example:
+
+```
+-rwxr-sr-x 1 root developers 12345 example
+```
+
+The `s` in the group execute position indicates SGID.
+
+Conceptually:
+
+```
+User Alice
+    │
+    ▼
+Executes SGID program
+    │
+    ├── Real GID: Alice's group
+    │
+    └── Effective GID: developers
+```
+
+This enables a program to perform group-level operations that ordinary users might not otherwise be able to perform.
+
+Like SUID, SGID executables must be treated carefully.
+
+### **3.2 SGID on directories**
+
+This is especially useful in production environments.
+
+When a directory has SGID enabled, new files and subdirectories created inside it normally inherit the directory's group.
+
+This helps keep shared project files in the same group.
+
+Without SGID:
+
+```
+/shared/project
+    │
+    ├── Alice creates file
+    │       └── Group may be Alice's primary group
+    │
+    └── Bob creates file
+            └── Group may be Bob's primary group
+```
+
+With SGID on the shared directory:
+
+```
+/shared/project  [SGID]
+        │
+        ├── Alice creates file
+        │       └── Group: developers
+        │
+        └── Bob creates file
+                └── Group: developers
+```
+
+This is very useful for:
+
+- Shared development directories.
+- Deployment workspaces.
+- Team-generated reports.
+- Collaborative upload areas.
+- Group-managed application files.
+
+New subdirectories also inherit the SGID behavior on Linux, keeping the group inheritance consistent down the directory tree.
+
+## **4. Sticky Bit**
+
+The sticky bit is primarily important on directories.
+
+It restricts who can delete or rename entries inside a directory.
+
+For a sticky directory, a user generally may delete or rename an entry only when at least one of these conditions holds:
+
+- They own the file.
+- They own the containing directory.
+- They have the relevant privileged capability, typically through root privileges.
+
+### **4.1 Why sticky bit exists**
+
+Consider `/tmp`.
+
+Many users and programs need to create temporary files in this location.
+
+A simplified view:
+
+```
+/tmp/
+│
+├── alice-temp.txt
+├── bob-temp.txt
+└── application-temp.txt
+```
+
+All users need to create temporary files.
+
+But Alice should not automatically be able to delete Bob's file.
+
+The sticky bit provides this protection.
+
+Inspect `/tmp`:
+
+```
+ls -ld /tmp
+```
+
+Typical output:
+
+```
+drwxrwxrwt  root root  ...
+```
+
+The final `t` indicates the sticky bit.
+
+Its common numeric permission is:
+
+```
+1777
+```
+
+This means:
+
+```
+1 = Sticky bit
+777 = Owner, group and others have rwx
+```
+
+The result lets all users create files, while restricting deletion and renaming according to the sticky-directory rules.
+
+### **4.2 Sticky bit is primarily a directory feature**
+
+The sticky bit has historical meanings on regular files, but on modern Linux it is effectively ignored for ordinary regular-file execution semantics.
+
+For normal Linux system administration, focus on sticky directories.
+
+## **5. Windows-to-Linux Comparison**
+
+Windows has other mechanisms for controlling inherited permissions and deletion rights, but there is no exact one-to-one mapping for every Linux special bit.
+
+| Linux feature      | Purpose                                               | Broad Windows comparison                                  |
+| ------------------ | ----------------------------------------------------- | --------------------------------------------------------- |
+| SUID               | Executable uses file owner's effective identity       | Special privileged execution or service identity behavior |
+| SGID on executable | Executable uses file group's effective identity       | Group-based process access behavior                       |
+| SGID on directory  | New entries inherit directory's group                 | Inherited group/permission behavior                       |
+| Sticky bit         | Restricts deletion and renaming in shared directories | Restricted deletion rules in NTFS ACLs                    |
+
+The Linux mechanisms are compact filesystem permission rules rather than the same security model used by Windows.
+
+## **6. Numeric Representation of Special Bits**
+
+We can represent special bits with an additional numeric digit before the normal three-digit permission mode.
+
+| Special bit | Numeric value |
+| ----------- | ------------- |
+| SUID        | 4             |
+| SGID        | 2             |
+| Sticky bit  | 1             |
+
+The standard three permission digits still represent owner, group and others.
+
+### **Examples**
+
+| Numeric mode | Meaning             |
+| ------------ | ------------------- |
+| `4755`       | SUID + `755`        |
+| `2755`       | SGID + `755`        |
+| `2770`       | SGID + `770`        |
+| `1777`       | Sticky + `777`      |
+| `1755`       | Sticky + `755`      |
+| `6755`       | SUID + SGID + `755` |
+
+You can use `chmod` to configure these bits.
+
+### **6.1 Set SUID**
+
+```
+chmod 4755 program
+```
+
+### **6.2 Set SGID**
+
+```
+chmod 2755 program
+```
+
+### **6.3 Set sticky bit**
+
+```
+chmod 1777 directory
+```
+
+These commands change metadata. Do not apply SUID or SGID to arbitrary production executables.
+
+## **7. Understanding&#x20;**`s`**,&#x20;**`S`**,&#x20;**`t`**&#x20;and&#x20;**`T`
+
+When you inspect special permissions with `ls -l`, Linux uses special characters.
+
+### **7.1 SUID**
+
+Lowercase `s`:
+
+```
+-rwsr-xr-x
+```
+
+This means SUID is set and the owner's execute permission is also present.
+
+Uppercase `S`:
+
+```
+-rwSr-xr-x
+```
+
+This means SUID is set, but the owner's execute permission is absent.
+
+### **7.2 SGID**
+
+Lowercase `s`:
+
+```
+-rwxr-sr-x
+```
+
+SGID is enabled and group execute permission is present.
+
+Uppercase `S`:
+
+```
+-rwxr-Sr-x
+```
+
+SGID is enabled, but group execute permission is absent.
+
+### **7.3 Sticky bit**
+
+Lowercase `t`:
+
+```
+drwxrwxrwt
+```
+
+Sticky bit is enabled and others' execute permission is present.
+
+Uppercase `T`:
+
+```
+drwxrwxrwT
+```
+
+Sticky bit is enabled, but others' execute permission is absent.
+
+**Quick visual reference**
+
+| Position               | Special bit | Letter     |
+| ---------------------- | ----------- | ---------- |
+| Owner execute position | SUID        | `s` or `S` |
+| Group execute position | SGID        | `s` or `S` |
+| Other execute position | Sticky      | `t` or `T` |
+
+Lowercase means the corresponding execute bit is present. Uppercase means it is absent.
+
+## **8. Linux Implementation: Setting and Removing Special Bits**
+
+The symbolic method is often easier to remember.
+
+### **SUID**
+
+Enable:
+
+```
+chmod u+s program
+```
+
+Remove:
+
+```
+chmod u-s program
+```
+
+### **SGID**
+
+Enable:
+
+```
+chmod g+s directory
+```
+
+Remove:
+
+```
+chmod g-s directory
+```
+
+### **Sticky bit**
+
+Enable:
+
+```
+chmod +t directory
+```
+
+Remove:
+
+```
+chmod -t directory
+```
+
+Inspect all three using:
+
+```
+ls -l
+stat -c '%A %a %n' filename
+```
+
+## **9. Internal Working: What Actually Changes?**
+
+### **9.1 SUID execution**
+
+Ordinary process execution:
+
+```
+Alice launches application
+         │
+         ▼
+Real UID: Alice
+Effective UID: Alice
+```
+
+SUID execution of a root-owned executable:
+
+```
+Alice launches SUID executable
+         │
+         ▼
+Real UID: Alice
+Effective UID: root
+         │
+         ▼
+Kernel checks privileged operations
+using the process credentials and
+applicable security policies
+```
+
+Linux does not simply convert the user into root permanently. The privilege is associated with the execution of the SUID program.
+
+### **9.2 SGID directory inheritance**
+
+When a process creates a file in an ordinary directory, the new file's group is normally influenced by the process's effective GID.
+
+When the parent directory is SGID-enabled:
+
+```
+Parent directory
+Group: developers
+Mode: 2770
+       │
+       ▼
+New file created
+       │
+       ▼
+Group inherited: developers
+```
+
+This makes it much easier to maintain group consistency across shared directories.
+
+### **9.3 Sticky directory deletion protection**
+
+Without a sticky bit:
+
+```
+Shared directory
+       │
+       ├── Alice's file
+       └── Bob's file
+
+Another user with sufficient directory
+permissions may delete either file.
+```
+
+With a sticky bit:
+
+```
+Shared directory [Sticky]
+       │
+       ├── Alice's file
+       │     └── Alice can delete it
+       │
+       └── Bob's file
+             └── Bob can delete it
+```
+
+The directory owner and appropriately privileged processes also have the ability to remove entries.
+
+The sticky bit does not prevent users from reading files or modifying file contents when other applicable permissions permit it. It specifically restricts directory-entry deletion and renaming.
+
+## **10. Practical Demonstration A — Inspect SUID on Ubuntu**
+
+Works in WSL2 Ubuntu
+
+We will inspect an existing system executable. We will not create a privileged executable.
+
+### **Step 1 — Inspect&#x20;**`passwd`
+
+```
+ls -l /usr/bin/passwd
+```
+
+On a typical Ubuntu installation, the permission string may look like:
+
+```
+-rwsr-xr-x
+```
+
+This shows SUID.
+
+### **Step 2 — Inspect the numeric mode**
+
+```
+stat -c '%A %a %U:%G %n' /usr/bin/passwd
+```
+
+An example may be:
+
+```
+-rwsr-xr-x 4755 root:root /usr/bin/passwd
+```
+
+The exact configuration may differ across distributions and installations.
+
+### **Step 3 — Inspect SUID executables**
+
+```
+find /usr/bin /usr/sbin -xdev -type f -perm -4000 -print 2>/dev/null
+```
+
+Explanation:
+
+- `find` searches for files.
+- `/usr/bin /usr/sbin` specify the directories to search.
+- `-xdev` avoids crossing filesystem boundaries.
+- `-type f` restricts results to regular files.
+- `-perm -4000` selects files with the SUID bit set.
+- `-print` displays matches.
+- `2>/dev/null` suppresses permission-related error messages.
+
+The output varies between installations.
+
+**Production relevance:** Administrators audit SUID binaries because unexpected SUID executables can present security risks.
+
+## **11. Practical Demonstration B — SGID Directory**
+
+We will create a shared team directory and demonstrate group inheritance.
+
+### **Step 1 — Create a disposable group and users**
+
+Use a fresh group and two test users for this exercise.
+
+Check for name conflicts first:
+
+```
+getent group linux-special-lab
+getent passwd linuxspecial_a
+getent passwd linuxspecial_b
+```
+
+When the names do not exist, create them:
+
+```
+sudo groupadd linux-special-lab
+sudo useradd -m -s /bin/bash -g linux-special-lab linuxspecial_a
+sudo useradd -m -s /bin/bash -g linux-special-lab linuxspecial_b
+```
+
+Verify:
+
+```
+id linuxspecial_a
+id linuxspecial_b
+```
+
+Each user should have `linux-special-lab` as the primary group.
+
+### **Step 2 — Create the shared directory**
+
+```
+sudo mkdir -p /tmp/linux-special-bits-lab/sgid
+```
+
+Set its group:
+
+```
+sudo chown root:linux-special-lab /tmp/linux-special-bits-lab/sgid
+```
+
+Set SGID and group access:
+
+```
+sudo chmod 2770 /tmp/linux-special-bits-lab/sgid
+```
+
+Inspect:
+
+```
+ls -ld /tmp/linux-special-bits-lab/sgid
+```
+
+Expected pattern:
+
+```
+drwxrws--- root linux-special-lab ...
+```
+
+Notice the group-position `s`.
+
+### **Step 3 — Create a file as the first user**
+
+```
+sudo -u linuxspecial_a touch /tmp/linux-special-bits-lab/sgid/alice-file.txt
+```
+
+Check ownership:
+
+```
+stat -c '%U:%G %a %n' /tmp/linux-special-bits-lab/sgid/alice-file.txt
+```
+
+Expected:
+
+```
+linuxspecial_a:linux-special-lab 644 /tmp/linux-special-bits-lab/sgid/alice-file.txt
+```
+
+The owner is the user who created the file.
+
+The group is inherited from the SGID directory.
+
+### **Step 4 — Create another file as the second user**
+
+```
+sudo -u linuxspecial_b touch /tmp/linux-special-bits-lab/sgid/bob-file.txt
+```
+
+Inspect:
+
+```
+ls -l /tmp/linux-special-bits-lab/sgid
+```
+
+Both files should have the `linux-special-lab` group.
+
+This is the primary practical purpose of SGID directories.
+
+## **12. Practical Demonstration C — Sticky Bit**
+
+Now we will use the same two test users to demonstrate deletion restrictions.
+
+### **Step 1 — Create a shared sticky directory**
+
+```
+sudo mkdir -p /tmp/linux-special-bits-lab/sticky
+```
+
+Set the directory owner and group:
+
+```
+sudo chown root:linux-special-lab /tmp/linux-special-bits-lab/sticky
+```
+
+Set permissions:
+
+```
+sudo chmod 1770 /tmp/linux-special-bits-lab/sticky
+```
+
+Inspect:
+
+```
+ls -ld /tmp/linux-special-bits-lab/sticky
+```
+
+Expected pattern:
+
+```
+drwxrwx--T root linux-special-lab ...
+```
+
+Depending on the execute bits, the final character will be `t` or `T`. Here, `1770` gives others no permissions, so an uppercase `T` is expected.
+
+### **Step 2 — User A creates a file**
+
+```
+sudo -u linuxspecial_a touch /tmp/linux-special-bits-lab/sticky/alice-file.txt
+```
+
+Verify:
+
+```
+ls -l /tmp/linux-special-bits-lab/sticky
+```
+
+### **Step 3 — User B attempts to delete it**
+
+```
+sudo -u linuxspecial_b rm /tmp/linux-special-bits-lab/sticky/alice-file.txt
+```
+
+Expected result:
+
+```
+Operation not permitted
+```
+
+The second user can access the shared directory through group permissions, but cannot delete Alice's entry because the sticky bit is enabled.
+
+### **Step 4 — The owner can delete their file**
+
+```
+sudo -u linuxspecial_a rm /tmp/linux-special-bits-lab/sticky/alice-file.txt
+```
+
+This should succeed.
+
+The sticky bit therefore allows a shared directory without allowing every group member to delete every other user's files.
+
+### **Step 5 — Compare with a directory without sticky bit**
+
+Create another directory:
+
+```
+sudo mkdir -p /tmp/linux-special-bits-lab/no-sticky
+sudo chown root:linux-special-lab /tmp/linux-special-bits-lab/no-sticky
+sudo chmod 0770 /tmp/linux-special-bits-lab/no-sticky
+```
+
+Create a file as user A:
+
+```
+sudo -u linuxspecial_a touch /tmp/linux-special-bits-lab/no-sticky/alice-file.txt
+```
+
+Try to delete it as user B:
+
+```
+sudo -u linuxspecial_b rm /tmp/linux-special-bits-lab/no-sticky/alice-file.txt
+```
+
+This can succeed because the directory has group write and execute permission, and no sticky bit restricts removal.
+
+That is the difference we wanted to demonstrate.
+
+## **13. Practical Demonstration D — Safely Inspect SUID and SGID Metadata**
+
+This demonstration changes permissions on a harmless text file, not on an executable program.
+
+Create:
+
+```
+touch /tmp/linux-special-bits-lab/permission-marker.txt
+```
+
+Set the ordinary permission mode:
+
+```
+chmod 644 /tmp/linux-special-bits-lab/permission-marker.txt
+```
+
+Add SUID:
+
+```
+chmod u+s /tmp/linux-special-bits-lab/permission-marker.txt
+```
+
+Inspect:
+
+```
+ls -l /tmp/linux-special-bits-lab/permission-marker.txt
+```
+
+You may see:
+
+```
+-rwSr--r--
+```
+
+The uppercase `S` appears because SUID is present but the owner's execute bit is absent.
+
+Remove it:
+
+```
+chmod u-s /tmp/linux-special-bits-lab/permission-marker.txt
+```
+
+You can also inspect special bits numerically:
+
+```
+stat -c '%A %a %n' /tmp/linux-special-bits-lab/permission-marker.txt
+```
+
+This safely demonstrates the metadata representation without executing a privileged program.
+
+## **14. Real-World Production Scenarios**
+
+### **Scenario A — Password management**
+
+The `passwd` program is a familiar example of SUID.
+
+A normal user can request an operation that needs access to protected authentication data.
+
+The program uses its controlled privileged execution model to perform that operation.
+
+Security engineers carefully audit such executables because they cross an important privilege boundary.
+
+### **Scenario B — Shared development directory**
+
+Imagine a team of five developers.
+
+All five need to create files in:
+
+```
+/var/www/project
+```
+
+They belong to:
+
+```
+developers
+```
+
+Set group ownership and SGID:
+
+```
+sudo chgrp developers /var/www/project
+sudo chmod 2770 /var/www/project
+```
+
+Now files created in this directory normally inherit the `developers` group.
+
+This reduces inconsistent group ownership in shared directories.
+
+### **Scenario C — Shared temporary directory**
+
+`/tmp` is a well-known sticky directory.
+
+Users and programs can create temporary entries, but they cannot generally remove entries belonging to unrelated users.
+
+Inspect it:
+
+```
+ls -ld /tmp
+```
+
+The typical mode is:
+
+```
+1777
+```
+
+### **Scenario D — Security audit**
+
+An administrator wants to find all SUID binaries:
+
+```
+sudo find / -xdev -type f -perm -4000 -print 2>/dev/null
+```
+
+This is an example of a security inventory.
+
+Compare the results against expected programs for that host. An unfamiliar SUID binary should be investigated, not blindly removed.
+
+## **15. Troubleshooting Special Permissions**
+
+| Problem                                            | Likely explanation                                                                    | Diagnostic                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------- |
+| SUID not working                                   | File is not executable, is a script, or execution environment suppresses the behavior | `stat file`                 |
+| SGID directory does not inherit the expected group | SGID bit missing or wrong directory used                                              | `ls -ld directory`          |
+| Another user can delete a shared file              | Sticky bit missing                                                                    | `stat -c '%A %a' directory` |
+| Permission string displays `S` instead of `s`      | Special bit is set, but matching execute bit is absent                                | `ls -l`                     |
+| Special bit disappears after ownership changes     | Ownership operation or security behavior changed it                                   | Inspect with `stat`         |
+| File creation still has unexpected group ownership | Parent directory is not the expected SGID directory, or another mechanism applies     | `namei -l path`, `stat`     |
+
+### **Important WSL notes**
+
+These exercises work inside the WSL2 Linux filesystem.
+
+A few differences to remember:
+
+- WSL2 Ubuntu uses a real Linux filesystem for its distribution data.
+- Linux special permission semantics are available there.
+- Windows-mounted paths under `/mnt/c` may have different metadata behavior.
+- Some system services and login behaviors differ from a conventional server.
+- Do not change system SUID binaries or use WSL to experiment with privileged production executables.
+
+For these reasons, our demonstrations use `/tmp` and your home-directory learning workspace, not Windows system directories.
+
+## **16. Advanced Security Notes**
+
+### **16.1 SUID and privilege escalation**
+
+A vulnerable root-owned SUID program can allow a normal user to obtain elevated privileges.
+
+This is why administrators should:
+
+- Inventory SUID programs.
+- Keep trusted system packages updated.
+- Investigate unexpected privileged executables.
+- Minimize the amount of code that runs with elevated privileges.
+
+### **16.2 SGID and shared data**
+
+SGID directories are useful, but SGID does not automatically guarantee that every new file is group-writable.
+
+For example, a file might inherit the group but still be created with mode `644`.
+
+To make a shared collaboration directory work properly, you must consider both:
+
+- Group inheritance.
+- The permissions assigned to new files and directories.
+
+Default ACLs, which we will study later, can help configure consistent inherited access.
+
+### **16.3 Sticky bit is not full isolation**
+
+The sticky bit protects directory entries against deletion and renaming by unrelated users.
+
+It does not automatically make the files' contents private.
+
+A user might still read or modify another user's file if the file's own permissions permit it.
+
+Think of it as deletion/rename protection, not a complete security boundary.
+
+## **17. Lab Cleanup**
+
+Once the demonstrations are complete, remove only the disposable lab resources.
+
+First inspect the target:
+
+```
+ls -la /tmp/linux-special-bits-lab
+```
+
+Remove the directory:
+
+```
+sudo rm -r -- /tmp/linux-special-bits-lab
+```
+
+Remove the test users:
+
+```
+sudo userdel -r linuxspecial_a
+sudo userdel -r linuxspecial_b
+```
+
+Remove the test group:
+
+```
+sudo groupdel linux-special-lab
+```
+
+These commands are intended only for the disposable resources created in this lesson. Never substitute system or personal account names.
+
+## **18. Teaching Summary**
+
+**Topic 04 — Special permission bits**
+
+**SUID — 4**
+
+- Applies to executable files.
+- Process effective UID becomes the executable's owner under applicable execution rules.
+- Common example: root-owned `passwd`.
+
+**SGID — 2**
+
+- On executable files, process effective GID becomes the executable's group.
+- On directories, new files and subdirectories inherit the directory's group.
+- Useful for collaborative directories.
+
+**Sticky bit — 1**
+
+- Primarily useful on shared directories.
+- Restricts deletion and renaming of other users' entries.
+- Common example: `/tmp` with mode `1777`.
+
+**Important commands**
+
+```
+chmod u+s file
+chmod g+s directory
+chmod +t directory
+chmod u-s file
+chmod g-s directory
+chmod -t directory
+```
+
+**Inspection**
+
+```
+ls -l
+stat
+find /usr/bin -perm -4000 -type f
+```
+
+# **MODULE 02 — PROGRESS**
+
+**Users, Permissions & Access**
+
+# **4/9**
+
+Four of nine curriculum areas covered.
+
+1. Users and Groups&#x20;
+
+   Covered
+
+2. File Permissions: rwx and umask&#x20;
+
+   Covered
+
+3. Ownership and Group Ownership&#x20;
+
+   Covered
+
+4. SUID, SGID and Sticky Bit&#x20;
+
+   Covered
+
+5. Access Control Lists — ACLs
+
+6. sudo Policy
+
+7. SSH Keys and SSH Agent
+
+8. SCP and SFTP
+
+9. Linux Capabilities Overview
+
+## **Next lesson — Two more topics**
+
+**Topic 05 — Linux Access Control Lists (ACLs)**
+
+We will explore `getfacl` and `setfacl`, named-user permissions, named-group permissions, default ACLs, ACL masks, how ACLs interact with `chmod`, and how to troubleshoot unexpected access decisions.
+
+**Topic 06 — sudo and Administrative Policy**
+
+We will cover sudo privileges, `/etc/sudoers`, safe editing with `visudo`, `/etc/sudoers.d/`, command restrictions, least privilege, and how production administrators grant controlled administrative access.

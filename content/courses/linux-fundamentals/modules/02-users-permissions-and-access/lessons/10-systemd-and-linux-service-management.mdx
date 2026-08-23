@@ -1,0 +1,1331 @@
+title: "Systemd and Linux Service Management"
+description: "Understand systemd, service units, service lifecycle management, and practical Linux service administration."
+slug: "10-systemd-and-linux-service-management"
+courseSlug: "linux-fundamentals"
+moduleSlug: "02-users-permissions-and-access"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 10
+readingTime: "19 min"
+tags: ["linux", "systemd", "services", "systemctl", "administration"]
+toc: true
+---
+
+## **1. Introduction**
+
+When Linux starts, it needs to initialize the operating system and start the components required to make the machine usable.
+
+A production Linux server might need to start:
+
+- SSH server.
+- Nginx.
+- PostgreSQL.
+- Redis.
+- Background workers.
+- Application services.
+- Monitoring agents.
+- Scheduled system tasks.
+
+These programs are often called **services** or **daemons**.
+
+Consider a server hosting a Laravel application:
+
+```
+Linux server
+│
+├── SSH service
+│   └── Remote administration
+│
+├── Nginx service
+│   └── HTTP requests
+│
+├── PHP-FPM service
+│   └── PHP application execution
+│
+├── PostgreSQL service
+│   └── Database operations
+│
+└── Redis service
+    └── Cache and queues
+```
+
+An administrator needs to:
+
+- Start services.
+- Stop services.
+- Restart services.
+- Inspect their status.
+- Configure automatic startup.
+- View service logs.
+- Diagnose failed services.
+
+Modern Linux distributions commonly use **systemd** for service and system management.
+
+This is the foundation of Linux server operations.
+
+## **2. Conceptual Foundation**
+
+### **2.1 What is a service?**
+
+A service is a program or process that performs a function for other programs or users.
+
+Examples:
+
+| Service        | Purpose                     |
+| -------------- | --------------------------- |
+| `ssh`          | Remote login                |
+| `nginx`        | Web server                  |
+| `postgresql`   | Database                    |
+| `redis-server` | In-memory data store        |
+| `cron`         | Scheduled command execution |
+
+Many services run in the background rather than interacting directly with a terminal.
+
+Such background processes are commonly called **daemons**.
+
+A daemon commonly remains running and waits for requests or events.
+
+### **2.2 What is systemd?**
+
+`systemd` is a system and service manager.
+
+It commonly acts as the first userspace process in a Linux boot environment, with PID `1`.
+
+It is responsible for managing system initialization and many system resources.
+
+A simplified architecture:
+
+```
+Linux kernel
+     │
+     ▼
+systemd (PID 1)
+     │
+     ├── SSH service
+     │
+     ├── Nginx service
+     │
+     ├── PostgreSQL service
+     │
+     ├── Logging services
+     │
+     └── Other system units
+```
+
+The `systemctl` command is the primary command-line interface used to communicate with systemd.
+
+**Important distinction:**
+
+- `systemd` is the service manager.
+- `systemctl` is the command-line control utility.
+- `systemd` units are the resources systemd manages.
+
+### **2.3 What is a unit?**
+
+A **unit** is a resource or object managed by systemd.
+
+A service is only one type of unit.
+
+Other types represent sockets, timers, mounts, devices and more.
+
+For example:
+
+```
+systemd
+│
+├── nginx.service
+├── ssh.service
+├── backup.timer
+├── docker.socket
+├── home.mount
+└── multi-user.target
+```
+
+Each unit has a specific purpose and may have a corresponding unit file.
+
+## **3. Windows-to-Linux Comparison**
+
+Windows also manages background services.
+
+For example, Windows has services such as:
+
+- Windows Update.
+- Print Spooler.
+- Windows Defender services.
+- Remote Procedure Call (RPC).
+
+You can inspect them using:
+
+- Services application (`services.msc`).
+- PowerShell `Get-Service`.
+- PowerShell `Start-Service`.
+- PowerShell `Stop-Service`.
+- PowerShell `Restart-Service`.
+
+Comparable Linux commands:
+
+| Windows PowerShell            | Linux systemd                         |
+| ----------------------------- | ------------------------------------- |
+| `Get-Service`                 | `systemctl list-units --type=service` |
+| `Get-Service` for one service | `systemctl status nginx`              |
+| `Start-Service`               | `systemctl start nginx`               |
+| `Stop-Service`                | `systemctl stop nginx`                |
+| `Restart-Service`             | `systemctl restart nginx`             |
+| Startup type: Automatic       | `systemctl enable nginx`              |
+| Disable service startup       | `systemctl disable nginx`             |
+
+The concepts are similar, but systemd has a broader role than simply managing background services.
+
+It also manages unit dependencies, startup ordering, sockets, timers and other system resources.
+
+## **4. Understanding systemd Unit Types**
+
+These are the most useful unit types to recognize.
+
+| Unit extension | Purpose                                   | Example               |
+| -------------- | ----------------------------------------- | --------------------- |
+| `.service`     | Manages a service process                 | `nginx.service`       |
+| `.socket`      | Manages a socket                          | `docker.socket`       |
+| `.timer`       | Schedules a unit                          | `backup.timer`        |
+| `.path`        | Watches filesystem paths                  | `app-watch.path`      |
+| `.mount`       | Manages a filesystem mount                | `home.mount`          |
+| `.target`      | Groups units into a synchronization point | `multi-user.target`   |
+| `.slice`       | Groups processes for resource management  | `system.slice`        |
+| `.scope`       | Represents externally created processes   | `session-2.scope`     |
+| `.device`      | Represents a device recognized by systemd | Device-specific units |
+
+We will cover the most important ones in this module and later stages.
+
+### **4.1 Service unit**
+
+Example:
+
+```
+nginx.service
+```
+
+This represents the Nginx service.
+
+It describes how systemd should start and manage the service process.
+
+### **4.2 Socket unit**
+
+Example:
+
+```
+docker.socket
+```
+
+A socket unit manages a communication socket.
+
+It can be used for socket activation, where systemd listens for incoming connections and starts the relevant service when activity arrives.
+
+### **4.3 Timer unit**
+
+Example:
+
+```
+backup.timer
+```
+
+A timer unit schedules activation of another unit.
+
+It is commonly used as a systemd-native alternative to some cron jobs.
+
+We will cover timers separately later in this module.
+
+### **4.4 Target unit**
+
+Example:
+
+```
+multi-user.target
+```
+
+Targets group other units and provide synchronization points for system startup and operation.
+
+For example, `multi-user.target` is associated with a normal multi-user system environment.
+
+A target is not simply a program that stays running.
+
+It is a grouping and synchronization mechanism.
+
+## **5. Where systemd Unit Files Live**
+
+Unit files can be installed in different locations depending on their purpose.
+
+Common paths include:
+
+| Directory                  | Purpose                                                                 |
+| -------------------------- | ----------------------------------------------------------------------- |
+| `/etc/systemd/system/`     | Administrator-managed system units and overrides                        |
+| `/run/systemd/system/`     | Runtime-generated unit configuration                                    |
+| `/usr/lib/systemd/system/` | Vendor/package-provided units on many distributions                     |
+| `/lib/systemd/system/`     | Vendor unit path on some distributions, including compatibility layouts |
+
+The exact vendor unit directory varies between distributions.
+
+### **5.1 Inspect installed services**
+
+```
+systemctl list-unit-files --type=service
+```
+
+This lists installed service unit files and their enablement states.
+
+### **5.2 Inspect active services**
+
+```
+systemctl list-units --type=service
+```
+
+This lists services loaded by systemd, normally focusing on active or otherwise relevant loaded units.
+
+### **5.3 Locate a unit file**
+
+```
+systemctl cat ssh.service
+```
+
+This displays the unit definition and applicable drop-in configuration when available.
+
+You can also inspect the unit's loaded path:
+
+```
+systemctl show ssh.service -p FragmentPath
+```
+
+If the SSH service isn't installed, the command will not find its unit.
+
+## **6. Understanding a Service Unit File**
+
+A systemd service unit is a configuration file describing how a service should be managed.
+
+Consider this simplified example:
+
+```
+[Unit]
+Description=Example Application Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/example-app
+
+[Install]
+WantedBy=multi-user.target
+```
+
+There are three main sections.
+
+### **6.1&#x20;**`[Unit]`
+
+Contains general information and dependencies.
+
+```
+[Unit]
+Description=Example Application Service
+After=network.target
+```
+
+| Directive     | Purpose                                   |
+| ------------- | ----------------------------------------- |
+| `Description` | Human-readable description                |
+| `After`       | Defines ordering relative to another unit |
+| `Requires`    | Defines a required dependency             |
+| `Wants`       | Defines a weaker dependency               |
+| `Before`      | Defines ordering before another unit      |
+
+We will cover dependency behavior in the next topic.
+
+### **6.2&#x20;**`[Service]`
+
+Contains service execution settings.
+
+```
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/example-app
+```
+
+Important directives:
+
+| Directive          | Purpose                                |
+| ------------------ | -------------------------------------- |
+| `Type`             | Defines the service startup behavior   |
+| `ExecStart`        | Command to start the service           |
+| `ExecStop`         | Optional command to stop it            |
+| `ExecReload`       | Optional command to reload it          |
+| `User`             | User identity used to run the service  |
+| `Group`            | Group identity used to run the service |
+| `WorkingDirectory` | Working directory for the service      |
+| `Environment`      | Environment variables                  |
+| `EnvironmentFile`  | File containing environment variables  |
+| `Restart`          | Restart policy                         |
+| `RestartSec`       | Delay before a restart                 |
+
+We will study service restart behavior separately.
+
+### **6.3&#x20;**`[Install]`
+
+Contains installation information used by commands such as `systemctl enable`.
+
+```
+[Install]
+WantedBy=multi-user.target
+```
+
+This says that enabling this service associates it with the `multi-user.target` startup target.
+
+An important distinction:
+
+**The&#x20;**`[Install]`**&#x20;section is generally used by&#x20;**`systemctl enable`**&#x20;and&#x20;**`disable`**. It is not the section that controls the service's immediate execution behavior.**
+
+## **7. Understanding Service Types**
+
+The `Type` directive tells systemd how to interpret the startup process.
+
+Common types:
+
+| Type      | Behavior                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------- |
+| `simple`  | Service is considered started when its main process is launched                             |
+| `exec`    | Service is considered started after the configured executable has been successfully invoked |
+| `forking` | Program starts and forks into the background                                                |
+| `oneshot` | Runs a task that normally finishes and exits                                                |
+| `notify`  | Service signals readiness using systemd notification                                        |
+| `idle`    | Execution is delayed until certain other jobs have been dispatched                          |
+
+### **7.1 Type=simple**
+
+Example:
+
+```
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/my-app
+```
+
+Commonly used for programs that remain in the foreground.
+
+Many modern applications are designed to run this way.
+
+The process stays active, and systemd monitors it.
+
+### **7.2 Type=exec**
+
+Example:
+
+```
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/my-app
+```
+
+This type allows systemd to distinguish whether the configured executable was successfully invoked.
+
+### **7.3 Type=forking**
+
+Older daemons sometimes start in the background and fork away from their initial process.
+
+For those programs:
+
+```
+[Service]
+Type=forking
+ExecStart=/usr/sbin/example-daemon
+```
+
+A `PIDFile` can also be used when the service provides one.
+
+Modern service designs generally favor foreground processes where practical.
+
+### **7.4 Type=oneshot**
+
+Example:
+
+```
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/perform-maintenance
+```
+
+A one-shot service runs a task and exits.
+
+Examples:
+
+- Generate a report.
+- Perform a maintenance task.
+- Clean up temporary data.
+- Perform a controlled configuration operation.
+
+### **7.5 Type=notify**
+
+Some applications can tell systemd when they are ready.
+
+Example:
+
+```
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/my-app
+```
+
+This requires an application that supports systemd's notification mechanism.
+
+Do not select `notify` for an ordinary application that does not send readiness notifications.
+
+## **8. Controlling Services with&#x20;**`systemctl`
+
+Now let's learn the commands an administrator uses every day.
+
+### **8.1 Check whether systemd is available**
+
+```
+ps -p 1 -o comm=
+```
+
+On a conventional systemd-based Linux installation, this normally displays:
+
+```
+systemd
+```
+
+You can also check:
+
+```
+systemctl is-system-running
+```
+
+Possible output:
+
+```
+running
+```
+
+Other possible states include:
+
+- `degraded`
+- `starting`
+- `maintenance`
+- `offline`
+
+A `degraded` result means systemd is running but at least one unit has failed.
+
+### **8.2 Start a service**
+
+```
+sudo systemctl start nginx.service
+```
+
+Starts the Nginx service immediately.
+
+It does not automatically configure it to start during future boots.
+
+### **8.3 Stop a service**
+
+```
+sudo systemctl stop nginx.service
+```
+
+Stops the service.
+
+Stopping a production service interrupts the functionality it provides. Check operational impact before running this command.
+
+### **8.4 Restart a service**
+
+```
+sudo systemctl restart nginx.service
+```
+
+Stops and starts the service again.
+
+This is commonly used after changes that require a service restart.
+
+### **8.5 Reload a service**
+
+```
+sudo systemctl reload nginx.service
+```
+
+Asks the service to reload its configuration without performing a full restart, provided the service supports reloading.
+
+A reload is not supported by every service.
+
+### **8.6 Check service status**
+
+```
+systemctl status nginx.service
+```
+
+You may see information such as:
+
+```
+● nginx.service - A high performance web server
+
+     Loaded: loaded (...)
+     Active: active (running)
+
+   Main PID: 1234 (nginx)
+
+      Tasks: ...
+     Memory: ...
+        CPU: ...
+```
+
+Important fields:
+
+| Field    | Meaning                                                  |
+| -------- | -------------------------------------------------------- |
+| Loaded   | Whether the unit file was loaded                         |
+| Active   | Current unit state                                       |
+| Main PID | Main process ID                                          |
+| Tasks    | Number of tasks or processes associated with the service |
+| Memory   | Reported memory usage                                    |
+| CPU      | Reported CPU consumption                                 |
+
+### **8.7 Enable automatic startup**
+
+```
+sudo systemctl enable nginx.service
+```
+
+This configures the service to be started through its configured installation relationships when the relevant target is activated.
+
+It does not necessarily start the service immediately.
+
+### **8.8 Disable automatic startup**
+
+```
+sudo systemctl disable nginx.service
+```
+
+This removes the relevant enablement relationships.
+
+It does not necessarily stop a service that is already running.
+
+### **8.9 Enable and start in one command**
+
+```
+sudo systemctl enable --now nginx.service
+```
+
+This enables the service and starts it immediately.
+
+### **8.10 Disable and stop in one command**
+
+```
+sudo systemctl disable --now nginx.service
+```
+
+This disables automatic startup and stops the running service.
+
+These distinctions are essential:
+
+| Command         | Immediate effect                  | Startup configuration         |
+| --------------- | --------------------------------- | ----------------------------- |
+| `start`         | Starts service                    | No change                     |
+| `stop`          | Stops service                     | No change                     |
+| `restart`       | Restarts service                  | No change                     |
+| `enable`        | No immediate start required       | Enables startup relationship  |
+| `disable`       | Does not necessarily stop service | Removes startup relationship  |
+| `enable --now`  | Starts service                    | Enables startup relationship  |
+| `disable --now` | Stops service                     | Disables startup relationship |
+
+## **9. Other Useful systemctl Commands**
+
+### **List active services**
+
+```
+systemctl list-units --type=service
+```
+
+### **List all installed service unit files**
+
+```
+systemctl list-unit-files --type=service
+```
+
+### **Check whether a service is active**
+
+```
+systemctl is-active nginx.service
+```
+
+### **Check whether a service is enabled**
+
+```
+systemctl is-enabled nginx.service
+```
+
+### **View service properties**
+
+```
+systemctl show nginx.service
+```
+
+View a specific property:
+
+```
+systemctl show nginx.service -p MainPID
+```
+
+### **Display the unit definition**
+
+```
+systemctl cat nginx.service
+```
+
+### **Reset the failed state**
+
+```
+sudo systemctl reset-failed nginx.service
+```
+
+This clears the failed-state record.
+
+It does not fix the underlying problem.
+
+### **Find failed units**
+
+```
+systemctl --failed
+```
+
+This is one of the most useful commands during server troubleshooting.
+
+## **10. Internal Working — How systemd Manages a Service**
+
+Consider starting Nginx:
+
+```
+sudo systemctl start nginx
+```
+
+A simplified internal workflow:
+
+```
+Administrator
+     │
+     ▼
+systemctl start nginx
+     │
+     ▼
+systemd receives request
+     │
+     ▼
+Loads nginx.service definition
+     │
+     ▼
+Evaluates dependencies and ordering
+     │
+     ▼
+Prepares service execution environment
+     │
+     ▼
+Launches configured process
+     │
+     ▼
+Tracks service state and process
+```
+
+systemd maintains service state and monitors the configured process according to the unit's type and settings.
+
+It also integrates with logging and other system management facilities.
+
+### **10.1 What happens when a service process exits?**
+
+That depends on service type and configuration.
+
+For example:
+
+- A `simple` service normally becomes inactive when its main process exits.
+- A `oneshot` service commonly runs and finishes.
+- A service with an applicable restart policy may be started again.
+
+We will study restart policies in the next topic.
+
+### **10.2 What is PID 1?**
+
+In a conventional systemd-based boot:
+
+```
+ps -p 1 -o pid,comm,args
+```
+
+You may see:
+
+```
+PID COMMAND
+1   systemd
+```
+
+PID 1 plays a special role in the system process hierarchy.
+
+It is involved in starting system services and adopting orphaned processes.
+
+In WSL, the initialization architecture has additional integration behavior. Do not assume its process hierarchy is identical to a physical server.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub+1
+
+
+
+## **11. WSL2 and systemd**
+
+Check your WSL configuration first
+
+Unlike a conventional Linux server, not every WSL installation necessarily starts systemd as its init system.
+
+Recent WSL versions support systemd, and current Ubuntu installations through WSL commonly use it. Microsoft documents systemd support and the per-distribution configuration method.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+2
+
+
+
+### **Step 1 — Check whether systemd is already running**
+
+Inside Ubuntu:
+
+```
+ps -p 1 -o comm=
+```
+
+If it displays:
+
+```
+systemd
+```
+
+continue with the systemd exercises.
+
+Also check:
+
+```
+systemctl is-system-running
+```
+
+### **Step 2 — Check the WSL version**
+
+From Windows PowerShell:
+
+```
+wsl --version
+```
+
+If this command is not recognized, your WSL installation may be using an older inbox version.
+
+Microsoft documents updating WSL using:
+
+```
+wsl --update
+```
+
+Systemd support requires a sufficiently recent WSL installation.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+### **Step 3 — Enable systemd when necessary**
+
+Inside Ubuntu:
+
+```
+sudo nano /etc/wsl.conf
+```
+
+Add this section, preserving any existing sections:
+
+```
+[boot]
+systemd=true
+```
+
+Save the file.
+
+Now close WSL and, from Windows PowerShell, run:
+
+```
+wsl --shutdown
+```
+
+This shuts down running WSL distributions so the configuration change takes effect.
+
+Start Ubuntu again.
+
+Verify:
+
+```
+ps -p 1 -o comm=
+systemctl is-system-running
+```
+
+Microsoft documents this configuration and restart process in its WSL documentation.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+### **Step 4 — Understand the WSL limitation**
+
+Even with systemd enabled:
+
+- WSL remains a virtualized Linux environment managed by Windows.
+- The WSL distribution's lifecycle is still connected to WSL startup and shutdown.
+- A systemd service does not automatically imply that the Linux environment will stay running when Windows or WSL shuts it down.
+- Some services need real hardware, kernel facilities or traditional server networking that WSL may not provide in the same way.
+
+For production server administration, use a disposable Ubuntu VM or real server for tasks that depend on conventional Linux boot and hardware behavior.
+
+## **12. Practical Demonstration — Create a Custom systemd Service**
+
+Works in WSL2 when systemd is enabled
+
+We will create a harmless service that writes a timestamp to a file.
+
+It will run under your normal WSL username rather than root.
+
+### **Step 1 — Create a lab directory**
+
+```
+mkdir -p ~/linux-learning/lab-19-systemd
+cd ~/linux-learning/lab-19-systemd
+```
+
+### **Step 2 — Create a script**
+
+```
+cat > hello.sh <<'EOF'
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+printf 'Service ran at %s as %s\n' \
+    "$(date --iso-8601=seconds)" \
+    "$(id -un)" \
+    >> "$HOME/linux-learning/lab-19-systemd/run.log"
+EOF
+```
+
+This script:
+
+- Uses Bash.
+- Enables strict error-handling options.
+- Generates a timestamp.
+- Identifies the executing user.
+- Appends the information to `run.log`.
+
+Make it executable:
+
+```
+chmod 755 hello.sh
+```
+
+Run it manually first:
+
+```
+./hello.sh
+```
+
+Inspect:
+
+```
+cat run.log
+```
+
+Expected structure:
+
+```
+Service ran at 2026-11-15T18:00:00+05:30 as your-linux-user
+```
+
+The timestamp and username will differ.
+
+### **Step 3 — Create a systemd unit**
+
+Find the current Linux username:
+
+```
+id -un
+```
+
+Create the service file dynamically:
+
+```
+CURRENT_USER="$(id -un)"
+LAB="$HOME/linux-learning/lab-19-systemd"
+
+sudo tee /etc/systemd/system/linux-learning-demo.service >/dev/null <<EOF
+[Unit]
+Description=Linux Learning Demonstration Service
+
+[Service]
+Type=oneshot
+User=$CURRENT_USER
+ExecStart=$LAB/hello.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+Let's examine the important settings:
+
+| Directive             | Meaning                                                  |
+| --------------------- | -------------------------------------------------------- |
+| `Description`         | Human-readable name                                      |
+| `Type=oneshot`        | Runs a task and exits                                    |
+| `User`                | Runs under your normal Linux user                        |
+| `ExecStart`           | Absolute path to the executable script                   |
+| `RemainAfterExit=yes` | Keeps the unit active after the task finishes            |
+| `WantedBy`            | Defines the startup target association used when enabled |
+
+Why use an absolute path?
+
+System services should not depend on a user's interactive shell PATH or current working directory.
+
+### **Step 4 — Verify the unit file**
+
+```
+sudo systemd-analyze verify /etc/systemd/system/linux-learning-demo.service
+```
+
+If the command is unavailable in your environment, continue with `daemon-reload` and check the service status for configuration errors.
+
+### **Step 5 — Reload systemd's unit definitions**
+
+```
+sudo systemctl daemon-reload
+```
+
+Why is this needed?
+
+You created a new unit file. systemd needs to reload its unit definitions so it can recognize the new service.
+
+This command does not restart all running services.
+
+### **Step 6 — Start the service**
+
+```
+sudo systemctl start linux-learning-demo.service
+```
+
+Check its status:
+
+```
+sudo systemctl status linux-learning-demo.service
+```
+
+Because this is a `oneshot` service with `RemainAfterExit=yes`, a successful execution should generally appear as:
+
+```
+Active: active (exited)
+```
+
+This means the task completed and systemd is retaining the unit's active state.
+
+### **Step 7 — Verify the file**
+
+```
+cat ~/linux-learning/lab-19-systemd/run.log
+```
+
+You should see another timestamp entry.
+
+### **Step 8 — Inspect service logs**
+
+```
+sudo journalctl -u linux-learning-demo.service -n 20 --no-pager
+```
+
+This displays recent journal entries associated with the unit.
+
+The task's output may be minimal because the demonstration script appends its result to a file rather than printing it to standard output.
+
+### **Step 9 — Learn enablement without leaving the service enabled**
+
+Inspect its current state:
+
+```
+systemctl is-enabled linux-learning-demo.service
+```
+
+Enable it:
+
+```
+sudo systemctl enable linux-learning-demo.service
+```
+
+Check:
+
+```
+systemctl is-enabled linux-learning-demo.service
+```
+
+Expected:
+
+```
+enabled
+```
+
+Disable it again:
+
+```
+sudo systemctl disable linux-learning-demo.service
+```
+
+Check:
+
+```
+systemctl is-enabled linux-learning-demo.service
+```
+
+This separates startup configuration from immediate execution.
+
+### **Step 10 — Clean up the service**
+
+Stop and disable it:
+
+```
+sudo systemctl disable --now linux-learning-demo.service
+```
+
+Remove the unit file:
+
+```
+sudo rm -f /etc/systemd/system/linux-learning-demo.service
+```
+
+Reload the unit definitions:
+
+```
+sudo systemctl daemon-reload
+```
+
+Clear any failed-state record:
+
+```
+sudo systemctl reset-failed linux-learning-demo.service
+```
+
+You can retain the learning script and its log in your home directory for revision.
+
+## **13. Troubleshooting systemd**
+
+| Problem                                                  | Possible cause                                                  | Diagnostic                                               |
+| -------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------- |
+| `System has not been booted with systemd as init system` | WSL is not running systemd                                      | `ps -p 1 -o comm=`                                       |
+| `Unit could not be found`                                | Incorrect unit filename or definitions not reloaded             | `systemctl cat unit`, `daemon-reload`                    |
+| `Failed to start`                                        | Invalid command, permissions or configuration                   | `systemctl status`, `journalctl -u`                      |
+| `ExecStart` executable missing                           | Invalid path                                                    | `ls -l /absolute/path`                                   |
+| Service exits immediately                                | Program completed or failed                                     | Inspect service type and logs                            |
+| `Permission denied`                                      | Service's configured user cannot access the executable or files | `namei -l /path`                                         |
+| Unit file changes have no effect                         | systemd has not reloaded definitions                            | `sudo systemctl daemon-reload`                           |
+| Service is active but application unavailable            | Service state does not guarantee application health             | Inspect logs, listening sockets and application endpoint |
+| Service shows `degraded` system state                    | One or more units have failed                                   | `systemctl --failed`                                     |
+
+### **Useful service diagnosis sequence**
+
+When a service fails, follow this order:
+
+```
+systemctl status service-name
+sudo journalctl -u service-name -n 50 --no-pager
+systemctl cat service-name
+systemctl show service-name
+```
+
+Then check the executable and its dependencies.
+
+For a process that should listen on a network port:
+
+```
+ss -lntp
+```
+
+This inspects listening TCP sockets.
+
+Do not immediately restart a service repeatedly without understanding its failure reason.
+
+## **14. Real-World Production Scenario — Deploying an Application Service**
+
+Imagine you have a Node.js application:
+
+```
+/opt/myapp/
+├── server.js
+├── package.json
+└── node_modules/
+```
+
+You want systemd to manage it.
+
+An illustrative unit:
+
+```
+[Unit]
+Description=My Node.js Application
+After=network.target
+
+[Service]
+Type=exec
+User=myapp
+WorkingDirectory=/opt/myapp
+ExecStart=/usr/bin/node /opt/myapp/server.js
+
+[Install]
+WantedBy=multi-user.target
+```
+
+This demonstrates:
+
+- A dedicated service identity.
+- A defined working directory.
+- An explicit executable path.
+- A startup target.
+
+For a real production service, you would also consider:
+
+- Environment configuration.
+- File permissions.
+- Secrets management.
+- Service dependencies.
+- Restart policy.
+- Resource limits.
+- Logging.
+- Graceful shutdown.
+- Health monitoring.
+
+We will build toward those details in the next topics.
+
+## **15. Advanced Notes**
+
+### **15.1 systemd is not just a service launcher**
+
+It also provides mechanisms for:
+
+- Socket activation.
+- Timers.
+- Mount management.
+- Resource grouping.
+- Service isolation.
+- Dependency management.
+- Process lifecycle management.
+
+### **15.2 Unit overrides**
+
+Avoid editing vendor-provided unit files directly under system directories.
+
+Administrators can create override files using:
+
+```
+sudo systemctl edit nginx.service
+```
+
+This creates a drop-in configuration for the unit.
+
+After changing unit configuration:
+
+```
+sudo systemctl daemon-reload
+```
+
+This is usually preferable to modifying a package-managed unit file because package updates can otherwise overwrite local changes.
+
+We will explore override and dependency behavior in more detail in the next topic.
+
+### **15.3 Targets and startup**
+
+A target groups related units.
+
+Inspect the default boot target:
+
+```
+systemctl get-default
+```
+
+Common targets include:
+
+```
+multi-user.target
+graphical.target
+rescue.target
+emergency.target
+```
+
+Inspect the dependencies of a target:
+
+```
+systemctl list-dependencies multi-user.target
+```
+
+This helps administrators understand what gets pulled into a particular system state.
+
+## **16. Teaching Summary**
+
+**Module 03 — Topic 01 key concepts**
+
+- A service is a process or program providing a system function.
+- A daemon commonly runs in the background.
+- systemd is a system and service manager.
+- `systemctl` is its primary command-line control utility.
+- Unit files describe resources managed by systemd.
+- `.service`, `.socket`, `.timer`, `.mount` and `.target` are common unit types.
+- `systemctl start` starts a service now.
+- `systemctl enable` configures startup relationships.
+- `systemctl status` inspects service state.
+- `journalctl -u` reads unit logs.
+- `daemon-reload` reloads systemd unit definitions.
+- `visudo` and sudo policy are separate from systemd service configuration.
+- WSL supports systemd when appropriately configured.
+
+# **MODULE 03 — SERVICES & SCHEDULING**
+
+**Module 03 progress**
+
+# **1 topic started**
+
+The first of eight distinct curriculum areas is covered. SCP/SFTP were already taught in Module 02.
+
+1. systemd Units and Basic Service Management&#x20;
+
+   Covered
+
+2. Service Dependencies and Restart Policies
+
+3. journald and Journal Log Analysis
+
+4. Cron and systemd Timers
+
+5. Log Rotation
+
+6. Process Signals
+
+7. Graceful Shutdown Handling
+
+8. SCP/SFTP&#x20;
+
+   Covered earlier
+
+
+
+## **Next lesson — Two topics**
+
+**Topic 02 — Service Dependencies and Restart Policies**
+
+We will cover `After`, `Before`, `Requires`, `Wants`, `PartOf`, `Restart=`, `RestartSec=`, service ordering, failure recovery, and how to build reliable systemd-managed application services.
+
+**Topic 03 — journald and Journal Log Analysis**
+
+We will cover `journalctl`, journal storage, filtering by service and time, boot-specific logs, kernel logs, persistent logging, disk usage, retention, and real-world service troubleshooting.
+
+**Useful official references:** [Microsoft WSL configuration documentation](https://learn.microsoft.com/en-us/windows/wsl/wsl-config?utm_source=chatgpt.com) · [Microsoft: Use systemd to manage Linux services with WSL](https://learn.microsoft.com/en-us/windows/wsl/systemd?utm_source=chatgpt.com) · [Linux capabilities manual](https://www.man7.org/linux/man-pages/man7/capabilities.7.html?utm_source=chatgpt.com).
