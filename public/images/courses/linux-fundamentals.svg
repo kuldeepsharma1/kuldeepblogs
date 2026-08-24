@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="60" y1="20" x2="1115" y2="675" gradientUnits="userSpaceOnUse"><stop stop-color="#122B27"/><stop offset="1" stop-color="#263839"/></linearGradient>
+    <linearGradient id="layer" x1="200" y1="150" x2="970" y2="530" gradientUnits="userSpaceOnUse"><stop stop-color="#D7E8C8"/><stop offset="1" stop-color="#78B49B"/></linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" stroke="#EAF3E6" stroke-opacity=".08"/></pattern>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h1200v675H0z"/><path fill="url(#grid)" d="M0 0h1200v675H0z"/>
+  <circle cx="1010" cy="112" r="220" fill="#A2CFA9" fill-opacity=".12"/><circle cx="162" cy="594" r="225" fill="#E18C5F" fill-opacity=".12"/>
+  <g transform="translate(0 10)">
+    <rect x="207" y="126" width="786" height="424" rx="19" fill="#0A1718" stroke="#D5E4D6" stroke-opacity=".28" stroke-width="2"/>
+    <rect x="207" y="126" width="786" height="50" rx="19" fill="#E9F0E7" fill-opacity=".08"/><path d="M207 157v19h786v-19" fill="#E9F0E7" fill-opacity=".08"/>
+    <circle cx="240" cy="151" r="6" fill="#ED8A64"/><circle cx="262" cy="151" r="6" fill="#E9C07D"/><circle cx="284" cy="151" r="6" fill="#8EC19D"/>
+    <text x="322" y="157" fill="#AAB9AB" font-family="monospace" font-size="13">bash — linux fundamentals</text>
+    <text x="250" y="228" fill="#86C19A" font-family="monospace" font-size="17">$ uname -s</text><text x="390" y="228" fill="#E8EFE5" font-family="monospace" font-size="17">Linux</text>
+    <text x="250" y="270" fill="#86C19A" font-family="monospace" font-size="17">$ ls /</text><text x="325" y="270" fill="#E8EFE5" font-family="monospace" font-size="17">bin  etc  home  usr  var</text>
+    <text x="250" y="312" fill="#86C19A" font-family="monospace" font-size="17">$ whoami</text><text x="370" y="312" fill="#E8EFE5" font-family="monospace" font-size="17">learner</text>
+    <rect x="250" y="354" width="696" height="1" fill="#D5E4D6" fill-opacity=".18"/>
+    <rect x="250" y="384" width="127" height="112" rx="12" fill="url(#layer)"/><text x="275" y="430" fill="#17302D" font-family="Arial,sans-serif" font-size="14" letter-spacing="1">USER SPACE</text><text x="275" y="462" fill="#17302D" font-family="monospace" font-size="18">bash · apt</text>
+    <rect x="395" y="384" width="241" height="112" rx="12" fill="#E6B87D"/><text x="420" y="430" fill="#382C21" font-family="Arial,sans-serif" font-size="14" letter-spacing="1">SYSTEM SERVICES</text><text x="420" y="462" fill="#382C21" font-family="monospace" font-size="18">users · files · network</text>
+    <rect x="654" y="384" width="127" height="112" rx="12" fill="#E78366"/><text x="678" y="430" fill="#321E1A" font-family="Arial,sans-serif" font-size="14" letter-spacing="1">KERNEL</text><text x="678" y="462" fill="#321E1A" font-family="monospace" font-size="18">Linux</text>
+    <rect x="799" y="384" width="147" height="112" rx="12" fill="#AEC1D0"/><text x="824" y="430" fill="#1F2D38" font-family="Arial,sans-serif" font-size="14" letter-spacing="1">HARDWARE</text><text x="824" y="462" fill="#1F2D38" font-family="monospace" font-size="18">CPU · RAM</text>
+  </g>
+  <text x="69" y="86" fill="#E9F0E7" font-family="Arial,sans-serif" font-size="19" letter-spacing="3">SYSTEMS / SHELL / ADMIN</text>
+  <text x="962" y="615" fill="#E9F0E7" font-family="Arial,sans-serif" font-size="16" letter-spacing="2">LINUX / 01</text>
+</svg>

@@ -39,34 +39,20 @@ This is not just a collection of commands. It is a small example of how a Linux 
 2. Project Architecture
 We will build a project named linux-admin-toolkit.
 Project structure
+```text
 linux-admin-toolkit/
-
-bin/
-
-admin.sh
-
-system-info.sh
-
-backup.sh
-
-
-config/
-
-app.conf
-
-
-data/
-
-application/
-
-backups/
-
-
-logs/
-
-reports/
-
-
+├── bin/
+│   ├── admin.sh
+│   ├── system-info.sh
+│   └── backup.sh
+├── config/
+│   └── app.conf
+├── data/
+│   ├── application/
+│   └── backups/
+├── logs/
+└── reports/
+```
 
 Everything will be created inside the Linux user's home directory.
 What we will learn through this project
@@ -94,7 +80,9 @@ cd "$HOME/linux-learning/lab-10-integration"
 
 
 Step 2 — Create the directory structure
+```bash
 mkdir -p linux-admin-toolkit/{bin,config,data/application,data/backups,logs,reports}
+```
 
 
 Understand the command:
@@ -284,12 +272,14 @@ development
 
 Security note: Sourcing a file executes shell code. Only source configuration files you trust. A production application should use a proper configuration loader or carefully controlled environment file.
 Step 3 — Create a configuration report
+```bash
 {
     echo "Application: $APP_NAME"
     echo "Environment: $APP_ENV"
     echo "Port: $APP_PORT"
     echo "Version: $APP_VERSION"
 } > reports/application-config.txt
+```
 
 
 The { ...; } group runs several commands in the current shell.
@@ -456,6 +446,7 @@ cat reports/error-report.txt
 
 
 Step 8 — Combine multiple reports
+```bash
 {
     echo "APPLICATION LOG SUMMARY"
     echo "========================"
@@ -469,6 +460,7 @@ Step 8 — Combine multiple reports
     echo "Warning count:"
     grep -c 'WARNING' logs/application.log
 } > reports/log-summary.txt
+```
 
 
 Inspect:
@@ -493,6 +485,7 @@ nano bin/admin.sh
 
 
 Add:
+```bash
 #!/usr/bin/env bash
 
 set -u
@@ -584,8 +577,8 @@ case "$COMMAND" in
         show_usage >&2
         exit 2
         ;;
-esac
-
+    esac
+```
 
 Step 2 — Make executable
 chmod +x bin/admin.sh
@@ -634,33 +627,44 @@ echo "$?"
 9. Understand the Main Script Architecture
 We used several important Bash techniques.
 9.1 BASH_SOURCE
+```bash
 "${BASH_SOURCE[0]}"
+```
 
 
 This refers to the currently executing Bash source file.
 
 It helps scripts locate themselves independently of the current working directory.
 9.2 dirname
+```bash
 dirname -- "${BASH_SOURCE[0]}"
+```
 
 
 Extracts the directory portion of the script path.
 9.3 cd
+```bash
 cd -- "$SCRIPT_DIR/.."
+```
 
 
 Moves to the parent directory of bin.
 9.4 Command substitution
+```bash
 PROJECT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+```
 
 
 Executes commands and captures their output.
 9.5 local
+```bash
 local FILE="$LOG_DIR/application.log"
+```
 
 
 Creates a function-local variable.
 9.6 case
+```bash
 case "$COMMAND" in
     info)
         show_info
@@ -669,6 +673,7 @@ case "$COMMAND" in
         run_backup
         ;;
 esac
+```
 
 
 This is useful when implementing command-line interfaces with multiple operations.
@@ -723,6 +728,7 @@ nano bin/full-report.sh
 
 
 Add:
+```bash
 #!/usr/bin/env bash
 
 set -u
@@ -784,6 +790,7 @@ mkdir -p "$REPORT_DIR"
 } > "$REPORT_FILE"
 
 echo "Report created: $REPORT_FILE"
+```
 
 
 Make executable:

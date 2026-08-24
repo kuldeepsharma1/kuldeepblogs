@@ -324,15 +324,16 @@ body {
    Rehype Pretty Code Styles
    ───────────────────────────────────────────── */
 figure[data-rehype-pretty-code-figure] {
-  @apply overflow-hidden rounded-2xl border border-border bg-[#0d1117] my-8 shadow-xl;
+  @apply my-8 overflow-hidden rounded-xl border border-border bg-[#0d1117];
+  box-shadow: 0 14px 36px rgb(0 0 0 / 0.16);
 }
 
 figure[data-rehype-pretty-code-figure] pre {
-  @apply py-5 overflow-x-auto;
+  @apply overflow-x-auto py-5;
 }
 
 figure[data-rehype-pretty-code-figure] code {
-  @apply grid min-w-full text-sm leading-relaxed;
+  @apply grid min-w-full text-[13px] leading-6;
   counter-reset: line;
 }
 
@@ -347,7 +348,7 @@ figure[data-rehype-pretty-code-figure] code[data-line-numbers] > [data-line]::be
 }
 
 figure[data-rehype-pretty-code-figure] [data-line] {
-  @apply px-5 border-l-2 border-transparent;
+  @apply border-l-2 border-transparent px-5;
 }
 
 figure[data-rehype-pretty-code-figure] [data-highlighted-line] {
@@ -360,7 +361,523 @@ figure[data-rehype-pretty-code-figure] [data-highlighted-chars] {
 
 /* Code block title */
 figure[data-rehype-pretty-code-figure] figcaption[data-rehype-pretty-code-title] {
-  @apply px-5 py-3 text-xs font-medium text-zinc-400 border-b border-white/10 bg-white/5;
+  @apply border-b border-white/10 bg-white/5 px-5 py-3 text-xs font-medium text-zinc-400;
+}
+
+.lesson-prose {
+  max-width: 76ch;
+  color: var(--muted-foreground);
+  font-size: 0.97rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.lesson-prose > :first-child {
+  margin-top: 0;
+}
+
+.lesson-prose h1,
+.lesson-prose h2,
+.lesson-prose h3,
+.lesson-prose h4 {
+  color: var(--foreground);
+  font-weight: 650;
+  line-height: 1.25;
+  scroll-margin-top: 7rem;
+}
+
+.lesson-prose h1 {
+  margin: 3.25rem 0 1.25rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.9rem;
+}
+
+.lesson-prose h2 {
+  margin: 2.8rem 0 1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.4rem;
+}
+
+.lesson-prose h3 {
+  margin: 2rem 0 0.65rem;
+  font-size: 1.12rem;
+}
+
+.lesson-prose h4 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.lesson-prose p {
+  margin: 1rem 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.lesson-prose strong {
+  color: var(--foreground);
+  font-weight: 650;
+}
+
+.lesson-prose ul,
+.lesson-prose ol {
+  margin: 1.25rem 0;
+  padding-left: 1.5rem;
+}
+
+.lesson-prose li {
+  margin: 0.45rem 0;
+  padding-left: 0.2rem;
+  line-height: 1.75;
+}
+
+.lesson-prose li::marker {
+  color: var(--info);
+}
+
+.lesson-prose :not(pre) > code {
+  margin: 0 0.1em;
+  padding: 0.15em 0.4em;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--muted);
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  overflow-wrap: anywhere;
+}
+
+.lesson-prose blockquote {
+  margin: 1.75rem 0;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--info) 18%, var(--border));
+  border-left: 3px solid var(--info);
+  border-radius: 0 0.65rem 0.65rem 0;
+  background: color-mix(in srgb, var(--info) 4%, var(--card));
+  color: var(--muted-foreground);
+  font-style: normal;
+}
+
+.lesson-prose blockquote > :first-child {
+  margin-top: 0.5rem;
+}
+
+.lesson-prose blockquote > :last-child {
+  margin-bottom: 0.5rem;
+}
+
+.lesson-prose a {
+  color: var(--info-foreground);
+  font-weight: 550;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--info) 45%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.lesson-prose a:hover {
+  text-decoration-color: currentColor;
+}
+
+.lesson-prose table {
+  width: 100%;
+  min-width: 34rem;
+  margin: 1.75rem 0;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.lesson-prose th,
+.lesson-prose td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.lesson-prose th {
+  background: var(--muted);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.lesson-prose tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--muted) 48%, transparent);
+}
+
+.lesson-prose hr {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.lesson-prose figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.lesson-prose a.mdx-link-preview__card {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+.mdx-callout {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.85rem;
+  margin: 1.75rem 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--callout-border);
+  border-left: 3px solid var(--callout-accent);
+  border-radius: 0.7rem;
+  background: var(--callout-bg);
+  color: var(--muted-foreground);
+}
+
+.mdx-callout[data-type="note"] {
+  --callout-accent: var(--info);
+  --callout-border: color-mix(in srgb, var(--info) 22%, var(--border));
+  --callout-bg: color-mix(in srgb, var(--info) 5%, var(--card));
+}
+
+.mdx-callout[data-type="tip"] {
+  --callout-accent: var(--success);
+  --callout-border: color-mix(in srgb, var(--success) 22%, var(--border));
+  --callout-bg: color-mix(in srgb, var(--success) 5%, var(--card));
+}
+
+.mdx-callout[data-type="warning"] {
+  --callout-accent: var(--warning);
+  --callout-border: color-mix(in srgb, var(--warning) 24%, var(--border));
+  --callout-bg: color-mix(in srgb, var(--warning) 5%, var(--card));
+}
+
+.mdx-callout__icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.15rem;
+  color: var(--callout-accent);
+}
+
+.mdx-callout__title {
+  margin: 0 0 0.25rem;
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.mdx-callout__body > :first-child {
+  margin-top: 0;
+}
+
+.mdx-callout__body > :last-child {
+  margin-bottom: 0;
+}
+
+.mdx-image-figure {
+  margin: 2rem 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--muted);
+}
+
+.mdx-image-figure__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 38rem;
+  object-fit: contain;
+}
+
+.mdx-image-figure__caption {
+  padding: 0.7rem 1rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.mdx-link-preview {
+  display: block;
+  margin: 1.25rem 0;
+}
+
+.mdx-link-preview__card {
+  display: grid;
+  width: 100%;
+  max-width: 40rem;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--card);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.mdx-link-preview__card:hover {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+  background: var(--surface-hover);
+}
+
+.mdx-link-preview__image,
+.mdx-link-preview__fallback {
+  width: 6rem;
+  aspect-ratio: 4 / 3;
+  border-radius: 0.4rem;
+  background: var(--muted);
+  object-fit: cover;
+}
+
+.mdx-link-preview__fallback {
+  display: grid;
+  place-items: center;
+  color: var(--muted-foreground);
+}
+
+.mdx-link-preview__site {
+  display: block;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.63rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mdx-link-preview__title {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 0.2rem;
+  color: var(--foreground);
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.mdx-link-preview__description {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 0.25rem;
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.mdx-link-preview__host {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.35rem;
+  color: var(--muted-foreground);
+  font-size: 0.63rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.architecture-diagram {
+  max-width: none;
+  margin: 2.5rem 0;
+  scroll-margin-top: 6rem;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.architecture-diagram__caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 1.5rem;
+}
+
+.architecture-diagram__eyebrow {
+  color: var(--muted-foreground);
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.architecture-diagram__title {
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.architecture-diagram__root-track {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 1.6rem;
+}
+
+.architecture-diagram__root {
+  display: flex;
+  min-width: 12rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.7rem 1.2rem;
+  border: 1px solid color-mix(in srgb, #2563eb 24%, var(--border));
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, #2563eb 6%, var(--card));
+  text-align: center;
+}
+
+.architecture-diagram__root-label {
+  color: var(--muted-foreground);
+  font-size: 0.62rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.architecture-diagram__root strong {
+  color: var(--foreground);
+  font-size: 0.92rem;
+}
+
+.architecture-diagram__root-connector {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  height: 1.6rem;
+  border-left: 1px solid var(--border);
+}
+
+.architecture-diagram__branches {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  padding-top: 1.35rem;
+}
+
+.architecture-diagram__bus {
+  position: absolute;
+  top: 0;
+  right: var(--architecture-edge);
+  left: var(--architecture-edge);
+  border-top: 1px solid var(--border);
+}
+
+.architecture-diagram__branch {
+  --branch-accent: #d97706;
+  --branch-soft: color-mix(in srgb, #d97706 6%, var(--card));
+  --branch-border: color-mix(in srgb, #d97706 24%, var(--border));
+  position: relative;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--branch-border);
+  border-radius: 0.7rem;
+  background: var(--branch-soft);
+}
+
+.architecture-diagram__branch[data-variant="rhel"] {
+  --branch-accent: #dc2626;
+  --branch-soft: color-mix(in srgb, #dc2626 5%, var(--card));
+  --branch-border: color-mix(in srgb, #dc2626 22%, var(--border));
+}
+
+.architecture-diagram__branch-connector {
+  position: absolute;
+  top: -1.35rem;
+  left: 50%;
+  height: 1.35rem;
+  border-left: 1px solid var(--border);
+}
+
+.architecture-diagram__branch-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--branch-accent);
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.architecture-diagram__branch-kicker::before {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--branch-accent);
+  content: "";
+}
+
+.architecture-diagram__branch-title {
+  margin: 0.35rem 0 0.2rem !important;
+  color: var(--foreground);
+  font-size: 0.98rem !important;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.architecture-diagram__branch-description {
+  margin: 0 !important;
+  color: var(--muted-foreground);
+  font-size: 0.78rem !important;
+  line-height: 1.55 !important;
+}
+
+.architecture-diagram__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.85rem 0 0 !important;
+  padding: 0 !important;
+  list-style: none;
+}
+
+.architecture-diagram__topic {
+  margin: 0 !important;
+  padding: 0.27rem 0.5rem !important;
+  border: 1px solid var(--branch-border);
+  border-radius: 0.35rem;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.7rem;
+  line-height: 1.45 !important;
+}
+
+@media (max-width: 640px) {
+  .architecture-diagram__branches {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.85rem;
+    padding-left: 1.1rem;
+    padding-top: 0;
+  }
+
+  .architecture-diagram__bus {
+    top: 0.35rem;
+    right: auto;
+    bottom: 0.5rem;
+    left: 0;
+    border-top: 0;
+    border-left: 1px solid var(--border);
+  }
+
+  .architecture-diagram__branch-connector {
+    top: 1.35rem;
+    left: -1.1rem;
+    width: 1.1rem;
+    height: 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
 }
 
 /* ─────────────────────────────────────────────

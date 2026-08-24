@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getAllCourses, getCourseBySlug, getRelatedCourses } from "@/lib/courses";
 import { getModulesByCourse } from "@/lib/modules";
 import { getLessonsByModule } from "@/lib/course-lessons";
+import { CourseArtwork } from "@/components/learning/course-artwork";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Avatar } from "@/components/ui/avatar";
@@ -64,59 +65,62 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
         ]}
       />
 
-      {/* Hero */}
-      <section className="learn-surface rounded-3xl border border-border p-8 sm:p-10">
-        <div className="flex items-center gap-2 mb-4">
-          <Badge variant={course.difficulty as Difficulty}>{course.difficulty}</Badge>
-          <span className="text-sm text-muted-foreground">{course.category}</span>
-        </div>
+      <section className="grid overflow-hidden rounded-lg border border-border bg-card md:grid-cols-[1.1fr_0.9fr]">
+        <div className="flex flex-col items-start p-6 sm:p-8 lg:p-10">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={course.difficulty as Difficulty}>{course.difficulty}</Badge>
+            <span className="text-sm text-muted-foreground">{course.category}</span>
+          </div>
 
-        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          {course.title}
-        </h1>
-        <p className="mt-4 max-w-2xl text-lg text-muted-foreground leading-relaxed">
-          {course.description}
-        </p>
+          <h1 className="mt-5 max-w-2xl text-3xl font-semibold text-foreground sm:text-4xl">
+            {course.title}
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+            {course.description}
+          </p>
 
-        {/* Stats Row */}
-        <div className="mt-6 flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4" />
-            {course.estimatedTime}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Layers className="h-4 w-4" />
-            {modules.length} modules
-          </span>
-          <span className="flex items-center gap-1.5">
-            <FileText className="h-4 w-4" />
-            {totalLessons} lessons
-          </span>
-        </div>
+          <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="h-4 w-4" />
+              {course.estimatedTime}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Layers className="h-4 w-4" />
+              {modules.length} modules
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <FileText className="h-4 w-4" />
+              {totalLessons} lessons
+            </span>
+          </div>
 
-        {/* Instructor */}
-        <div className="mt-6 flex items-center gap-3">
-          <Avatar alt={course.instructor.name} size="sm" />
-          <div>
-            <p className="text-sm font-medium text-foreground">{course.instructor.name}</p>
-            {course.instructor.role && (
-              <p className="text-xs text-muted-foreground">{course.instructor.role}</p>
+          <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-4 pt-8">
+            {modulesWithLessons.length > 0 && modulesWithLessons[0].lessonsList.length > 0 && (
+              <Link
+                href={`/learn/courses/${slug}/${modulesWithLessons[0].slug}/${modulesWithLessons[0].lessonsList[0].slug}`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-md bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-foreground/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Start course
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             )}
+            <div className="flex items-center gap-3">
+              <Avatar alt={course.instructor.name} size="sm" />
+              <div>
+                <p className="text-sm font-medium text-foreground">{course.instructor.name}</p>
+                {course.instructor.role && (
+                  <p className="text-xs text-muted-foreground">{course.instructor.role}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Start Button */}
-        {modulesWithLessons.length > 0 && modulesWithLessons[0].lessonsList.length > 0 && (
-          <div className="mt-8">
-            <Link
-              href={`/learn/courses/${slug}/${modulesWithLessons[0].slug}/${modulesWithLessons[0].lessonsList[0].slug}`}
-              className="inline-flex items-center gap-2 rounded-xl bg-foreground px-6 py-3 text-sm font-medium text-background transition-all hover:bg-foreground/90 active:scale-[0.98]"
-            >
-              Start Course
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        )}
+        <CourseArtwork
+          course={course}
+          priority
+          className="aspect-4/3 min-h-56 w-full md:aspect-auto"
+        />
       </section>
 
       <div className="grid gap-10 lg:grid-cols-[1fr_320px]">

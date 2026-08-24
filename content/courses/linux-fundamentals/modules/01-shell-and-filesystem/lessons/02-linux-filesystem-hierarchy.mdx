@@ -1941,6 +1941,7 @@ A Linux path identifies a location in the filesystem namespace, not necessarily 
 A mount point is a directory where a filesystem is attached to the main directory hierarchy.
 
 Example:
+```text
 Main filesystem
       |
       v
@@ -1953,7 +1954,7 @@ Main filesystem
       +---- /var
       |
       +---- /data  <---- Separate filesystem mounted here
-
+    ```
 
 Suppose the /data directory exists before mounting.
 
@@ -2959,6 +2960,7 @@ mkdir -p demo-root/var/log/inventory-api
 If none of these directories exists, Linux creates the hierarchy from the top down.
 11.4 Step 3: Create the application configuration
 Execute:
+```bash
 cat > demo-root/etc/inventory-api/config.yaml <<'EOF'
 application:
   name: inventory-api
@@ -2971,6 +2973,7 @@ storage:
 logging:
   directory: /var/log/inventory-api
 EOF
+```
 
 
 We will study redirection and heredocs fully in Topic 05.
@@ -3003,12 +3006,14 @@ The configuration refers to a real-server layout to illustrate the intended depl
 Inside our simulation, those paths are not actual root-level system directories.
 11.5 Step 4: Create an application executable placeholder
 Execute:
+```bash
 cat > demo-root/usr/local/bin/inventory-api <<'EOF'
 #!/bin/bash
 
 echo "Inventory API demonstration application"
 echo "Application started successfully"
 EOF
+```
 
 
 Read the file:
@@ -3022,11 +3027,13 @@ It has not been granted executable permissions yet.
 That is intentional: we will study executable permissions in Module 02.
 11.6 Step 5: Create persistent application data
 Execute:
+```bash
 cat > demo-root/var/lib/inventory-api/application-state.db <<'EOF'
 inventory_records=125
 last_processed_record=125
 application_status=active
 EOF
+```
 
 
 This simulates persistent application state.
@@ -3039,12 +3046,14 @@ cat demo-root/var/lib/inventory-api/application-state.db
 
 11.7 Step 6: Create application logs
 Execute:
+```bash
 cat > demo-root/var/log/inventory-api/application.log <<'EOF'
 2026-11-13 10:00:00 INFO Application initialized
 2026-11-13 10:01:00 INFO Database connection established
 2026-11-13 10:02:00 INFO HTTP server started on port 8080
 2026-11-13 10:03:00 INFO Health check completed successfully
 EOF
+```
 
 
 Inspect:
@@ -3054,6 +3063,7 @@ cat demo-root/var/log/inventory-api/application.log
 Explain that application events belong to the logging area, rather than the configuration area.
 11.8 Step 7: Create served website content
 Execute:
+```bash
 cat > demo-root/srv/inventory-api/public/index.html <<'EOF'
 <!DOCTYPE html>
 <html>
@@ -3066,6 +3076,7 @@ cat > demo-root/srv/inventory-api/public/index.html <<'EOF'
 </body>
 </html>
 EOF
+```
 
 
 This is a simple example of content that a web service might serve.
@@ -3190,11 +3201,11 @@ Separate disk mounts	LIMITED	WSL supports disk mounting, but this requires caref
 
 Recommended WSL storage practice
 For the entire learning curriculum, use:
-/home/<username>/linux-learning/
+`/home/<username>/linux-learning/`
 
 
 For projects primarily operated with Linux commands, use:
-/home/<username>/projects/
+`/home/<username>/projects/`
 
 
 Use /mnt/c for situations requiring direct Windows filesystem interaction.

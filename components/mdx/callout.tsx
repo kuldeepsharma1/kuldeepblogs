@@ -1,20 +1,30 @@
-import { cn } from "@/lib/cn";
+import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 
 interface CalloutProps {
   children: React.ReactNode;
   type?: "note" | "tip" | "warning";
+  title?: string;
 }
 
-export function Callout({ children, type = "note" }: CalloutProps) {
-  const styles = {
-    note: "border-zinc-300 bg-zinc-50 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300",
-    tip: "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200",
-    warning: "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-200",
+export function Callout({
+  children,
+  type = "note",
+  title,
+}: CalloutProps) {
+  const callout = {
+    note: { icon: Info, title: "Note" },
+    tip: { icon: CheckCircle2, title: "Tip" },
+    warning: { icon: AlertTriangle, title: "Warning" },
   };
+  const { icon: Icon, title: defaultTitle } = callout[type];
 
   return (
-    <div className={cn("mt-8 rounded-2xl border p-5 text-base leading-7", styles[type])}>
-      {children}
-    </div>
+    <aside className="mdx-callout" data-type={type} aria-label={title || defaultTitle}>
+      <Icon className="mdx-callout__icon" aria-hidden="true" />
+      <div>
+        <p className="mdx-callout__title">{title || defaultTitle}</p>
+        <div className="mdx-callout__body">{children}</div>
+      </div>
+    </aside>
   );
 }

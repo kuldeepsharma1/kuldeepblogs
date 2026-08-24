@@ -3203,22 +3203,30 @@ Red Hat publishes installation media and documentation for installing RHEL as a 
 
 A conventional learning environment would look like:
 
-```
-Windows
-   |
-   +---- Ubuntu WSL 2
-   |        |
-   |        +---- Linux fundamentals
-   |        +---- Shell engineering
-   |        +---- Basic administration
-   |
-   +---- RHEL virtual machine
-            |
-            +---- DNF / RPM
-            +---- SELinux
-            +---- systemd
-            +---- Enterprise administration
-```
+<ArchitectureDiagram
+    title="Linux learning environments"
+    root="Windows"
+>
+    <EnvironmentCard
+        name="Ubuntu WSL 2"
+        description="Linux development environment"
+        variant="ubuntu"
+    >
+        <TopicNode>Linux fundamentals</TopicNode>
+        <TopicNode>Shell engineering</TopicNode>
+        <TopicNode>Basic administration</TopicNode>
+    </EnvironmentCard>
+    <EnvironmentCard
+        name="RHEL virtual machine"
+        description="Enterprise Linux environment"
+        variant="rhel"
+    >
+        <TopicNode>DNF / RPM</TopicNode>
+        <TopicNode>SELinux</TopicNode>
+        <TopicNode>systemd</TopicNode>
+        <TopicNode>Enterprise administration</TopicNode>
+    </EnvironmentCard>
+</ArchitectureDiagram>
 
 RHEL image access and subscription eligibility depend on the applicable Red Hat program.&#x20;
 
