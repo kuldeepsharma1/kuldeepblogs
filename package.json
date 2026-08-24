@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "validate:content": "node scripts/validate-content.mjs",
+    "validate:content:json": "node scripts/validate-content.mjs --json",
+    "validate:content:quiet": "node scripts/validate-content.mjs --quiet"
   },
   "dependencies": {
     "@mdx-js/react": "^3.1.1",
