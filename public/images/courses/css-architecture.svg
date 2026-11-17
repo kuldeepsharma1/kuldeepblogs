@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="60" y1="30" x2="1130" y2="680" gradientUnits="userSpaceOnUse"><stop stop-color="#102A2A"/><stop offset="1" stop-color="#172D3B"/></linearGradient>
+    <linearGradient id="panel" x1="190" y1="120" x2="890" y2="550" gradientUnits="userSpaceOnUse"><stop stop-color="#F4B183"/><stop offset="1" stop-color="#E96852"/></linearGradient>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M42 0H0V42" stroke="#EAF1E9" stroke-opacity=".09"/></pattern>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h1200v675H0z"/><path fill="url(#grid)" d="M0 0h1200v675H0z"/>
+  <circle cx="1030" cy="110" r="210" fill="#79B7A2" fill-opacity=".14"/><circle cx="145" cy="600" r="220" fill="#EB7658" fill-opacity=".12"/>
+  <g transform="rotate(-7 590 338)">
+    <rect x="218" y="137" width="716" height="405" rx="20" fill="#0B171D" fill-opacity=".75" stroke="#D9E5D8" stroke-opacity=".25" stroke-width="2"/>
+    <rect x="246" y="164" width="660" height="53" rx="10" fill="#F7F1E8" fill-opacity=".08"/>
+    <circle cx="272" cy="190" r="6" fill="#ED785A"/><circle cx="294" cy="190" r="6" fill="#F0BE75"/><circle cx="316" cy="190" r="6" fill="#8BC0A7"/>
+    <rect x="265" y="248" width="245" height="260" rx="12" fill="url(#panel)"/>
+    <rect x="285" y="268" width="100" height="18" rx="4" fill="#12282B" fill-opacity=".75"/><rect x="285" y="300" width="205" height="10" rx="5" fill="#12282B" fill-opacity=".48"/>
+    <rect x="285" y="329" width="91" height="65" rx="8" fill="#FAE6D1" fill-opacity=".7"/><rect x="389" y="329" width="101" height="65" rx="8" fill="#183B3B" fill-opacity=".8"/>
+    <rect x="285" y="408" width="205" height="11" rx="5.5" fill="#12282B" fill-opacity=".48"/><rect x="285" y="432" width="166" height="11" rx="5.5" fill="#12282B" fill-opacity=".35"/>
+    <rect x="535" y="253" width="344" height="12" rx="6" fill="#E9A775"/><rect x="535" y="283" width="256" height="12" rx="6" fill="#A6D0BC"/>
+    <rect x="535" y="324" width="296" height="12" rx="6" fill="#D5E4D9" fill-opacity=".65"/><rect x="559" y="347" width="270" height="12" rx="6" fill="#D5E4D9" fill-opacity=".35"/>
+    <rect x="535" y="388" width="217" height="12" rx="6" fill="#E9A775" fill-opacity=".85"/><rect x="559" y="411" width="285" height="12" rx="6" fill="#D5E4D9" fill-opacity=".45"/>
+    <rect x="535" y="452" width="152" height="12" rx="6" fill="#A6D0BC"/><rect x="559" y="475" width="210" height="12" rx="6" fill="#D5E4D9" fill-opacity=".35"/>
+  </g>
+  <text x="70" y="91" fill="#E9F0E7" font-family="Arial,sans-serif" font-size="19" letter-spacing="3">LAYOUT SYSTEMS</text>
+  <text x="960" y="615" fill="#E9F0E7" font-family="Arial,sans-serif" font-size="16" letter-spacing="2">CSS / 01</text>
+</svg>

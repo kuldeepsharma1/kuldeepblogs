@@ -1,0 +1,902 @@
+---
+title: "Access Control Lists (ACLs)"
+description: "Use POSIX access and default ACLs to grant fine-grained permissions to additional users and groups."
+slug: "05-access-control-lists-acls"
+courseSlug: "linux-fundamentals"
+moduleSlug: "02-users-permissions-and-access"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 5
+readingTime: "13 min"
+tags: ["linux", "acl", "getfacl", "setfacl", "access-control"]
+toc: true
+---
+
+## **1. Introduction**
+
+Imagine a shared application directory:
+
+```
+/var/www/application/
+├── index.php
+├── config/
+│   └── database.php
+├── storage/
+└── logs/
+```
+
+You have three people:
+
+| User    | Role                   |
+| ------- | ---------------------- |
+| Alice   | Developer              |
+| Bob     | Database administrator |
+| Charlie | Application operator   |
+
+You want the following access:
+
+- Alice can read and modify application files.
+- Bob can read only `database.php`.
+- Charlie can access the logs.
+- Other users should not have access.
+
+Traditional Linux permissions provide only three permission classes:
+
+```
+Owner | Group | Others
+```
+
+You could create more groups, change ownership and move users between groups, but this can become complicated.
+
+Consider this requirement:
+
+> Give Bob read access to one file without changing the file's owner or main group.
+
+Traditional permissions cannot directly express that as a fourth independent entry.
+
+This is where **Access Control Lists (ACLs)** are useful.
+
+An ACL allows additional users and groups to receive specific permissions on files and directories.
+
+## **2. Conceptual Foundation**
+
+### **2.1 What is an ACL?**
+
+An Access Control List is an extended access-control mechanism associated with a filesystem object.
+
+A basic permission model looks like this:
+
+```
+File: application.conf
+
+Owner: alice
+Group: developers
+
+Permissions:
+Owner:  rw-
+Group:  r--
+Others: ---
+```
+
+An extended ACL can add named users and groups:
+
+```
+User: alice           rw-
+Group: developers     r--
+
+Named user: bob       r--
+Named group: auditors r--
+
+Others                ---
+```
+
+Now Bob and the `auditors` group can receive access without becoming the file owner or owning group.
+
+### **2.2 Basic permissions vs ACLs**
+
+| Feature                           | Basic permissions | ACLs |
+| --------------------------------- | ----------------- | ---- |
+| Owner permissions                 | Yes               | Yes  |
+| Owning group permissions          | Yes               | Yes  |
+| Others permissions                | Yes               | Yes  |
+| Additional named users            | No                | Yes  |
+| Additional named groups           | No                | Yes  |
+| Default inherited directory rules | No                | Yes  |
+
+ACLs extend the basic permission model. They do not replace it.
+
+### **2.3 Types of ACLs**
+
+Linux POSIX ACLs have two important types.
+
+**Access ACL**
+
+Controls access to an existing file or directory.
+
+**Default ACL**
+
+A default ACL is configured on a directory. It provides inherited ACL entries for newly created objects inside that directory.
+
+Example:
+
+```
+/shared/project/
+│
+├── file-a.txt
+├── file-b.txt
+└── reports/
+```
+
+A default ACL on `/shared/project` can provide permissions to new files and subdirectories created inside it.
+
+Remember:
+
+- Access ACL: controls an existing object.
+- Default ACL: defines inherited access rules for newly created objects.
+
+## **3. Windows-to-Linux Comparison**
+
+Windows NTFS uses Access Control Entries (ACEs) within Access Control Lists (ACLs).
+
+Linux POSIX ACLs have a similar high-level purpose, but the permission models are not identical.
+
+| Windows               | Linux POSIX ACL                        |
+| --------------------- | -------------------------------------- |
+| NTFS ACL              | POSIX ACL                              |
+| ACE for a user        | Named user entry                       |
+| ACE for a group       | Named group entry                      |
+| Inherited permissions | Default ACL inheritance on directories |
+| Effective permissions | ACL entries combined with ACL mask     |
+
+For example, in Windows you can grant a specific user read access to a file through its Security settings.
+
+In Linux:
+
+```
+setfacl -m u:bob:r-- application.conf
+```
+
+This adds a named-user ACL entry for Bob.
+
+## **4. Linux Implementation — ACL Tools**
+
+The main tools are:
+
+- `getfacl` — Read ACL entries.
+- `setfacl` — Modify ACL entries.
+
+### **4.1 Check whether ACL tools are installed**
+
+```
+command -v getfacl
+command -v setfacl
+```
+
+On Ubuntu, these commands are supplied by the `acl` package.
+
+Install it when necessary:
+
+```
+sudo apt update
+sudo apt install acl
+```
+
+This installs the ACL utilities.
+
+### **4.2 Check filesystem support**
+
+Linux ACL behavior depends on filesystem support and mount configuration.
+
+Inspect the filesystem containing your home directory:
+
+```
+findmnt -T "$HOME" -o TARGET,FSTYPE,OPTIONS
+```
+
+WSL2 Ubuntu normally stores the distribution's Linux filesystem on a Linux filesystem that supports POSIX ACLs.
+
+Avoid assuming that Windows-mounted paths under `/mnt/c` behave exactly like the Linux filesystem.
+
+### **4.3 Inspect an existing ACL**
+
+```
+getfacl application.conf
+```
+
+Typical output for a file without extended ACL entries:
+
+```
+# file: application.conf
+# owner: alice
+# group: developers
+user::rw-
+group::r--
+other::---
+```
+
+These entries correspond to:
+
+| Entry     | Meaning                    |
+| --------- | -------------------------- |
+| `user::`  | File owner's permissions   |
+| `group::` | Owning group's permissions |
+| `other::` | Other users' permissions   |
+
+The double colon means the entry refers to the file owner or owning group, rather than a specifically named user or group.
+
+## **5. Adding ACL Permissions**
+
+Let's examine the most important command.
+
+General syntax:
+
+```
+setfacl -m ENTRY FILE
+```
+
+The `-m` option means modify or add ACL entries.
+
+### **5.1 Grant a named user read access**
+
+```
+sudo setfacl -m u:bob:r-- application.conf
+```
+
+Meaning:
+
+- `u` identifies a user ACL entry.
+- `bob` is the target username.
+- `r--` grants read permission.
+- `-m` modifies the ACL.
+
+Inspect:
+
+```
+getfacl application.conf
+```
+
+You might see:
+
+```
+user::rw-
+user:bob:r--
+group::r--
+mask::rw-
+other::---
+```
+
+Bob has a named ACL entry.
+
+### **5.2 Grant read and write access**
+
+```
+sudo setfacl -m u:bob:rw- application.conf
+```
+
+### **5.3 Remove write access for a named user**
+
+```
+sudo setfacl -m u:bob:r-- application.conf
+```
+
+### **5.4 Grant permissions to a named group**
+
+```
+sudo setfacl -m g:auditors:r-- application.conf
+```
+
+This adds a group ACL entry.
+
+### **5.5 Grant multiple entries in one command**
+
+```
+sudo setfacl -m u:bob:r--,g:auditors:r-- application.conf
+```
+
+Both entries are added or modified.
+
+### **5.6 Remove a named user entry**
+
+```
+sudo setfacl -x u:bob application.conf
+```
+
+The `-x` option removes a specified ACL entry.
+
+Remove a group entry:
+
+```
+sudo setfacl -x g:auditors application.conf
+```
+
+### **5.7 Remove all extended ACL entries**
+
+```
+sudo setfacl -b application.conf
+```
+
+The `-b` option removes extended ACL entries.
+
+The traditional owner/group/other permission entries remain.
+
+**Production caution:** Do not use `setfacl -b` against application directories without first understanding which users and services depend on their ACLs.
+
+## **6. Understanding the ACL Mask**
+
+This is one of the most important ACL concepts.
+
+The **ACL mask** defines the maximum effective permissions available to:
+
+- Named users.
+- Named groups.
+- The owning group entry.
+
+It does not restrict the file owner's `user::` entry or the `other::` entry.
+
+Consider:
+
+```
+user::rw-
+user:bob:rw-
+group::r--
+mask::r--
+other::---
+```
+
+Bob's named entry requests read/write:
+
+```
+user:bob:rw-
+```
+
+But the mask allows only:
+
+```
+mask::r--
+```
+
+Therefore, Bob's effective permission is only read.
+
+The effective ACL entry is the intersection of the named entry and the mask.
+
+**ACL mask example**
+
+Bob's requested permission
+
+# **rw-**
+
+ACL mask
+
+# **r--**
+
+**Bob's effective permission**
+
+# **r--**
+
+The mask removes Bob's effective write permission.
+
+This is why a named ACL entry can appear to grant more permission than the user actually receives.
+
+### **6.1 Inspect effective ACL permissions**
+
+Use:
+
+```
+getfacl -e application.conf
+```
+
+The `-e` option displays effective permissions when an ACL mask restricts an entry.
+
+You may see:
+
+```
+user:bob:rw-              #effective:r--
+```
+
+This indicates that the named entry requests `rw-`, but effective access is `r--`.
+
+### **6.2 Modify the mask explicitly**
+
+To allow read/write access through the mask:
+
+```
+sudo setfacl -m m:rw- application.conf
+```
+
+Now Bob's effective permission can become `rw-`.
+
+To restrict the mask to read-only:
+
+```
+sudo setfacl -m m:r-- application.conf
+```
+
+The effective permissions of named entries and the owning group entry may be reduced.
+
+### **6.3 Why&#x20;**`chmod`**&#x20;can affect ACLs**
+
+When extended ACLs exist, the group permission bits displayed by `ls -l` correspond to the ACL mask.
+
+Therefore:
+
+```
+chmod 640 application.conf
+```
+
+can change the ACL mask and reduce the effective permissions of named users and groups.
+
+It does not necessarily remove their named ACL entries.
+
+Example:
+
+Before `chmod`:
+
+```
+user::rw-
+user:bob:rw-
+group::r--
+mask::rw-
+other::---
+```
+
+After:
+
+```
+chmod 640 application.conf
+```
+
+The resulting permissions may be:
+
+```
+user::rw-
+user:bob:rw-
+group::r--
+mask::r--
+other::---
+```
+
+Bob's entry still requests `rw-`, but the effective permission is now only `r--`.
+
+This is an important troubleshooting point.
+
+> With extended ACLs, the group permission bits shown by `ls -l` represent the ACL mask, not necessarily just the owning group's ACL entry.
+
+## **7. Default ACLs — Inheritance**
+
+Default ACLs are especially useful for shared application directories.
+
+Imagine a team directory:
+
+```
+/shared/team/
+```
+
+You want every newly created file to provide:
+
+- Alice: read/write.
+- Bob: read.
+- Team group: read/write where permitted.
+- Other users: no access.
+
+Rather than configuring every file manually, you can configure a default ACL on the parent directory.
+
+### **7.1 Set a default user ACL**
+
+```
+sudo setfacl -d -m u:bob:r-- /shared/team
+```
+
+The `-d` option identifies a default ACL.
+
+### **7.2 Add a default group ACL**
+
+```
+sudo setfacl -d -m g:developers:rw- /shared/team
+```
+
+### **7.3 Add a default other entry**
+
+```
+sudo setfacl -d -m o::--- /shared/team
+```
+
+### **7.4 Inspect the default ACL**
+
+```
+getfacl /shared/team
+```
+
+Example:
+
+```
+# file: shared/team
+user::rwx
+group::rwx
+other::---
+default:user::rwx
+default:user:bob:r--
+default:group::rwx
+default:group:developers:rw-
+default:mask::rwx
+default:other::---
+```
+
+This directory now has a default ACL.
+
+### **7.5 Create a new file**
+
+```
+touch /shared/team/new-report.txt
+```
+
+Inspect its ACL:
+
+```
+getfacl /shared/team/new-report.txt
+```
+
+The file receives inherited default ACL entries, constrained by the permissions requested when the application creates the file.
+
+**Important:** A default ACL does not necessarily force every inherited permission to remain enabled. The creation mode requested by the program also matters.
+
+For example, a program that creates a file with requested permissions equivalent to `0600` can produce a much more restrictive inherited access result than a file created with `0666`.
+
+### **7.6 Remove default ACLs**
+
+Remove default ACLs from a directory:
+
+```
+sudo setfacl -k /shared/team
+```
+
+The `-k` option removes the directory's default ACL.
+
+It does not remove the directory's access ACL entries.
+
+## **8. How ACL Permission Evaluation Works**
+
+Linux evaluates the applicable ACL entry for a process identity.
+
+A useful simplified order is:
+
+```
+Process requests file access
+        │
+        ▼
+Does process UID match file owner UID?
+        │
+   ┌────┴────┐
+  Yes        No
+   │          │
+   ▼          ▼
+Owner       Does a matching named-user
+entry       ACL entry exist?
+              │
+         ┌────┴────┐
+        Yes        No
+         │          │
+         ▼          ▼
+Named user    Do any process groups
+entry + mask  match group entries?
+                    │
+               ┌────┴────┐
+              Yes        No
+               │          │
+               ▼          ▼
+           Matching     Other
+           groups +     entry
+           mask
+```
+
+More precisely:
+
+1. The file owner is checked against `user::`.
+2. A matching named-user entry is checked, with the ACL mask applied.
+3. Matching group-class entries are considered together, with the ACL mask applied.
+4. If no owner, named-user or group-class match applies, the `other::` entry is used.
+
+The group class can include the owning group as well as named group entries. When several matching group entries exist, their permissions are combined and restricted by the mask.
+
+A failed owner or named-user match does not simply fall through to a more permissive group or other entry.
+
+## **9. Practical Demonstration — ACL Lab**
+
+Works in WSL2 Ubuntu
+
+We will create a directory and use the disposable users from our previous lessons.
+
+### **Step 1 — Install ACL tools if needed**
+
+```
+sudo apt update
+sudo apt install acl
+```
+
+### **Step 2 — Ensure the test user and group exist**
+
+```
+getent passwd labuser
+getent group linuxlab
+```
+
+If they are missing, recreate them:
+
+```
+sudo groupadd linuxlab
+sudo useradd -m -s /bin/bash -g linuxlab labuser
+```
+
+Create another group if needed:
+
+```
+getent group linuxaudit || sudo groupadd linuxaudit
+```
+
+### **Step 3 — Create the lab**
+
+```
+mkdir -p ~/linux-learning/lab-14-acl
+cd ~/linux-learning/lab-14-acl
+```
+
+Create a file:
+
+```
+echo "Confidential application report" > application.conf
+```
+
+Set basic permissions:
+
+```
+chmod 600 application.conf
+```
+
+Inspect:
+
+```
+ls -l application.conf
+```
+
+### **Step 4 — Grant Bob-like access to the test user**
+
+```
+sudo setfacl -m u:labuser:r-- application.conf
+```
+
+Inspect:
+
+```
+getfacl application.conf
+```
+
+Expected structure:
+
+```
+user::rw-
+user:labuser:r--
+group::---
+mask::r--
+other::---
+```
+
+### **Step 5 — Test the ACL**
+
+```
+sudo -u labuser cat application.conf
+```
+
+Expected:
+
+```
+Confidential application report
+```
+
+The test user can read the file even though the traditional `other` permission is `---`.
+
+### **Step 6 — Test the ACL mask**
+
+Give the test user read/write permissions:
+
+```
+sudo setfacl -m u:labuser:rw- application.conf
+```
+
+Restrict the mask:
+
+```
+sudo setfacl -m m:r-- application.conf
+```
+
+Inspect effective permissions:
+
+```
+getfacl -e application.conf
+```
+
+Bob-like access should now be restricted to read.
+
+Test writing:
+
+```
+sudo -u labuser sh -c 'echo "New content" >> application.conf'
+```
+
+Expected: permission denied.
+
+### **Step 7 — Test default ACL inheritance**
+
+Create a shared directory:
+
+```
+mkdir shared
+chmod 700 shared
+```
+
+Add a default ACL:
+
+```
+sudo setfacl -d -m u:labuser:r-x,g:linuxlab:rwx,o::--- shared
+```
+
+Create a new subdirectory and file:
+
+```
+mkdir shared/new-directory
+touch shared/new-file.txt
+```
+
+Inspect the inherited ACLs:
+
+```
+getfacl shared/new-directory
+getfacl shared/new-file.txt
+```
+
+Observe the inherited entries.
+
+The exact effective permissions depend on the modes requested at creation.
+
+### **Step 8 — Remove ACL entries**
+
+Remove the access ACL entry:
+
+```
+sudo setfacl -x u:labuser application.conf
+```
+
+Remove default ACL entries from the shared directory:
+
+```
+sudo setfacl -k shared
+```
+
+Inspect:
+
+```
+getfacl application.conf
+getfacl shared
+```
+
+### **Step 9 — Cleanup**
+
+This lab directory is inside your home directory, so it can be retained for revision. Do not remove anything outside the dedicated lab directory.
+
+To remove it when finished:
+
+```
+rm -r -- ~/linux-learning/lab-14-acl
+```
+
+The earlier disposable account `labuser` can be retained until the end of this module if you want to reuse it for later access-control demonstrations.
+
+## **10. Real-World Production Scenario**
+
+An operations team manages:
+
+```
+/var/www/application/
+```
+
+The team wants to give a monitoring account read-only access to selected log files without changing the existing owner or group.
+
+An administrator can apply a named-user ACL:
+
+```
+sudo setfacl -m u:monitoring:r-- /var/www/application/logs/app.log
+```
+
+For an entire directory tree, an administrator must consider both existing files and future files.
+
+For example:
+
+```
+sudo setfacl -R -m u:monitoring:r-X /var/www/application/logs
+```
+
+Here:
+
+- `-R` applies the ACL recursively.
+- `r-X` grants read and applies execute/search only to directories and files that already have some execute bit.
+
+For future files, the administrator may also set a default ACL on the logs directory.
+
+The correct design should be tested against the actual logging process and file-creation behavior.
+
+Do not automatically grant recursive access to an entire application tree just because one monitoring process needs to read logs.
+
+## **11. Troubleshooting ACLs**
+
+| Problem                                    | Possible cause                                                  | Diagnostic                        |
+| ------------------------------------------ | --------------------------------------------------------------- | --------------------------------- |
+| User still cannot read file                | ACL entry absent or parent directory not searchable             | `getfacl file`, `namei -l path`   |
+| ACL appears to grant write but write fails | ACL mask removes effective write                                | `getfacl -e file`                 |
+| `setfacl: command not found`               | ACL tools not installed                                         | `sudo apt install acl`            |
+| ACL operation unsupported                  | Filesystem or mount does not support the requested ACL behavior | `findmnt -T path`                 |
+| Permissions change after `chmod`           | Group mode bits changed the ACL mask                            | `getfacl file`                    |
+| New files do not inherit ACL               | Default ACL missing on the correct parent directory             | `getfacl parent/`                 |
+| Access differs under `/mnt/c`              | Windows filesystem integration and mount settings               | Compare with a file under `$HOME` |
+
+### **Useful commands**
+
+```
+getfacl -e file
+getfacl -R directory
+setfacl -m u:alice:r-- file
+setfacl -x u:alice file
+setfacl -b file
+setfacl -d -m g:developers:rw- directory
+setfacl -k directory
+```
+
+## **12. Advanced Notes**
+
+### **ACLs and umask**
+
+If a directory has a default ACL, newly created objects inherit entries from it. The creation mode requested by the creating program constrains the permissions granted.
+
+This means the simple mental model of:
+
+```
+666 minus umask
+```
+
+is not sufficient to predict every permission result when default ACLs are involved.
+
+### **ACLs and backups**
+
+Backup tools should preserve ACLs when the backup needs to restore the original access configuration.
+
+GNU `tar` provides ACL-related options:
+
+```
+tar --acls -cf backup.tar application/
+```
+
+For restoration, use compatible ACL-aware options and test the restoration process.
+
+### **ACLs and security audits**
+
+A normal `ls -l` listing may not reveal every named ACL entry.
+
+The trailing `+` often indicates an extended ACL:
+
+```
+-rw-r-----+ 1 alice developers 2048 application.conf
+```
+
+Use `getfacl` to inspect the actual ACL.
+
+## **13. Teaching Summary**
+
+**Topic 05 — ACL key concepts**
+
+- ACLs extend traditional owner/group/other permissions.
+- `getfacl` reads ACL entries.
+- `setfacl` modifies ACL entries.
+- Named users and named groups can receive additional access.
+- The ACL mask restricts effective permissions.
+- `chmod` can modify the ACL mask.
+- Default ACLs provide inherited entries for new objects.
+- `setfacl -x` removes an entry.
+- `setfacl -b` removes extended access ACL entries.
+- `setfacl -k` removes a directory's default ACL.

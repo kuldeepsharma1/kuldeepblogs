@@ -1,0 +1,1225 @@
+---
+title: "Shell Startup Files and Profiles"
+description: "Understand Bash login and interactive shells and the startup files that configure them."
+slug: "07-shell-startup-files-and-profiles"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 7
+readingTime: "18 min"
+tags: ['linux', 'linux-fundamentals', 'bash', 'wsl', 'shell', 'filesystem']
+toc: true
+---
+
+## **1. Introduction**
+
+Whenever you open a Linux terminal, Bash starts and prepares an environment for you.
+
+It may need to:
+
+- Load environment variables.
+- Configure your `PATH`.
+- Define aliases.
+- Load shell functions.
+- Configure the command prompt.
+- Set command history behavior.
+- Load developer tools such as Node.js, Python or Java.
+- Configure interactive shell behavior.
+
+Where does Bash get these settings?
+
+From **shell startup files**.
+
+For example, you might have seen:
+
+```
+~/.bashrc
+~/.profile
+~/.bash_profile
+/etc/profile
+/etc/bash.bashrc
+```
+
+These files are not interchangeable. Bash reads different files depending on how it is started.
+
+This distinction becomes especially important when:
+
+- Your command works in one terminal but not another.
+- A variable is available interactively but missing in scripts.
+- Your Node.js installation works in a terminal but fails in automation.
+- SSH sessions behave differently from local terminals.
+- A production deployment behaves differently from your development environment.
+
+**Our objective:** Understand exactly how Bash starts, which configuration files it reads, and where different kinds of configuration belong.
+
+## **2. Conceptual Foundation**
+
+### **2.1 What is a shell startup file?**
+
+A shell startup file is a configuration file that Bash may execute during startup.
+
+For example:
+
+```
+alias ll='ls -lah'
+```
+
+If this command is placed inside `~/.bashrc`, an interactive Bash session can load the alias automatically.
+
+Without the startup configuration, you would need to define the alias manually every time.
+
+Other examples:
+
+```
+export EDITOR="nano"
+```
+
+```
+export PATH="$HOME/bin:$PATH"
+```
+
+```
+export APP_ENV="development"
+```
+
+Startup files help make the shell environment consistent across sessions.
+
+### **2.2 What is a login shell?**
+
+A login shell is a shell started as part of a login session.
+
+Examples include:
+
+- Logging into a Linux machine through a text console.
+- Connecting through SSH with a normal interactive login.
+- Starting a login shell explicitly using Bash's `--login` option.
+
+A login shell reads login initialization files.
+
+### **2.3 What is an interactive shell?**
+
+An interactive shell is designed to communicate directly with a user.
+
+It typically:
+
+- Displays a prompt.
+- Accepts commands.
+- Supports command history.
+- Supports interactive editing.
+- Loads interactive shell configuration.
+
+Example:
+
+```
+bash
+```
+
+When started from an interactive terminal, this normally creates an interactive non-login Bash shell.
+
+### **2.4 Login and interactive are different properties**
+
+This is a critical distinction.
+
+A shell can be:
+
+- Interactive and login.
+- Interactive and non-login.
+- Non-interactive and login.
+- Non-interactive and non-login.
+
+Common examples:
+
+| Shell type            | Example                                                   |
+| --------------------- | --------------------------------------------------------- |
+| Interactive login     | SSH login shell                                           |
+| Interactive non-login | Opening another Bash terminal inside an existing terminal |
+| Non-interactive       | Running `bash script.sh`                                  |
+| Non-interactive login | Running `bash --login -c 'command'`                       |
+
+Do not assume every terminal window starts a login shell.
+
+## **3. Windows-to-Linux Comparison**
+
+Windows also has different places where shell and user configuration can be defined.
+
+For example:
+
+- PowerShell profile scripts.
+- User environment variables.
+- System environment variables.
+- Windows Terminal settings.
+
+PowerShell has a profile script:
+
+```
+$PROFILE
+```
+
+Inspect its location:
+
+```
+Write-Output $PROFILE
+```
+
+Linux Bash has several startup files instead of relying on one profile file.
+
+| Windows                      | Linux Bash                              |
+| ---------------------------- | --------------------------------------- |
+| PowerShell profile           | `~/.bashrc` or other Bash startup files |
+| User environment variables   | User login environment configuration    |
+| System environment variables | System-wide environment configuration   |
+| PowerShell aliases           | Bash aliases                            |
+| PowerShell functions         | Bash functions                          |
+
+The concepts are similar, but the startup mechanisms differ.
+
+## **4. The Important Bash Startup Files**
+
+Let's understand each file.
+
+### **4.1&#x20;**`~/.bashrc`
+
+Most important for interactive Bash
+
+Location:
+
+```
+/home/username/.bashrc
+```
+
+It is normally loaded by interactive non-login Bash shells.
+
+Typical contents include:
+
+```
+# Aliases
+alias ll='ls -lah'
+alias gs='git status'
+
+# Interactive shell settings
+HISTSIZE=5000
+HISTFILESIZE=10000
+
+# Personal executable directory
+export PATH="$HOME/bin:$PATH"
+```
+
+Ubuntu usually provides a default `.bashrc` file when a user account is created.
+
+Inspect it:
+
+```
+cat ~/.bashrc
+```
+
+Because it can be lengthy, you can also inspect the beginning:
+
+```
+head -n 40 ~/.bashrc
+```
+
+### **4.2&#x20;**`~/.profile`
+
+This file is commonly used for user login initialization.
+
+Typical location:
+
+```
+/home/username/.profile
+```
+
+It may contain:
+
+```
+# Add user's private bin directory to PATH if it exists
+if [ -d "$HOME/bin" ]; then
+    PATH="$HOME/bin:$PATH"
+fi
+```
+
+On Ubuntu, `~/.profile` commonly arranges to load `~/.bashrc` when the login shell is Bash.
+
+Inspect:
+
+```
+cat ~/.profile
+```
+
+### **4.3&#x20;**`~/.bash_profile`
+
+Bash checks for these files when starting as a login shell, in this order:
+
+1. `~/.bash_profile`
+2. `~/.bash_login`
+3. `~/.profile`
+
+It reads the first one that exists.
+
+This means that if `~/.bash_profile` exists, Bash will not automatically continue to `~/.profile`.
+
+For example:
+
+```
+cat > ~/.bash_profile <<'EOF'
+# Login shell configuration
+if [ -f ~/.bashrc ]; then
+    source ~/.bashrc
+fi
+EOF
+```
+
+This explicitly loads `.bashrc` for login shells.
+
+**Important:** Do not create `~/.bash_profile` unnecessarily on Ubuntu. The existing `~/.profile` may already perform the required setup.
+
+### **4.4&#x20;**`/etc/profile`
+
+This is a system-wide login shell initialization file.
+
+It can configure login environments for multiple users.
+
+Typical responsibilities:
+
+- System-wide environment settings.
+- PATH configuration.
+- Loading scripts from `/etc/profile.d/`.
+
+Inspect it:
+
+```
+cat /etc/profile
+```
+
+You will normally need elevated permissions to modify this file.
+
+Do not modify it casually.
+
+### **4.5&#x20;**`/etc/profile.d/`
+
+This directory commonly contains additional system-wide shell initialization scripts.
+
+Inspect it:
+
+```
+ls -l /etc/profile.d/
+```
+
+Example files might configure:
+
+- Locale.
+- Toolchain paths.
+- Language runtimes.
+- Other system-wide login settings.
+
+System administrators can add shell initialization scripts here.
+
+### **4.6&#x20;**`/etc/bash.bashrc`
+
+On Ubuntu and Debian, this is commonly used for system-wide interactive Bash configuration.
+
+Inspect:
+
+```
+cat /etc/bash.bashrc
+```
+
+This is distinct from `/etc/profile`.
+
+| File               | Typical purpose                            |
+| ------------------ | ------------------------------------------ |
+| `/etc/profile`     | System-wide login-shell configuration      |
+| `/etc/bash.bashrc` | System-wide interactive Bash configuration |
+| `/etc/profile.d/`  | Additional system-wide login scripts       |
+| `~/.profile`       | User login configuration                   |
+| `~/.bashrc`        | User interactive Bash configuration        |
+
+### **4.7&#x20;**`/etc/environment`
+
+This file is different from the Bash startup files.
+
+It is commonly used by PAM-related login environment setup to define system-wide environment assignments.
+
+Example:
+
+```
+APP_ENV=production
+APP_REGION=asia
+```
+
+This is not a Bash script.
+
+Therefore, do not put Bash commands into it:
+
+```
+export APP_ENV=production
+```
+
+That is not the intended syntax for `/etc/environment`.
+
+For this lesson, inspect it only:
+
+```
+cat /etc/environment
+```
+
+It may be empty or contain a small number of assignments.
+
+## **5. How Bash Decides Which Files to Read**
+
+This is the most important technical part of the lesson.
+
+### **5.1 Interactive non-login Bash**
+
+Example:
+
+```
+bash
+```
+
+When started interactively as a non-login shell, Bash reads:
+
+```
+~/.bashrc
+```
+
+On Ubuntu, system-wide interactive settings may also be loaded through `/etc/bash.bashrc`, depending on the distribution's configuration and how the shell was invoked.
+
+### **5.2 Interactive login Bash**
+
+Example:
+
+```
+bash --login
+```
+
+Bash reads the first existing file from:
+
+```
+~/.bash_profile
+~/.bash_login
+~/.profile
+```
+
+It also processes system-wide login initialization such as `/etc/profile`.
+
+Ubuntu's default `~/.profile` commonly loads `.bashrc` when the login shell is Bash.
+
+### **5.3 Non-interactive Bash**
+
+Example:
+
+```
+bash -c 'echo Hello'
+```
+
+This is non-interactive.
+
+Bash does not normally read `~/.bashrc` or the login profile files for an ordinary non-interactive shell.
+
+For non-interactive Bash, the `BASH_ENV` variable can specify a file to read before executing the script or command.
+
+Example:
+
+```
+BASH_ENV="$HOME/bash-env-demo" bash -c 'echo "$APP_ENV"'
+```
+
+If the specified file contains:
+
+```
+export APP_ENV="from-bash-env"
+```
+
+The child Bash can print:
+
+```
+from-bash-env
+```
+
+This behavior is useful to understand, but do not use `BASH_ENV` as a casual replacement for properly configuring an application's environment.
+
+### **5.4 Startup behavior diagram**
+
+**Simplified Bash startup decision tree**
+
+**Bash starts**
+
+**Is it a login shell?**
+
+Yes
+
+**Login files**
+
+- `/etc/profile`
+- First available:
+  - `~/.bash_profile`
+  - `~/.bash_login`
+  - `~/.profile`
+
+No
+
+**Non-login**
+
+If interactive:
+
+\- `~/.bashrc`
+
+If non-interactive:
+
+\- `BASH_ENV`, if set
+
+System-wide and distribution-specific initialization may add additional behavior. Login and interactive status are independent.
+
+## **6. Linux Implementation: Inspect Your Current Shell**
+
+All commands in this section work in WSL2 Ubuntu.
+
+### **6.1 Check whether Bash is interactive**
+
+Run:
+
+```
+echo "$-"
+```
+
+Example:
+
+```
+himBHs
+```
+
+The exact characters vary.
+
+If the output contains `i`, Bash is interactive.
+
+Use a direct check:
+
+```
+case "$-" in
+    *i*) echo "Interactive shell" ;;
+    *) echo "Non-interactive shell" ;;
+esac
+```
+
+### **6.2 Check whether Bash is a login shell**
+
+Run:
+
+```
+shopt -q login_shell && echo "Login shell" || echo "Non-login shell"
+```
+
+`shopt` is a Bash built-in that displays or changes shell options.
+
+`login_shell` reports whether the current Bash session is a login shell.
+
+### **6.3 Check your current shell process**
+
+```
+echo "PID: $$"
+echo "Shell: $0"
+echo "Bash version: $BASH_VERSION"
+```
+
+Possible output:
+
+```
+PID: 1234
+Shell: /bin/bash
+Bash version: 5.x.x
+```
+
+The PID and version will differ.
+
+### **6.4 Inspect the startup-related variables**
+
+```
+echo "HOME=$HOME"
+echo "SHELL=$SHELL"
+echo "BASH_ENV=$BASH_ENV"
+echo "BASH_VERSION=$BASH_VERSION"
+```
+
+Remember:
+
+- `$SHELL` usually indicates the user's configured login shell.
+- `$0` indicates how the current shell or script was invoked.
+- `$BASH_VERSION` is set by Bash.
+- `$BASH_ENV` may be unset.
+
+These variables describe different aspects of the shell environment.
+
+## **7. Practical Demonstration: See Which Startup Files Execute**
+
+We will create harmless marker files under your home directory.
+
+This demonstration makes startup behavior visible instead of relying only on theory.
+
+### **Step 1 — Create a lab directory**
+
+```
+mkdir -p "$HOME/linux-learning/lab-07-shell-startup"
+cd "$HOME/linux-learning/lab-07-shell-startup"
+```
+
+### **Step 2 — Create a marker file**
+
+```
+cat > "$HOME/startup-marker.sh" <<'EOF'
+echo "STARTUP FILE EXECUTED"
+EOF
+```
+
+### **Step 3 — Back up your current Bash configuration**
+
+```
+cp "$HOME/.bashrc" "$HOME/.bashrc.lab-backup"
+```
+
+If you already have a backup with that name, choose another filename instead of overwriting it.
+
+### **Step 4 — Add the marker to&#x20;**`.bashrc`
+
+```
+printf '\nsource "$HOME/startup-marker.sh"\n' >> "$HOME/.bashrc"
+```
+
+### **Step 5 — Start an interactive non-login shell**
+
+```
+bash
+```
+
+Expected output:
+
+```
+STARTUP FILE EXECUTED
+```
+
+Why?
+
+Because this is an interactive non-login Bash shell, which reads `.bashrc`.
+
+Exit:
+
+```
+exit
+```
+
+### **Step 6 — Start a non-interactive shell**
+
+```
+bash -c 'echo "Command executed"'
+```
+
+Expected:
+
+```
+Command executed
+```
+
+You should not see:
+
+```
+STARTUP FILE EXECUTED
+```
+
+Why?
+
+An ordinary non-interactive Bash shell does not normally read `.bashrc`.
+
+### **Step 7 — Start a login shell**
+
+```
+bash --login
+```
+
+On a standard Ubuntu setup, the default `~/.profile` generally loads `.bashrc` when Bash is the login shell.
+
+Expected:
+
+```
+STARTUP FILE EXECUTED
+```
+
+Exit:
+
+```
+exit
+```
+
+**Important:** The result depends on your actual startup configuration. If the marker does not appear in the login test, inspect `~/.profile` rather than assuming the shell is broken.
+
+## **8. Real-World Scenario: Why Does a Command Work in One Terminal but Not Another?**
+
+Imagine that you installed a development tool in:
+
+```
+/home/user/.local/bin
+```
+
+You added this to `.bashrc`:
+
+```
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+It works when you open your terminal.
+
+But a scheduled script cannot find the executable.
+
+Why?
+
+The scheduled process may not be an interactive shell. It might not read `.bashrc`.
+
+A common mistake is assuming every Linux process automatically receives your interactive shell's configuration.
+
+It does not.
+
+For automation and production services, configure the required environment explicitly.
+
+For example:
+
+```
+PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin" /home/user/bin/deploy.sh
+```
+
+This explicitly supplies a PATH for that command.
+
+Later, we will learn how cron and systemd provide their own process environments.
+
+## **9. Aliases and Functions in Startup Files**
+
+Startup files are not only for environment variables.
+
+They also configure interactive shell behavior.
+
+### **9.1 Aliases**
+
+An alias is a shortcut for a command.
+
+Example:
+
+```
+alias ll='ls -lah'
+```
+
+Run:
+
+```
+ll
+```
+
+It behaves like:
+
+```
+ls -lah
+```
+
+Aliases are particularly useful in interactive shells.
+
+However, they are generally not expanded in non-interactive shells unless the appropriate Bash option is enabled.
+
+Do not rely on aliases inside production scripts.
+
+Use actual commands and functions instead.
+
+### **9.2 Shell functions**
+
+Functions can be defined in `.bashrc`.
+
+Example:
+
+```
+function mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+```
+
+Now:
+
+```
+mkcd project-demo
+```
+
+This creates the directory and changes into it.
+
+A function is more powerful than an alias because it supports arguments and logic.
+
+Check it:
+
+```
+type mkcd
+```
+
+Expected:
+
+```
+mkcd is a function
+```
+
+### **9.3 Difference between aliases and functions**
+
+| Feature                | Alias                        | Function                        |
+| ---------------------- | ---------------------------- | ------------------------------- |
+| Basic command shortcut | Yes                          | Yes                             |
+| Accept arguments       | Limited textual substitution | Yes                             |
+| Conditional logic      | No                           | Yes                             |
+| Loops                  | No                           | Yes                             |
+| Good for scripts       | Generally avoid              | Yes, when defined appropriately |
+
+## **10. Common Startup Configuration Mistakes**
+
+### **Mistake 1 — Putting aliases in&#x20;**`/etc/environment`
+
+Incorrect:
+
+```
+alias ll='ls -lah'
+```
+
+`/etc/environment` is not a shell script.
+
+Put aliases in a suitable shell startup file such as `~/.bashrc`.
+
+### **Mistake 2 — Assuming&#x20;**`.bashrc`**&#x20;runs for every script**
+
+It does not.
+
+For ordinary non-interactive Bash, `.bashrc` is not automatically read.
+
+Scripts should define or receive their dependencies explicitly.
+
+### **Mistake 3 — Creating&#x20;**`.bash_profile`**&#x20;without understanding it**
+
+If `.bash_profile` exists, Bash chooses it instead of continuing to `.profile`.
+
+This may accidentally bypass existing Ubuntu login configuration.
+
+### **Mistake 4 — Defining interactive-only commands in the wrong place**
+
+For example, an alias defined in `.bashrc` may not exist in an ordinary script.
+
+If a script needs a command, define it in the script or invoke an executable directly.
+
+### **Mistake 5 — Making system-wide changes for personal preferences**
+
+If only your user account needs an alias or PATH addition, use your home-directory configuration rather than changing system-wide files.
+
+### **Mistake 6 — Duplicating configuration**
+
+Repeatedly appending the same export command creates duplicate lines.
+
+Inspect before modifying:
+
+```
+grep -n 'APP_ENV' ~/.bashrc
+```
+
+This shows matching lines and their line numbers.
+
+## **11. WSL-Specific Behavior**
+
+All main labs work in WSL2
+
+WSL adds another layer to the startup process.
+
+A Windows Terminal window can launch WSL, which starts a Linux distribution, which then starts a shell.
+
+Simplified:
+
+```
+Windows
+  |
+  v
+Windows Terminal
+  |
+  v
+WSL
+  |
+  v
+Ubuntu
+  |
+  v
+Bash
+  |
+  +-- Startup configuration
+  |
+  v
+Linux command prompt
+```
+
+Depending on your Windows Terminal profile and WSL configuration, Bash may start as a login or non-login shell.
+
+Check the actual session:
+
+```
+echo "$-"
+shopt -q login_shell && echo "Login" || echo "Non-login"
+```
+
+Do not assume that every WSL terminal starts the same way.
+
+### **WSL-specific caution**
+
+Windows environment import and Linux Bash startup configuration are separate mechanisms.
+
+For example:
+
+- WSL may import Windows environment variables.
+- Bash may read `.bashrc`.
+- Ubuntu may process `.profile` for login sessions.
+- A Windows Terminal profile may affect how the Linux shell is launched.
+
+Changing `.bashrc` does not change your Windows PowerShell profile.
+
+## **12. Practical Lab — Build a Personal Shell Configuration**
+
+We will create a small, organized configuration.
+
+### **Step 1 — Create the lab directory**
+
+```
+mkdir -p "$HOME/linux-learning/lab-07-shell-startup"
+```
+
+### **Step 2 — Create a personal aliases file**
+
+```
+cat > "$HOME/.bash_aliases" <<'EOF'
+alias ll='ls -lah'
+alias gs='git status'
+alias ports='ss -tuln'
+EOF
+```
+
+Ubuntu's default `.bashrc` commonly loads `.bash_aliases` if the file exists.
+
+Inspect the relevant section:
+
+```
+grep -n -A5 -B3 bash_aliases "$HOME/.bashrc"
+```
+
+### **Step 3 — Reload Bash configuration**
+
+```
+source "$HOME/.bashrc"
+```
+
+### **Step 4 — Verify aliases**
+
+```
+type ll
+type gs
+type ports
+```
+
+Expected:
+
+```
+ll is aliased to `ls -lah'
+gs is aliased to `git status'
+ports is aliased to `ss -tuln'
+```
+
+### **Step 5 — Create a personal function**
+
+Add this to `.bashrc`:
+
+```
+cat >> "$HOME/.bashrc" <<'EOF'
+
+function mkcd() {
+    if [[ -z "$1" ]]; then
+        echo "Usage: mkcd DIRECTORY"
+        return 1
+    fi
+
+    mkdir -p -- "$1" && cd -- "$1"
+}
+EOF
+```
+
+Reload:
+
+```
+source "$HOME/.bashrc"
+```
+
+Test:
+
+```
+mkcd "$HOME/linux-learning/lab-07-shell-startup/demo"
+pwd
+```
+
+Expected:
+
+```
+/home/your-linux-username/linux-learning/lab-07-shell-startup/demo
+```
+
+### **Step 6 — Verify a new interactive shell**
+
+```
+bash
+```
+
+Inside the new shell:
+
+```
+type ll
+type mkcd
+```
+
+Both should be available.
+
+Exit:
+
+```
+exit
+```
+
+### **Step 7 — Understand what is not inherited**
+
+Run:
+
+```
+bash -c 'type ll'
+```
+
+It will generally report that `ll` is not found as an alias.
+
+Why?
+
+The new shell is non-interactive and does not automatically load `.bashrc`.
+
+The function may also be unavailable because it was not exported as a function.
+
+This is expected.
+
+## **13. Restore Your Configuration After the Demonstration**
+
+The earlier marker demonstration added a line to `.bashrc`.
+
+We should remove that temporary line and marker file.
+
+First inspect:
+
+```
+grep -n 'startup-marker.sh' "$HOME/.bashrc"
+```
+
+If the only matching line is the one we added for this lesson, remove that exact line using a text editor:
+
+```
+nano "$HOME/.bashrc"
+```
+
+Delete:
+
+```
+source "$HOME/startup-marker.sh"
+```
+
+Save and exit.
+
+Then remove the marker:
+
+```
+rm "$HOME/startup-marker.sh"
+```
+
+Reload:
+
+```
+source "$HOME/.bashrc"
+```
+
+The backup created earlier remains at:
+
+```
+~/.bashrc.lab-backup
+```
+
+Keep it until you have confirmed your normal shell configuration works. Do not blindly replace your current `.bashrc` with the backup because you may have added other useful settings during the lesson.
+
+The personal aliases and function from the lab are intentionally left in place.
+
+## **14. Advanced Notes**
+
+### **14.1 Bash startup behavior is not universal across shells**
+
+Linux systems may use different shells:
+
+- Bash
+- Zsh
+- Fish
+- Dash
+- KornShell
+
+They have different configuration files and startup rules.
+
+For example, Zsh commonly uses:
+
+```
+~/.zshrc
+~/.zprofile
+~/.zlogin
+```
+
+Do not apply Bash startup instructions to Zsh without checking its documentation.
+
+### **14.2 Login shell versus login session**
+
+A login shell is a shell with login initialization behavior.
+
+A login session is broader. It can involve a display manager, PAM, systemd user services, SSH, or other components.
+
+These concepts are related, but they are not identical.
+
+### **14.3&#x20;**`source`**&#x20;versus executing a script**
+
+Consider:
+
+```
+source config.sh
+```
+
+This executes the file in the current shell.
+
+But:
+
+```
+bash config.sh
+```
+
+starts a child Bash process to execute it.
+
+Example:
+
+```
+# config.sh
+APP_MODE="development"
+```
+
+Run:
+
+```
+source config.sh
+echo "$APP_MODE"
+```
+
+Output:
+
+```
+development
+```
+
+Now start a separate Bash process:
+
+```
+unset APP_MODE
+bash config.sh
+echo "$APP_MODE"
+```
+
+The variable will be empty in the parent shell.
+
+The assignment occurred inside the child process.
+
+This distinction is important for shell configuration and scripting.
+
+### **14.4 Why production scripts should not depend on&#x20;**`.bashrc`
+
+A production script should be predictable.
+
+Its behavior should not unexpectedly change because an administrator adds an alias, modifies a prompt, or changes interactive shell preferences.
+
+A good script should:
+
+- Set required defaults.
+- Validate required variables.
+- Use explicit executable paths when necessary.
+- Handle missing configuration.
+- Avoid depending on interactive shell aliases.
+
+We will build more reliable scripts later in the Bash engineering stage.
+
+## **15. Teaching Summary**
+
+The key concepts:
+
+| File or concept    | Main purpose                                                             |
+| ------------------ | ------------------------------------------------------------------------ |
+| `~/.bashrc`        | User interactive non-login Bash configuration                            |
+| `~/.profile`       | User login initialization                                                |
+| `~/.bash_profile`  | Alternative Bash login initialization                                    |
+| `/etc/profile`     | System-wide login shell configuration                                    |
+| `/etc/profile.d/`  | Additional system-wide login scripts                                     |
+| `/etc/bash.bashrc` | System-wide interactive Bash configuration on Ubuntu/Debian              |
+| `/etc/environment` | System-wide environment assignments through login environment mechanisms |
+| `source`           | Execute configuration in the current shell                               |
+| `alias`            | Interactive command shortcut                                             |
+| Function           | Reusable shell logic                                                     |
+| `BASH_ENV`         | Startup file for non-interactive Bash when configured                    |
+
+### **Essential commands**
+
+```
+# Check interactive shell
+echo "$-"
+
+# Check login shell
+shopt -q login_shell && echo "Login" || echo "Non-login"
+
+# Inspect current shell
+echo "$0"
+echo "$BASH_VERSION"
+
+# Read configuration
+cat ~/.bashrc
+cat ~/.profile
+
+# Reload configuration
+source ~/.bashrc
+
+# Inspect aliases and functions
+alias
+type ll
+declare -f mkcd
+
+# Find configuration entries
+grep -n 'PATH' ~/.bashrc
+```
+
+### **Mastery checklist**
+
+- Understand login versus non-login shells.
+- Understand interactive versus non-interactive shells.
+- Know when `.bashrc` is loaded.
+- Know how `.profile` and `.bash_profile` differ.
+- Understand system-wide versus user-specific configuration.
+- Understand why scripts do not automatically load `.bashrc`.
+- Know the difference between `source` and executing a script.
+- Create aliases and shell functions.
+- Inspect the actual startup behavior of a WSL Bash session.
+
+## **16. Official Documentation**
+
+- [GNU Bash — Bash Startup Files](https://www.gnu.org/software/bash/manual/html_node/Bash-Startup-Files.html?utm_source=chatgpt.com)
+- [GNU Bash — Interactive Shells](https://www.gnu.org/software/bash/manual/html_node/Interactive-Shells.html?utm_source=chatgpt.com)
+- [GNU Bash — Bourne Shell Builtins](https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Builtins.html?utm_source=chatgpt.com)
+- [Ubuntu — Bash documentation](https://help.ubuntu.com/community/EnvironmentVariables?utm_source=chatgpt.com)
+
+**Module 01 Progress**
+
+Topic 07 complete
+
+# **7 / 10**
+
+Next: Topic 08 — Linux Package Managers
+
+**Next lesson:** Linux package management — APT, DPKG, RPM, DNF and YUM; installing, updating, removing, inspecting and troubleshooting software packages; repositories, package dependencies and how Linux software installation actually works.

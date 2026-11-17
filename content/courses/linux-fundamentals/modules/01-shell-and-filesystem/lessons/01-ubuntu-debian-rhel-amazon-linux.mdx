@@ -1,0 +1,3455 @@
+---
+title: "Ubuntu, Debian, RHEL and Amazon Linux"
+description: "Understand what Linux is, how major Linux distributions differ, and how to identify the distribution and package-management environment you are working with."
+slug: "01-ubuntu-debian-rhel-amazon-linux"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 1
+readingTime: "90 min"
+tags: ["linux", "ubuntu", "debian", "rhel", "amazon-linux", "wsl", "apt", "dnf", "linux-distributions"]
+objectives:
+  - "Explain the role of an operating system and the Linux kernel"
+  - "Differentiate Linux, a Linux distribution, a shell, and a terminal"
+  - "Describe the purpose and characteristics of Ubuntu, Debian, RHEL, and Amazon Linux"
+  - "Compare DEB/APT and RPM/DNF package-management ecosystems"
+  - "Explain how WSL 2 runs a real Linux kernel"
+  - "Inspect a WSL environment using standard Windows and Linux commands"
+  - "Apply a safe workflow for identifying and troubleshooting an unfamiliar Linux system"
+---
+
+# **Part 1 — Orientation: Understanding Linux**
+
+Before teaching someone Linux commands, establish one important idea:
+
+**Linux is not just a command-line interface. It is an operating system ecosystem that powers servers, cloud infrastructure, containers, supercomputers, embedded devices and much of the technology behind the internet.**
+
+A terminal is simply one way to interact with it.
+
+## **1.1 What is an operating system?**
+
+An operating system (OS) is the software layer that manages a computer's resources and provides services to applications.
+
+Imagine a computer has:
+
+- A processor (CPU) that executes instructions.
+- RAM that holds data currently being used.
+- Storage that keeps data when the machine is turned off.
+- Network interfaces that communicate with other machines.
+- Applications that need access to all these resources.
+
+Without an operating system, every application would need to manage hardware and resources independently. That would be extremely complicated.
+
+An operating system provides a common management layer.
+
+**Simplified operating system architecture**
+
+**Applications**
+
+Web server · Database · Browser · Developer tools
+
+**Operating system services**
+
+Processes · Files · Users · Networking · Services
+
+**Kernel**
+
+CPU scheduling · Memory · Devices · Filesystems · System calls
+
+**Hardware**
+
+CPU · RAM · Disk · Network · Devices
+
+For example, suppose a web server wants to save an uploaded file.
+
+The web server does not directly control the physical storage hardware. It requests a file operation through the operating system. The kernel and filesystem implementation handle the necessary work.
+
+This separation makes it possible for many applications to share hardware safely and efficiently.
+
+## **1.2 What is Linux?**
+
+Technically, **Linux is the kernel**.
+
+The kernel is the central component of an operating system. It manages the computer's hardware and provides controlled access to system resources.
+
+The Linux kernel is responsible for areas such as:
+
+| Responsibility     | What it means                                                       |
+| ------------------ | ------------------------------------------------------------------- |
+| Process management | Creating, scheduling and terminating processes                      |
+| Memory management  | Allocating RAM and managing virtual memory                          |
+| Filesystem support | Providing filesystem operations                                     |
+| Device management  | Interacting with hardware through drivers                           |
+| Networking         | Implementing network protocols and interfaces                       |
+| Security           | Enforcing permissions and other access controls                     |
+| System calls       | Providing the interface applications use to request kernel services |
+
+A kernel is not the entire user experience.
+
+A Linux kernel alone does not automatically give you a convenient terminal, shell, package manager, standard utilities or administration tools.
+
+You need additional software.
+
+## **1.3 What is a Linux distribution?**
+
+A Linux distribution, commonly called a *distro*, combines the Linux kernel with a collection of other software to create a usable operating system.
+
+A distribution typically provides:
+
+- Linux kernel and kernel-related tools.
+- A shell such as Bash.
+- Standard utilities such as `ls`, `cp`, `grep` and `find`.
+- A package management system.
+- System libraries.
+- Service management tools.
+- Default security policies and configurations.
+- Software repositories.
+- Release and security maintenance policies.
+
+Think of the kernel as the engine and the distribution as the complete vehicle assembled around that engine.
+
+This analogy is useful, but remember that distributions can use different kernels, configurations, libraries, tools and release policies.
+
+For example:
+
+- Ubuntu uses the Debian packaging ecosystem.
+- Debian is an independent distribution and the upstream base for Ubuntu.
+- Red Hat Enterprise Linux (RHEL) uses the RPM packaging ecosystem.
+- Amazon Linux is designed for AWS environments and uses the RPM/DNF ecosystem in Amazon Linux 2023.
+
+These are not merely different visual themes. Their administration practices and software lifecycles can differ significantly.
+
+## **1.4 Linux versus distribution versus shell versus terminal**
+
+These four terms are frequently confused.
+
+| Term         | Meaning                                               | Example          |
+| ------------ | ----------------------------------------------------- | ---------------- |
+| Linux        | The operating system kernel                           | Linux kernel 6.x |
+| Distribution | A complete operating system assembled around a kernel | Ubuntu 26.04     |
+| Shell        | A program that interprets commands                    | Bash             |
+| Terminal     | An interface through which you interact with a shell  | Windows Terminal |
+
+The relationship looks like this:
+
+```
+You
+ │
+ ▼
+Terminal application
+ │
+ ▼
+Shell (Bash)
+ │
+ ▼
+Linux programs and utilities
+ │
+ ▼
+System calls
+ │
+ ▼
+Linux kernel
+ │
+ ▼
+Hardware / virtual hardware
+```
+
+A terminal does not execute Linux instructions by itself. It provides an interface to a shell. The shell interprets your commands, starts programs and coordinates their input and output.
+
+Later in this module, we will study precisely how this command-execution process works.
+
+## **1.5 Where does WSL fit into this architecture?**
+
+The learner uses Windows, so it is important to understand what is happening when they open Ubuntu from Windows Terminal.
+
+**Windows Subsystem for Linux (WSL)** allows Linux distributions and Linux tools to run alongside Windows.
+
+There are two architectures:
+
+- **WSL 1:** Uses a compatibility layer that translates Linux system calls into operations supported by the Windows kernel. It does not run a real Linux kernel.
+- **WSL 2:** Uses a real Linux kernel inside a lightweight, Microsoft-managed virtual machine.
+
+Microsoft documents WSL 2 as the default architecture for new installations. It provides much broader Linux system-call compatibility than WSL 1.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+**What happens when Ubuntu runs in WSL 2?**
+
+**Windows 11 / Windows 10**
+
+Your primary operating system
+
+**Windows applications**
+
+Browser · VS Code · Windows Terminal
+
+**WSL 2 managed virtual machine**
+
+A lightweight virtualized Linux environment
+
+**Microsoft-provided Linux kernel**
+
+**Ubuntu distribution**
+
+Bash · apt · Linux utilities · libraries · applications
+
+The key distinction:
+
+- Windows remains the main operating system.
+- WSL 2 provides a Linux kernel environment.
+- Ubuntu provides the distribution and its user-space software.
+- Bash provides the interactive command interpreter.
+
+The Linux environment is real enough to teach most Linux administration fundamentals, including processes, permissions, package management, networking and many system services.
+
+However, WSL is not identical to a standalone production Linux server. Its kernel, hardware access, networking, device integration, lifecycle and virtualized environment introduce differences.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+**Teaching point:** WSL is not a fake terminal. It is a genuine Linux learning environment with specific boundaries.
+
+# **Part 2 — Topic 01: Ubuntu, Debian, RHEL and Amazon Linux**
+
+## **2.1 Introduction: Why do multiple Linux distributions exist?**
+
+Imagine a company wants to operate 500 servers.
+
+Another company wants to run a cloud application on AWS.
+
+A third company operates banking infrastructure and requires long-term vendor support.
+
+All three need Linux, but their requirements are different.
+
+| Requirement                | What the organization values                              |
+| -------------------------- | --------------------------------------------------------- |
+| Software development       | Convenient tools, broad package availability              |
+| Enterprise infrastructure  | Predictable changes, support contracts, compatibility     |
+| Cloud infrastructure       | Cloud integration, optimized images, managed lifecycle    |
+| Databases                  | Reliability, supported dependencies, predictable upgrades |
+| Security-sensitive systems | Controlled updates, certifications, security policies     |
+
+One Linux distribution cannot necessarily optimize for every organization's needs.
+
+This is why different distributions exist.
+
+They share many fundamental Linux principles, but differ in:
+
+1. Who develops and maintains them.
+2. How software is packaged.
+3. How packages are installed and updated.
+4. How releases are tested.
+5. How long releases receive security updates.
+6. What configuration and security defaults they provide.
+7. What type of environments they target.
+
+**Important engineering principle:** Linux knowledge is transferable, but distribution-specific administration knowledge is also necessary.
+
+An experienced administrator understands both.
+
+# **Part 3 — Understanding the four distributions**
+
+## **3.1 Ubuntu**
+
+[ClinicMaster INTERNATIONAL](https://images.openai.com/static-rsc-4/LL_uhk0iJjO3vJzlkX9BOPATizCsH_I7ipcK4Q9hlUASNvX1cbd48I__CpMr81WyGky80KcgQbY3q4zGdmg2LOqoUJLHl-5C9wLXOdnFXqMyjcljjnaOwOrqTzj69IqCFuoXYrpzCMUobZxr-uhLozDhk8Hnd9tT5c1AUBQ8rVE?purpose=inline)
+
+**Ubuntu**
+
+Published by Canonical · Debian-based · DEB/APT ecosystem
+
+Our learning environment
+
+### **What is Ubuntu?**
+
+Ubuntu is a Linux distribution based on Debian.
+
+It is published by Canonical and provides a complete operating system intended for desktops, servers, developers and cloud deployments.
+
+Ubuntu is popular in development environments because it combines a large software repository, familiar administration tools and extensive documentation.
+
+It is also available as a WSL distribution, making it convenient for learning Linux without replacing Windows.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://wiki.ubuntu.com\&sz=32)
+
+Ubuntu Wiki+1
+
+
+
+### **Why does Ubuntu exist when Debian already exists?**
+
+This is an important distinction.
+
+Debian is an independent community-driven project. Ubuntu builds on Debian's technical foundation but has its own development process, release schedule, package maintenance and goals.
+
+Ubuntu integrates Debian packages, makes its own modifications where needed, and maintains its own release archives.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://documentation.ubuntu.com\&sz=32)
+
+Ubuntu project documentation+1
+
+
+
+The relationship:
+
+```
+             Linux Kernel
+                  |
+                  |
+                Debian
+                  |
+                  | Packages, infrastructure,
+                  | development collaboration
+                  |
+                Ubuntu
+                  |
+          +-------+-------+
+          |               |
+       Ubuntu           Ubuntu
+       Desktop          Server
+                          |
+                     Cloud Images
+                          |
+               +----------+----------+
+               |          |          |
+              AWS        Azure      GCP
+```
+
+This is a conceptual relationship, not an exact build pipeline. Ubuntu also receives software from many upstream projects outside Debian.
+
+### **Important characteristics**
+
+**1. Debian package format**
+
+Ubuntu traditionally uses `.deb` packages.
+
+For example:
+
+```
+nginx_1.24.0-2ubuntu7_amd64.deb
+```
+
+This is an illustrative filename, not a promise that this exact package exists in your repository.
+
+**2. APT package management**
+
+Ubuntu uses APT (Advanced Package Tool) for high-level package management.
+
+Common commands:
+
+```
+sudo apt update
+sudo apt install nginx
+sudo apt upgrade
+sudo apt remove nginx
+```
+
+We will study package management separately in this module. For now, remember that Ubuntu's usual package-management interface is `apt`.
+
+**3. Linux filesystem conventions**
+
+Ubuntu follows the standard Linux filesystem conventions.
+
+Examples:
+
+```
+/etc       Configuration files
+/home      User directories
+/var       Variable application data and logs
+/usr       Installed programs and libraries
+/bin       Essential command locations
+/tmp       Temporary files
+```
+
+We will examine these directories in the next topic.
+
+**4. Frequent use in cloud environments**
+
+Ubuntu images are available across major cloud providers. Developers commonly encounter Ubuntu in development servers, web application deployments, CI/CD environments and application hosting.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://documentation.ubuntu.com\&sz=32)
+
+Ubuntu project documentation+1
+
+
+
+### **Ubuntu release strategy**
+
+This is one of Ubuntu's most important characteristics.
+
+Ubuntu generally publishes releases every six months.
+
+There are two main release categories.
+
+| Release type            | Frequency      | Standard support |
+| ----------------------- | -------------- | ---------------- |
+| LTS (Long-Term Support) | Every 2 years  | 5 years          |
+| Interim                 | Every 6 months | 9 months         |
+
+LTS versions are intended for deployments requiring a longer maintenance window.
+
+For example:
+
+- Ubuntu 22.04 LTS
+- Ubuntu 24.04 LTS
+- Ubuntu 26.04 LTS
+
+Ubuntu 26.04 LTS was released in April 2026.
+
+As of November 2026, the current LTS is 26.04. Its standard support is scheduled through May 2031. Ubuntu Pro can extend coverage, with additional periods depending on the subscription and coverage type.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://ubuntu.com\&sz=32)
+
+Ubuntu+1
+
+
+
+### **What does LTS actually mean?**
+
+LTS does not mean the operating system will never change.
+
+It means the release receives a longer maintenance commitment.
+
+Suppose an organization deploys an application on Ubuntu 24.04 LTS.
+
+It wants to avoid changing the underlying OS every few months because changes may affect:
+
+- Application dependencies.
+- Database compatibility.
+- System libraries.
+- Drivers.
+- Runtime behavior.
+- Operational procedures.
+
+An LTS release gives the organization a longer period in which to maintain the same major release while receiving supported security and bug fixes.
+
+An important technical detail: Ubuntu often backports security fixes instead of moving every package to its newest upstream feature version. This is intended to preserve compatibility while correcting vulnerabilities.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://documentation.ubuntu.com\&sz=32)
+
+Ubuntu security documentation
+
+
+
+### **Where is Ubuntu used?**
+
+[Figure 4 - from Establish Virtual Computer Labs for](https://images.openai.com/static-rsc-4/7qM1oRQxMZRsibPwIxcGcsYZ0tE0A6KrnYnhLlbRAVCSFyqsAadMZ7EgK6VUvAuSsSmSeFaZKtn1RiJGz-aaxmT5JCa-VJDe64NcMrPgADZckFbt2KBg9X6bjZ2AoGLWxD0HJWUGm7xeleFfGLgcq83ymxFeP4_4Xsk7lxOHmug?purpose=inline)
+
+[Ubuntu Serverの初期設定完全ガイド｜インストールからセキュリティ設定まで【2026年版】 | Harmonic Society](https://images.openai.com/static-rsc-4/It2Qa24BSsoNqJv_q4MLo6ptFywQeTgw7s5IvymdTGpA9aL0aIyi-TnnPMNml_ON76RWdN67ljSFlqEqyoc7JbA7qkup0-gFGxR4ogcMjp37LCQ27lGKe-cM1gXGgCGxuOxJqU56aCZ8KUDzRT9PHalkJT6pc__KBzbfy5E3D3g?purpose=inline)
+
+[Ubuntu 20.04 LTS arrives](https://images.openai.com/static-rsc-4/olwdS2t83QRMOEN-FO7ZAnIoVA3PAZx752Zv7IY6nEg7XVciCVAz99EXMRmzjQ4B39X7mDnGtnWvS7ld5EpT6qseneOpCzYWmdGIgmBriH_8IXP72_CEaohsMaJdu5TpX_U8YiGJ6HclhYV28IpNjiANEgySxOKWRngs_bebblE?purpose=inline)
+
+Common use cases:
+
+- Web application servers.
+- Nginx and Apache hosting.
+- PHP/Laravel infrastructure.
+- Node.js and Python applications.
+- Docker and Kubernetes environments.
+- Developer workstations.
+- Cloud virtual machines.
+- WSL development environments.
+
+### **What should the learner remember?**
+
+Ubuntu is a Debian-based Linux distribution, uses DEB packages and APT, and provides LTS releases suitable for long-running infrastructure.
+
+It is a good starting environment because the learner can use it in WSL and build knowledge that transfers to many production environments.
+
+## **3.2 Debian**
+
+[Software We Use At NixNexus - NixNexus - Your Guide to everything FOSS](https://images.openai.com/static-rsc-4/oQLMZJ5NWzk43EGLhYMslNEVN8F1l_EH4xxV0UNmIrjEA4CfVsV41sJNau6RtUOuvUQIgSmpqY0AuYTVVJt3szz23XQz8rmBqFka5DdSUv8b7LFpDD1S9-4ABn8nvDJONySZWntm5ATShZ9HUpT2VG3GAD71f_XdussdqaEPSGY?purpose=inline)
+
+**Debian**
+
+Community-developed · DEB/APT ecosystem · Stability-oriented releases
+
+### **What is Debian?**
+
+Debian is an independent, community-driven Linux distribution.
+
+It is one of the important foundations of the Linux distribution ecosystem.
+
+Ubuntu is built using Debian as its foundation, but Debian itself is a separate operating system with its own governance, maintainers, repositories and release process.
+
+### **Why does Debian exist?**
+
+Debian places substantial emphasis on:
+
+- Software integration.
+- Stability.
+- Predictable releases.
+- Free and open-source software.
+- Careful testing.
+- Broad hardware and architecture support.
+
+A critical concept here is that stability and newness are not the same thing.
+
+A package that has been thoroughly tested and remains compatible over a long period may be preferable to a package that is newer but has not yet undergone equivalent integration testing.
+
+This is especially important for servers.
+
+### **Debian release branches**
+
+Debian maintains three important development states.
+
+**Stable**
+
+Production-oriented
+
+Software selected and tested for the official stable release. This is the normal choice for production deployments.
+
+**Testing**
+
+Integration testing
+
+Packages being evaluated for a future stable release. It generally offers newer software but may experience changes and regressions.
+
+**Unstable (Sid)**
+
+Development
+
+The continuously changing development distribution where new packages and changes are integrated.
+
+Debian officially recommends Stable as its primary production release. Testing and Unstable have different purposes and should not be treated as interchangeable production environments.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.debian.org\&sz=32)
+
+Debian+1
+
+
+
+### **What does stable mean?**
+
+Let's use a practical example.
+
+Assume an application depends on:
+
+```
+Python
+OpenSSL
+glibc
+PostgreSQL libraries
+System utilities
+```
+
+A constantly changing operating system might introduce newer versions of some dependencies.
+
+That may introduce:
+
+- API changes.
+- Behavior changes.
+- Compatibility problems.
+- Regressions.
+- Unexpected application failures.
+
+Debian Stable aims to keep the package set relatively consistent throughout a release's life.
+
+This does not mean vulnerabilities are ignored.
+
+Security fixes and selected bug fixes are applied while preserving the release's overall compatibility goals.
+
+**Stable means controlled and predictable software changes, not that bugs are impossible.**
+
+### **Debian package management**
+
+Debian uses the DEB packaging system and APT.
+
+The fundamental tools are:
+
+| Tool        | Responsibility                                           |
+| ----------- | -------------------------------------------------------- |
+| `apt`       | High-level package and dependency management             |
+| `apt-get`   | Script-oriented APT interface                            |
+| `dpkg`      | Lower-level package installation and database management |
+| `apt-cache` | Queries package metadata                                 |
+
+Example:
+
+```
+sudo apt update
+sudo apt install nginx
+```
+
+The package management principles are similar to Ubuntu because both distributions use the same underlying packaging ecosystem.
+
+However, their repositories, versions, package builds and release policies are not identical.
+
+### **Debian lifecycle**
+
+Debian's Stable lifecycle is approximately five years: the Debian Security Team provides the initial security maintenance, followed by the Debian LTS team for the remaining period.
+
+Debian 13, code-named Trixie, is the current Stable release as of November 2026. Its published lifecycle includes regular support followed by LTS through June 2030.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.debian.org\&sz=32)
+
+Debian+1
+
+
+
+### **Where is Debian used?**
+
+[Add a dynamic MOTD to your Linux server · Stan's blog](https://images.openai.com/static-rsc-4/ehTenqYj5mj6I3T8BXG5O8C96v0Mmz1_VP3GFpxCDtZ6qCUWvCzZXT5HA1YG7uJoGj_3KhLS12O3MC7qngE4nAeNWMhxn0Jxjx5JSB6NIdfgDdjbsC1khy5eQUBac9-zkI0zNSxF8ev0TZ0F6ac6tr7atmicLR45nwYNrzBs6iw?purpose=inline)
+
+Typical uses:
+
+- Minimal Linux servers.
+- Web hosting.
+- Infrastructure services.
+- Network appliances.
+- Containers and base images.
+- Long-running applications.
+- Systems where predictable package versions matter.
+
+### **Ubuntu versus Debian: The important distinction**
+
+| Area               | Debian                             | Ubuntu                                                    |
+| ------------------ | ---------------------------------- | --------------------------------------------------------- |
+| Governance         | Independent community project      | Canonical-led ecosystem with community participation      |
+| Foundation         | Independent                        | Based on Debian                                           |
+| Package format     | DEB                                | DEB                                                       |
+| Package manager    | APT                                | APT                                                       |
+| Release approach   | Stable, Testing, Unstable          | LTS and interim                                           |
+| Main emphasis      | Carefully integrated stable system | Integrated platform with more frequent scheduled releases |
+| Cloud availability | Available                          | Broad commercial cloud image ecosystem                    |
+
+**Teaching example:**
+
+Suppose a learner is told to install Nginx.
+
+On Ubuntu:
+
+```
+sudo apt install nginx
+```
+
+On Debian:
+
+```
+sudo apt install nginx
+```
+
+The command is identical, but the package version, repository source, defaults and release policies may differ.
+
+That is an important lesson: identical commands do not guarantee identical operating-system behavior.
+
+## **3.3 Red Hat Enterprise Linux (RHEL)**
+
+[Red Hat Enterprise Linux Logo Png | Red Hat Enterprise Linux Logo Vector  - freepng](https://images.openai.com/static-rsc-4/sdwDAENTuUyIHziX8mnAjeb5A2M6bZ-MMqn0qeDJDu8ZbiSLCKOQgYgtNu7GaIRI8l7ZuBtUF8hWP6hDqONxPQdsZeGw8e6Qq-ofNpm4T5hVIDOYBsJ8is32Tx6gRkzkV2DEnvsZs2rZZfdBCMsQt2bCo9PXckJQHa7jhfrxnt0?purpose=inline)
+
+**Red Hat Enterprise Linux**
+
+Published by Red Hat · RPM/DNF ecosystem · Enterprise-oriented
+
+### **What is RHEL?**
+
+Red Hat Enterprise Linux, commonly called RHEL, is an enterprise-focused Linux distribution published by Red Hat.
+
+It is designed for organizations that need a professionally supported operating system with controlled release management, documented lifecycle policies and enterprise infrastructure integration.
+
+RHEL is commonly encountered in enterprise data centers, application platforms, databases and large-scale business infrastructure.
+
+### **Why does RHEL exist?**
+
+Consider a large organization operating:
+
+- 200 database servers.
+- 100 application servers.
+- 50 internal infrastructure servers.
+- Several hundred virtual machines.
+
+A major operating system change could affect thousands of business operations.
+
+The organization therefore needs:
+
+1. Predictable software maintenance.
+2. Documented compatibility expectations.
+3. Vendor support.
+4. Security advisories.
+5. Controlled minor releases.
+6. Long support timelines.
+7. Enterprise administration features.
+
+RHEL addresses these requirements through its enterprise release and support model.
+
+### **The RPM ecosystem**
+
+Unlike Ubuntu and Debian, RHEL belongs to the RPM packaging ecosystem.
+
+The RPM format means *RPM Package Manager*.
+
+An RPM package commonly has a filename such as:
+
+```
+nginx-1.26.0-1.el10.x86_64.rpm
+```
+
+This is an illustrative filename.
+
+RHEL uses two important software management layers:
+
+| Technology | Responsibility                                             |
+| ---------- | ---------------------------------------------------------- |
+| RPM        | Low-level package installation and package database        |
+| DNF        | Higher-level software management and dependency resolution |
+
+In practice:
+
+```
+sudo dnf install nginx
+```
+
+DNF checks configured repositories, evaluates dependencies, downloads the required packages and coordinates their installation.
+
+Red Hat documents DNF as the standard package-management approach in current RHEL releases.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.redhat.com\&sz=32)
+
+Red Hat Documentation
+
+
+
+### **RHEL repositories**
+
+RHEL software is distributed through repositories.
+
+Repositories are structured collections of software packages and their metadata.
+
+The package manager uses repository metadata to determine:
+
+- What packages are available.
+- What version each repository offers.
+- Which dependencies are needed.
+- Which package sources are trusted.
+- What updates can be applied.
+
+Repositories can be vendor-managed or configured by an organization.
+
+For supported RHEL environments, access to Red Hat repositories and support services is tied to the applicable subscription and registration model.
+
+This is different from a typical Ubuntu installation, where the standard Ubuntu archives are generally accessible without a commercial subscription.
+
+### **RHEL release and lifecycle strategy**
+
+RHEL uses a lifecycle with major releases, minor releases and individual maintenance updates.
+
+Example:
+
+```
+RHEL 10
+   |
+   +-- RHEL 10.0
+   |
+   +-- RHEL 10.1
+   |
+   +-- RHEL 10.2
+   |
+   +-- Later minor updates
+```
+
+This is a conceptual illustration.
+
+The purpose is to provide a stable major-version platform while delivering updates within that release.
+
+Red Hat's documented lifecycle for RHEL 8, 9 and 10 provides ten years across the Full Support and Maintenance Support production phases, followed by an Extended Life Phase. Additional coverage can be available under optional offerings.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://access.redhat.com\&sz=32)
+
+Red Hat Customer Portal
+
+
+
+### **Why does this matter?**
+
+Imagine an organization runs an application on RHEL 9.
+
+It may need to keep the same major release because:
+
+- The application vendor certifies only particular OS versions.
+- Database drivers depend on specific system libraries.
+- The business has validated a certain runtime.
+- Compliance requires controlled infrastructure changes.
+
+The organization can maintain that environment while applying supported updates.
+
+This is an important part of enterprise Linux administration.
+
+### **RHEL and security**
+
+RHEL has a strong enterprise security ecosystem.
+
+A particularly important technology is SELinux.
+
+SELinux (Security-Enhanced Linux) provides mandatory access control.
+
+It can restrict what processes may access, even when ordinary Unix permissions would otherwise permit an operation.
+
+For example, a web server process might have permission to read a file under traditional Unix permissions but still be denied by SELinux because its security policy does not permit access.
+
+We will study SELinux and AppArmor in Stage 02, Module 06.
+
+Other enterprise-related concepts include:
+
+- Security advisories.
+- System auditing.
+- Cryptographic policies.
+- Vendor support.
+- Configuration compliance.
+- Controlled software updates.
+
+### **Where is RHEL used?**
+
+[Red Hat System Certified Administrator](https://images.openai.com/static-rsc-4/iZPwolsJbpFAKTplfUU3e51O8ldMqovMPnegjzRZMMeP960rDIaktc2652UzQnveavfJTv6IP8jpRDzrF85t8DBlwuEWEDWI4fXlPfs4AySsdjLxKZIsCzDohd33zNgx6VWifcY-RpBYku58YVvE3MePpw2efEHqUst9nKpoREY?purpose=inline)
+
+[OpenShift Platform Plus | Red Hat OpenShift Container Platform 4.10 on Dell Infrastructure | Dell Technologies Info Hub](https://images.openai.com/static-rsc-4/OAl4G7Cjnzz06RC9VtW-T2KgQoEqF4AhBwrXOV_TFbIxfhzRBt-F0M1I2K7tiBjU5Hc-E_Lt1W1PdFo2qepVoL4ONaxqBLlH7LcZGSnJkZUx-ljJOYumxmNyuljrp01f4VsukMx6f-S4m154uVcF7F5xsfVG7F4H7D6k2TNGQs8?purpose=inline)
+
+[삼성전자, 레드햇과 업계 최초 CXL 메모리 동작 검증 | 삼성반도체](https://images.openai.com/static-rsc-4/qMqkn90w3jZkDQRZAfZGe6exBeMfUHRTjbN67lnsPDcBJ8CbCjVrh8fLI_JYj39_vI_6Y59meCCRit_-BdRQe1Pz0-7-cyQ4WofOP9lX7Xxsj1p33xv500Lwp091A7gsB68Dp2D0b8Sy8vUdwUpy8c-bDJ495d4VvGBvrPj4Udg?purpose=inline)
+
+5
+
+Typical environments:
+
+- Banking and finance.
+- Enterprise databases.
+- Government infrastructure.
+- Telecom.
+- Hybrid cloud.
+- Enterprise application hosting.
+- Large corporate data centers.
+- Kubernetes and OpenShift environments.
+
+### **Is RHEL free?**
+
+There is an important distinction between software access, subscription access and commercial support.
+
+RHEL has subscription-based enterprise offerings. Red Hat also provides developer-oriented programs under specific eligibility and usage terms.
+
+The availability of a subscription, support entitlement and repository access depends on the particular program.
+
+Do not assume that downloading an RPM automatically gives access to RHEL's full supported package ecosystem.
+
+### **What should the learner remember?**
+
+RHEL is an enterprise-oriented Linux distribution using RPM packages and DNF. Its release lifecycle, vendor support and controlled update model make it especially relevant in enterprise Linux administration.
+
+## **3.4 Amazon Linux**
+
+[More secure Python Docker images with Amazon Linux 🔐 - DEV Community](https://images.openai.com/static-rsc-4/P0M3LruRcdh7xnL8sM0Rtxs1wMEIsW5T-UiEtVavw-DrhSNK04dC63b82DhHCmOahFpf8qemu1A6zjgy1D38SUABml5zoxgUG8bnznUd8xn2sOtMJxBWlumc0NiHrvlzryWdFCOtS2YUtslFfU_9XwUMa1DexDeRiRZRFiDEAM0?purpose=inline)
+
+**Amazon Linux**
+
+Published by AWS · RPM/DNF ecosystem · Cloud-oriented
+
+### **What is Amazon Linux?**
+
+Amazon Linux is a Linux distribution maintained by Amazon Web Services (AWS).
+
+It is designed for cloud infrastructure, particularly AWS environments.
+
+The current generation of the distribution in this syllabus is Amazon Linux 2023, commonly abbreviated as AL2023.
+
+Amazon Linux provides an operating system that AWS develops and tests for its cloud infrastructure and supported workloads.
+
+### **Why does AWS maintain its own Linux distribution?**
+
+Think about running a Linux server on AWS EC2.
+
+A conventional Linux operating system must work with:
+
+- Virtualized CPU resources.
+- Virtual storage devices.
+- Network interfaces.
+- Cloud instance metadata.
+- AWS-specific infrastructure integrations.
+- Security and update mechanisms.
+- AWS deployment images.
+
+AWS can provide a distribution specifically designed and maintained for its own infrastructure environment.
+
+Instead of choosing a general-purpose Linux distribution and independently configuring every aspect, an organization can use Amazon Linux images supported by AWS.
+
+### **Amazon Linux 2023 characteristics**
+
+Important characteristics include:
+
+1. AWS-oriented operating system.
+2. RPM package format.
+3. DNF package management.
+4. Controlled release cadence.
+5. AWS-provided machine images.
+6. Defined security maintenance.
+7. Compatibility expectations within a major release.
+
+AWS describes AL2023 as based in part on the current upstream Fedora Linux distribution, with AWS-specific integration and maintenance.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.aws.amazon.com\&sz=32)
+
+Amazon Linux 2023
+
+
+
+### **Package management**
+
+Amazon Linux 2023 uses DNF.
+
+Example:
+
+```
+sudo dnf update
+sudo dnf install nginx
+sudo dnf remove nginx
+```
+
+There is a useful historical detail.
+
+Amazon Linux 2 commonly used YUM as its package-management interface.
+
+Amazon Linux 2023 uses DNF. The `yum` command remains available as a compatibility pointer to DNF in AL2023.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.aws.amazon.com\&sz=32)
+
+Amazon Linux 2023
+
+
+
+### **Amazon Linux lifecycle**
+
+Amazon Linux 2023 was released in March 2023.
+
+Its published support dates are:
+
+| Phase               | End date      |
+| ------------------- | ------------- |
+| Standard support    | June 30, 2027 |
+| Maintenance support | June 30, 2029 |
+
+During standard support, AWS publishes quarterly minor releases.
+
+During maintenance, updates are focused on security fixes and critical bug fixes.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.aws.amazon.com\&sz=32)
+
+Amazon Linux 2023
+
+
+
+This distinction matters when planning cloud infrastructure.
+
+A system administrator must know the support status of the specific Amazon Linux generation in use, not simply assume that all Amazon Linux versions receive identical support.
+
+### **Where is Amazon Linux used?**
+
+[How to Create an EC2 VM in AWS (Step-by-Step Guide for Beginners) - DEV Community](https://images.openai.com/static-rsc-4/G5kOGEES3jmyRSSOGM_IBruNhlm2r0vaEM2aquf34OFpk2FCW2huEXqbMCB50d_S884-ahc9e7Ip2NYYIc0LS-TucuojKIUng6Po5CEGDrLe0QxHl_uasg08X1PRUHUAZkp7G7IJHJvL9wvPAQi2Jf7Rt8ynr2HWZymEd9xNMyk?purpose=inline)
+
+[Elastic Compute Cloud (EC2) - GeeksforGeeks](https://images.openai.com/static-rsc-4/H0-rOLtvjiqzJmNUhguH6YM60CusWrhfy1ZO9TMB4rZEmISh5DuKgLYwMFd-VpGI5Ebz-p-7913hE9Y-hW9C9UzhA9j0SbF6_Tn8IKcTr5Pinq_SDg70G3LdS5QWAdJ2eXUNMsO0FMG_RTSdmCny1OEPZMqmKOhnUetdCsRqXGs?purpose=inline)
+
+[Amazon Data Centers](https://images.openai.com/static-rsc-4/d6DGX6kMD-zjMq1ujSDgdTMimkSdReisJtXmaCSln9Qm8E-nYiHWttoxg-fuAFzZWupteKO9SOTqP2QUnAelTTRe6FJBjC2WLUZ_QuHLkx9gvCWprDH9jIXmhzk_JhNY68ca544Dae7r-QGgdXyIAS_iPgyan2tfhHt4k8v5wl4?purpose=inline)
+
+5
+
+Typical use cases:
+
+- Amazon EC2 instances.
+- AWS application servers.
+- Cloud-native workloads.
+- AWS-hosted backend services.
+- Cloud automation.
+- AWS-managed infrastructure environments.
+
+### **Is Amazon Linux the same as RHEL?**
+
+No.
+
+They share important technologies, including RPM packaging and DNF package management, but they are separate distributions.
+
+For example:
+
+| Area                 | RHEL                                | Amazon Linux 2023        |
+| -------------------- | ----------------------------------- | ------------------------ |
+| Maintainer           | Red Hat                             | AWS                      |
+| Primary focus        | Enterprise Linux                    | AWS cloud infrastructure |
+| Package format       | RPM                                 | RPM                      |
+| Main package manager | DNF                                 | DNF                      |
+| Repository ecosystem | Red Hat and configured repositories | AWS-managed repositories |
+| Lifecycle            | Red Hat RHEL lifecycle              | AL2023 lifecycle         |
+| Enterprise support   | Red Hat support offerings           | AWS support ecosystem    |
+
+An administrator familiar with RHEL will recognize many Amazon Linux commands, but that does not make the systems interchangeable.
+
+### **What should the learner remember?**
+
+Amazon Linux is AWS-maintained and cloud-oriented. AL2023 uses RPM and DNF, but has its own repositories, release policies and operational characteristics.
+
+# **Part 4 — Understanding distribution families**
+
+Now we can connect the four distributions.
+
+The first important distinction is that distributions belong to different development and packaging ecosystems.
+
+**Linux distribution ecosystem**
+
+**DEB / APT family**
+
+Package format: `.deb` · Package management: APT + dpkg
+
+**Debian**
+
+Independent foundation
+
+**Ubuntu**
+
+Based on Debian
+
+**RPM ecosystem**
+
+Package format: `.rpm` · Package management: DNF + RPM
+
+**RHEL**
+
+Red Hat enterprise platform
+
+**Amazon Linux**
+
+AWS-maintained platform
+
+These are simplified ecosystem groupings, not a complete distribution family tree. Shared packaging technology does not mean shared repositories, release policies or support guarantees.
+
+## **4.1 What is a package?**
+
+A package is a structured collection of software files and installation metadata.
+
+Imagine installing Nginx manually.
+
+You might need:
+
+- The Nginx executable.
+- Configuration files.
+- Startup service definitions.
+- Required libraries.
+- Documentation.
+- File ownership and permissions.
+- Installation and removal metadata.
+
+A package groups the software and describes how it should be installed and managed.
+
+## **4.2 What is a package manager?**
+
+A package manager is software responsible for installing, upgrading, querying and removing packages.
+
+Without one, administrators would need to manually:
+
+1. Find the correct application binary.
+2. Download its dependencies.
+3. Verify the files.
+4. Copy them into appropriate locations.
+5. Configure them.
+6. Update their ownership and permissions.
+7. Track installed versions.
+8. Remove everything correctly later.
+
+A package manager automates much of this process.
+
+## **4.3 APT versus DNF versus dpkg versus RPM**
+
+This is one of the most important concepts in this lesson.
+
+Do not confuse package formats with package managers.
+
+| Layer                           | Debian / Ubuntu | RHEL / Amazon Linux |
+| ------------------------------- | --------------- | ------------------- |
+| Package format                  | DEB             | RPM                 |
+| High-level manager              | APT             | DNF                 |
+| Low-level package utility       | dpkg            | rpm                 |
+| Common repository configuration | `/etc/apt/`     | `/etc/yum.repos.d/` |
+
+Think of it as two layers.
+
+```
+DEBIAN / UBUNTU
+
+        apt
+         |
+         | Resolves dependencies,
+         | retrieves repository metadata,
+         | manages packages
+         |
+        dpkg
+         |
+         | Installs package files,
+         | records package state
+         |
+      .deb files
+```
+
+```
+RHEL / AMAZON LINUX
+
+        dnf
+         |
+         | Resolves dependencies,
+         | retrieves repository metadata,
+         | manages packages
+         |
+         rpm
+         |
+         | Installs package files,
+         | records package state
+         |
+      .rpm files
+```
+
+The high-level manager is generally what administrators should use for normal software installation because it manages dependencies.
+
+The lower-level utilities are useful for inspecting or operating on individual packages.
+
+Ubuntu's official documentation describes APT as the recommended approach for DEB package management, with dpkg serving as the lower-level tool. Red Hat documents the equivalent DNF/RPM relationship.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://ubuntu.com\&sz=32)
+
+Ubuntu Server documentation+1
+
+
+
+## **4.4 Why can you not normally install a DEB package on RHEL?**
+
+A DEB package and an RPM package use different packaging formats and metadata conventions.
+
+For example:
+
+```
+nginx.deb
+nginx.rpm
+```
+
+Both might provide the Nginx application, but their installation metadata, dependency declarations and package management systems differ.
+
+The package manager cannot normally treat one format as the other.
+
+There are conversion utilities, but conversion does not guarantee that the resulting software is compatible.
+
+Even if you convert an RPM to a DEB format, it does not automatically resolve:
+
+- Missing libraries.
+- Distribution-specific configuration.
+- Different service definitions.
+- Package dependency incompatibilities.
+- Different installation paths.
+- Distribution-specific security policies.
+
+**Professional rule:** Install software using packages designed for your actual distribution whenever possible.
+
+## **4.5 Why are commands sometimes different?**
+
+Consider installing Nginx.
+
+Ubuntu:
+
+```
+sudo apt install nginx
+```
+
+Debian:
+
+```
+sudo apt install nginx
+```
+
+RHEL:
+
+```
+sudo dnf install nginx
+```
+
+Amazon Linux 2023:
+
+```
+sudo dnf install nginx
+```
+
+The package manager differs between the two ecosystems.
+
+Another example is Apache HTTP Server.
+
+Ubuntu/Debian generally use the package name:
+
+```
+sudo apt install apache2
+```
+
+RHEL and Amazon Linux commonly use:
+
+```
+sudo dnf install httpd
+```
+
+Notice something important:
+
+The application is conceptually the same, but package names and service names can differ.
+
+This is why copying deployment instructions between distributions without checking them can cause operational failures.
+
+# **Part 5 — Distribution comparison: Complete engineering view**
+
+## **5.1 Technical comparison**
+
+| Category              | Ubuntu                            | Debian                         | RHEL                              | Amazon Linux 2023                  |
+| --------------------- | --------------------------------- | ------------------------------ | --------------------------------- | ---------------------------------- |
+| Maintainer            | Canonical                         | Debian community               | Red Hat                           | AWS                                |
+| Foundation            | Debian                            | Independent                    | Red Hat ecosystem                 | Fedora-influenced AWS distribution |
+| Package format        | DEB                               | DEB                            | RPM                               | RPM                                |
+| Main manager          | APT                               | APT                            | DNF                               | DNF                                |
+| Low-level tool        | dpkg                              | dpkg                           | RPM                               | RPM                                |
+| Release approach      | LTS / interim                     | Stable / Testing / Unstable    | Major / minor lifecycle           | Major / minor lifecycle            |
+| Primary focus         | General purpose, server, cloud    | Stability and integration      | Enterprise infrastructure         | AWS cloud                          |
+| Support model         | Community and optional commercial | Community and LTS              | Commercial and developer programs | AWS                                |
+| Security technologies | AppArmor and other controls       | Configurable security controls | SELinux ecosystem                 | AWS-specific security integration  |
+
+## **5.2 When should an administrator choose each?**
+
+[Cos'è Ubuntu e a cosa serve](https://images.openai.com/static-rsc-4/ahzv27rTIE05hZrp486UTFa_gcXg8q_JXF3AF54jkdsPfZ298zZ8CeLr9YwCifebR9v9kraFJo7Fn9Tx6hs8wrFn3DOErSvzT-37WhvKL_tuKBjg7zg7F9HAJlK6uMJcyHmHO0hepjiv54CLAZrY8KuLVZUfi56PGuZphD8OCi4?purpose=inline)
+
+**Ubuntu**
+
+Suitable for general development, web applications, cloud deployments, learning and environments where the Ubuntu package ecosystem is expected.
+
+[Debian Host Operating System Tips](https://images.openai.com/static-rsc-4/uadZrZJR5EdWMD2QIpYf2Dyv4Z_vqNYFg-eVmLmix6LuJws725oUnL05QecHALs2DwZliIIDbArEZGKq_jQlsgeciHsM5_cLgXgxvRKJbdrBraC1kYckg_tsUoE7xq-He2I5O_QHfbcG2eyqxUfSsqNuINKVo9U7FgiTN69k5AQ?purpose=inline)
+
+**Debian**
+
+Suitable when a carefully integrated, predictable system with a stable package set is desirable.
+
+[RHEL, Red Hat Enterprise Linux | Piros](https://images.openai.com/static-rsc-4/EjVvGt3mJ4qjZ_lrzyGgIBMGV35FRC6XLF9_SmD_JC8iKHnIw1VoTOsgi5UzQiLbC6Y2ydH1wd0kGHyxS8COY1Oy5mDpGPgsibK-ZLBOOEW1XD9QYT1sq1DV67rsF6x8egnIwIEpvOrYMi2xabKB6F53vex_wsjYUNROPguFcm0?purpose=inline)
+
+**RHEL**
+
+Suitable for enterprise infrastructure, vendor-certified applications, formal support requirements and long-lived business systems.
+
+[Amazon Linux，专为AWS云服务优化的操作系统 - 泪雪网](https://images.openai.com/static-rsc-4/8o2v0Jz4ET7LyFZNw6RcrOF4SjF1mqvHUqcux0yH7ZZALWUkOgPbpelvExpKB4RnDZa-IwUK6Snx-kmi7HGt_a7Ba_J5qMD6JUQT4esVw_xthzLPyGqDaY_EGBjy6aNvk4ZPOCUj6nscKky8i-QTRc0FVddzN7gpGZAW5zx_Y7s?purpose=inline)
+
+**Amazon Linux**
+
+Suitable for applications deployed on AWS where the AWS-maintained operating system and its support model are desired.
+
+## **5.3 The most important lesson: Distribution knowledge versus Linux knowledge**
+
+A good Linux engineer does not memorize only Ubuntu commands.
+
+They understand the underlying operating system concepts.
+
+For example, these concepts transfer across distributions:
+
+- Processes.
+- Users and groups.
+- File permissions.
+- Inodes.
+- File descriptors.
+- Virtual memory.
+- Kernel system calls.
+- TCP/IP.
+- Filesystems.
+- System service management.
+
+Some administrative implementations differ:
+
+- Package managers.
+- Repository configuration.
+- Service defaults.
+- Security defaults.
+- Configuration paths.
+- Release lifecycle.
+
+Your teaching objective is to help the learner recognize which knowledge is universal and which is distribution-specific.
+
+# **Part 6 — Windows versus Linux: Understanding WSL properly**
+
+The learner should understand how Windows and Linux coexist before performing administration work.
+
+## **6.1 Windows architecture versus Linux architecture**
+
+Windows and Linux have different operating system architectures, but both provide the fundamental capabilities applications require.
+
+| Concept                           | Windows                             | Linux                                             |
+| --------------------------------- | ----------------------------------- | ------------------------------------------------- |
+| Kernel                            | Windows NT kernel                   | Linux kernel                                      |
+| Main command interpreter examples | PowerShell, CMD                     | Bash, Zsh                                         |
+| Common native filesystem          | NTFS                                | ext4, XFS, Btrfs                                  |
+| Software distribution             | EXE, MSI, MSIX, package managers    | DEB, RPM, other formats                           |
+| Process inspection                | Task Manager, PowerShell            | ps, top, procfs                                   |
+| Services                          | Windows Services                    | systemd on many modern distributions              |
+| User permissions                  | Windows security tokens and ACLs    | UID, GID, Unix permissions, ACLs and capabilities |
+| Software management               | winget, Microsoft Store, installers | apt, dnf, rpm, dpkg and others                    |
+
+Do not assume Windows and Linux are fundamentally the same system with different commands.
+
+For instance, Windows uses a different kernel and security architecture. Linux has its own process model, permissions model, filesystem interfaces and system-call interface.
+
+We will study these differences throughout the curriculum.
+
+## **6.2 WSL 1 versus WSL 2**
+
+**WSL 1**
+
+**Linux applications**
+
+**WSL compatibility layer**
+
+**Windows NT kernel**
+
+Linux system calls are translated into operations supported by Windows. There is no Linux kernel running inside WSL 1.
+
+**WSL 2**
+
+**Linux applications**
+
+**Linux userspace and system libraries**
+
+**Real Linux kernel**
+
+**Virtualized hardware**
+
+Linux system calls are handled by a genuine Linux kernel inside the WSL-managed virtual machine.
+
+Microsoft's comparison identifies full Linux kernel availability, much broader system-call compatibility and systemd support as important WSL 2 differences.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+### **What does this mean for our training?**
+
+| Learning activity                | WSL 1                 | WSL 2                                   |
+| -------------------------------- | --------------------- | --------------------------------------- |
+| Bash commands                    | Yes                   | Yes                                     |
+| Filesystem operations            | Yes                   | Yes                                     |
+| Users and permissions            | Yes, with limitations | Yes                                     |
+| APT package management           | Yes                   | Yes                                     |
+| Process inspection               | Yes, with differences | Yes                                     |
+| Real Linux kernel behavior       | No                    | Yes                                     |
+| systemd                          | No native support     | Supported                               |
+| Namespaces and cgroups           | Limited compatibility | Available, with WSL-specific boundaries |
+| Hardware and boot administration | Limited               | Limited by managed virtualization       |
+
+**Our training environment will target WSL 2.**
+
+### **Why are project files preferably stored inside the Linux filesystem?**
+
+There are two commonly used locations.
+
+Linux filesystem:
+
+```
+/home/username/projects
+```
+
+Windows filesystem mounted inside WSL:
+
+```
+/mnt/c/Users/username/projects
+```
+
+These look like ordinary directories, but they have different storage characteristics.
+
+In WSL 2, the Linux filesystem is backed by the virtual machine's Linux filesystem storage. Windows drives are mounted into Linux through WSL integration.
+
+For Linux-heavy development involving many small files, storing project files in the Linux filesystem generally gives better Linux-side performance.
+
+Microsoft also recommends keeping files on the same operating system filesystem as the tools being used.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+### **Recommended directory**
+
+For the learner:
+
+```
+mkdir -p ~/linux-learning
+cd ~/linux-learning
+```
+
+Explanation:
+
+- `mkdir` creates a directory.
+- `-p` creates missing parent directories and does not complain if the directory already exists.
+- `~` represents the current user's home directory.
+- `cd` changes the current working directory.
+
+We will use this location for safe learning exercises.
+
+# **Part 7 — A real WSL environment inspection**
+
+WSL READY
+
+Now we will inspect the actual Linux system.
+
+This is the first practical demonstration.
+
+The objective is to identify:
+
+1. Which distribution is running.
+2. Which release version is installed.
+3. Which Linux kernel is running.
+4. Which architecture the environment uses.
+5. Which package manager is available.
+
+## **7.1 Step 1: Open PowerShell**
+
+This is important.
+
+There are two command environments in this course:
+
+- Windows PowerShell.
+- Linux Bash.
+
+They are not interchangeable.
+
+**Windows PowerShell**
+
+```
+PS C:\Users\Student>
+```
+
+Commands such as `wsl --list --verbose` belong here.
+
+**Ubuntu Bash**
+
+```
+student@computer:~$
+```
+
+Commands such as `ls`, `uname` and `apt` belong here.
+
+### **Command 1: Check WSL status**
+
+Run in PowerShell:
+
+```
+wsl --status
+```
+
+What it does:
+
+- `wsl` invokes the Windows Subsystem for Linux management executable.
+- `--status` displays general configuration information.
+
+It can show:
+
+- Default WSL version.
+- Default distribution.
+- Kernel version.
+
+Representative information might look like:
+
+```
+Default Distribution: Ubuntu
+Default Version: 2
+
+Kernel version: ...
+```
+
+The exact format depends on the installed WSL version.
+
+### **Command 2: Check WSL version**
+
+```
+wsl --version
+```
+
+This displays component version information for the installed WSL environment.
+
+Remember:
+
+`wsl --version` tells you about WSL software, not your Ubuntu distribution release.
+
+### **Command 3: List installed distributions**
+
+```
+wsl --list --verbose
+```
+
+Alternative:
+
+```
+wsl -l -v
+```
+
+Representative output:
+
+```
+  NAME       STATE       VERSION
+* Ubuntu     Running     2
+```
+
+Explanation:
+
+| Column  | Meaning                                        |
+| ------- | ---------------------------------------------- |
+| NAME    | Installed Linux distribution                   |
+| STATE   | Whether the distribution is running or stopped |
+| VERSION | WSL 1 or WSL 2 architecture                    |
+| `*`     | Default WSL distribution                       |
+
+Microsoft documents these as the standard commands for inspecting and managing installed WSL distributions.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn
+
+
+
+### **What if the learner is using WSL 1?**
+
+Use the exact distribution name returned by `wsl -l -v`.
+
+For example, if the distribution is named Ubuntu:
+
+```
+wsl --set-version Ubuntu 2
+```
+
+Important
+
+Converting a WSL distribution can take time and involves filesystem changes. Export a backup first and ensure there is sufficient disk space. Do not run `wsl --unregister` as part of this conversion.
+
+For a beginner, keeping an existing WSL 2 environment is preferable to unnecessary conversions.
+
+## **7.2 Step 2: Identify the Linux distribution**
+
+Open the Ubuntu terminal.
+
+Run:
+
+```
+cat /etc/os-release
+```
+
+### **What is&#x20;**`/etc/os-release`**?**
+
+It is a standard operating-system identification file.
+
+It contains information about the installed distribution.
+
+A representative Ubuntu output:
+
+```
+PRETTY_NAME="Ubuntu 24.04 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04 LTS"
+ID=ubuntu
+ID_LIKE=debian
+```
+
+This is an example of the file's format, not a claim about which release is installed on the learner's machine.
+
+Let's understand the important fields.
+
+| Field         | Meaning                                    |
+| ------------- | ------------------------------------------ |
+| `NAME`        | Distribution name                          |
+| `PRETTY_NAME` | Human-readable distribution identification |
+| `VERSION_ID`  | Machine-readable release version           |
+| `VERSION`     | Human-readable release information         |
+| `ID`          | Distribution identifier                    |
+| `ID_LIKE`     | Related distribution family                |
+
+The most important values for automated scripts are generally `ID` and `VERSION_ID`.
+
+For example:
+
+```
+ID=ubuntu
+ID_LIKE=debian
+```
+
+This indicates that the OS identifies itself as Ubuntu and declares Debian as its related distribution family.
+
+### **Why is this file important?**
+
+Suppose you write a server installation script.
+
+It needs to know which package manager to use.
+
+Conceptually:
+
+```
+Read operating system identity
+          |
+          v
+      Check ID
+          |
+     +----+-----+
+     |          |
+   ubuntu      rhel
+     |          |
+     v          v
+    apt        dnf
+```
+
+This is how software installation scripts can make distribution-specific decisions.
+
+However, professional scripts should detect both distribution and version, validate that the version is supported and stop safely when they encounter an unknown environment.
+
+Do not rely on the distribution's human-readable name alone.
+
+## **7.3 Step 3: Identify the Linux kernel**
+
+Run:
+
+```
+uname -a
+```
+
+What is `uname`?
+
+`uname` displays system information.
+
+The `-a` option means display all available information.
+
+Representative output:
+
+```
+Linux COMPUTER 6.x.x-microsoft-standard-WSL2 #1 SMP ... x86_64 GNU/Linux
+```
+
+The actual version and remaining details depend on the installed WSL kernel.
+
+Important fields:
+
+| Output component        | Meaning                                  |
+| ----------------------- | ---------------------------------------- |
+| Linux                   | Kernel system name                       |
+| COMPUTER                | Hostname                                 |
+| 6.x.x                   | Kernel release                           |
+| microsoft-standard-WSL2 | WSL-specific kernel build identification |
+| x86_64                  | Processor architecture                   |
+| GNU/Linux               | Operating environment identification     |
+
+### **Very important distinction**
+
+Compare these two commands:
+
+```
+cat /etc/os-release
+```
+
+```
+uname -r
+```
+
+The first identifies the distribution.
+
+The second identifies the running kernel release.
+
+They answer different questions.
+
+For example:
+
+```
+Distribution: Ubuntu
+Kernel: Microsoft-built WSL 2 Linux kernel
+```
+
+This is entirely normal.
+
+Ubuntu is providing the userspace environment, but WSL 2 provides the Linux kernel.
+
+The kernel is not necessarily managed through Ubuntu's regular kernel packages in the same manner as a conventional Ubuntu server.
+
+Microsoft maintains and services the standard WSL 2 kernel through WSL updates.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn
+
+
+
+### **Command 4: Check architecture**
+
+```
+uname -m
+```
+
+Possible output:
+
+```
+x86_64
+```
+
+This indicates a 64-bit x86 architecture.
+
+Other common output:
+
+```
+aarch64
+```
+
+This indicates 64-bit ARM architecture.
+
+Architecture matters because software packages and executable binaries are built for particular processor architectures.
+
+### **Command 5: Check current user**
+
+```
+whoami
+```
+
+Representative output:
+
+```
+student
+```
+
+This is the current Linux username.
+
+It is not necessarily the same thing as the Windows account name.
+
+### **Command 6: Check current directory**
+
+```
+pwd
+```
+
+`pwd` means *print working directory*.
+
+Representative output:
+
+```
+/home/student
+```
+
+This tells you where the shell is currently operating.
+
+## **7.4 Step 4: Identify the package management environment**
+
+Run:
+
+```
+command -v apt
+```
+
+Representative output:
+
+```
+/usr/bin/apt
+```
+
+Now:
+
+```
+command -v dpkg
+```
+
+Representative output:
+
+```
+/usr/bin/dpkg
+```
+
+Check the RPM ecosystem:
+
+```
+command -v rpm
+```
+
+```
+command -v dnf
+```
+
+On a conventional Ubuntu installation, the latter commands will usually produce no executable path because RPM/DNF is not its native package-management system.
+
+### **What does&#x20;**`command -v`**&#x20;do?**
+
+`command` is a shell built-in.
+
+The `-v` option asks the shell to identify how a command name would be resolved.
+
+Depending on the name, it can identify:
+
+- An executable.
+- A shell built-in.
+- An alias.
+- A function.
+
+It is useful when troubleshooting why a command is available or unavailable.
+
+## **7.5 Step 5: Identify installed architecture at package level**
+
+Run:
+
+```
+dpkg --print-architecture
+```
+
+Possible output:
+
+```
+amd64
+```
+
+This reports the Debian package architecture.
+
+Notice that:
+
+```
+uname -m
+```
+
+and:
+
+```
+dpkg --print-architecture
+```
+
+use different naming conventions.
+
+For example:
+
+| Linux architecture | Debian package architecture |
+| ------------------ | --------------------------- |
+| `x86_64`           | `amd64`                     |
+| `aarch64`          | `arm64`                     |
+
+This matters when downloading manual software packages.
+
+You must download binaries compatible with the system architecture.
+
+# **Part 8 — What happens internally when a distribution runs?**
+
+This section moves from using Linux to understanding it as a systems engineer.
+
+## **8.1 Kernel and userspace are separate**
+
+The Linux system is conceptually divided into two major execution domains.
+
+**Kernel space**
+
+The privileged environment in which the Linux kernel executes.
+
+It manages:
+
+- Memory.
+- Process scheduling.
+- Device drivers.
+- Filesystem implementations.
+- Network stacks.
+- Security enforcement.
+
+**User space**
+
+The environment in which ordinary applications and utilities execute.
+
+It includes:
+
+- Bash.
+- `ls`.
+- `cat`.
+- Package managers.
+- Web servers.
+- Databases.
+- Application runtimes.
+
+Diagram:
+
+```
++------------------------------------------------+
+|                   USER SPACE                   |
+|                                                |
+|  Bash          apt          nginx              |
+|  ls            dpkg         Python             |
+|  curl          systemd      PostgreSQL         |
+|                                                |
++------------------------------------------------+
+                       |
+                       |
+                 System calls
+                       |
+================ KERNEL BOUNDARY =================
+                       |
+                       |
++------------------------------------------------+
+|                  KERNEL SPACE                  |
+|                                                |
+| Process Management                             |
+| Memory Management                              |
+| Filesystem Layer                               |
+| Networking                                     |
+| Device Drivers                                 |
+| Security Mechanisms                            |
+|                                                |
++------------------------------------------------+
+                       |
+                       |
+                 Virtual hardware
+```
+
+This boundary is fundamental to Linux.
+
+An ordinary userspace program cannot directly perform arbitrary privileged hardware operations. It requests services through system calls and other supported interfaces.
+
+## **8.2 What is a system call?**
+
+A system call is a controlled interface through which an application requests functionality from the kernel.
+
+For example:
+
+A program wants to read a file.
+
+Conceptual execution:
+
+```
+Application
+    |
+    |
+    v
+Request to open a file
+    |
+    v
+openat() system call
+    |
+    v
+Linux kernel
+    |
+    v
+Permission checks
+    |
+    v
+Filesystem operations
+    |
+    v
+File descriptor returned
+```
+
+The exact internal execution involves several components, but the important point is that userspace requests kernel functionality through defined interfaces.
+
+### **Example: Running&#x20;**`cat`
+
+When the learner executes:
+
+```
+cat /etc/os-release
+```
+
+The sequence is conceptually:
+
+1. Bash receives the command.
+2. Bash resolves `cat` using its command lookup rules.
+3. Bash starts the external executable, typically using an execution-related system call.
+4. The `cat` program requests access to the file.
+5. The kernel performs filesystem and permission operations.
+6. File contents become available to the process.
+7. `cat` writes those contents to standard output.
+8. The terminal displays the output.
+
+Later, we will investigate this process in considerably more depth when studying system calls and `strace`.
+
+## **8.3 Why can distributions have the same kernel but different behavior?**
+
+Because the kernel is only one component.
+
+Imagine two systems:
+
+```
+System A:
+Linux kernel
+Ubuntu userspace
+APT
+Ubuntu system configuration
+
+System B:
+Linux kernel
+RHEL userspace
+DNF
+RHEL system configuration
+```
+
+Even if both use closely related kernel versions, the systems can behave differently because their userspace components, libraries and policies differ.
+
+For example:
+
+- Different package managers.
+- Different Nginx package versions.
+- Different default security policies.
+- Different service configurations.
+- Different library versions.
+
+### **Advanced concept: Kernel version versus kernel patches**
+
+An administrator must not assume that a Linux kernel with a lower-looking version number is automatically insecure or outdated relative to another kernel.
+
+Distributions often backport security and bug fixes into their maintained kernel versions.
+
+That means a distribution might retain a kernel version while incorporating security patches from newer upstream development.
+
+This distinction is particularly important in enterprise Linux troubleshooting.
+
+**Version number alone is not sufficient security evidence.**
+
+## **8.4 How does a package installation work internally?**
+
+Consider:
+
+```
+sudo apt install nginx
+```
+
+Conceptually, the operation follows this sequence:
+
+```
+Administrator runs apt install nginx
+              |
+              v
+APT reads configuration
+              |
+              v
+APT examines available package metadata
+              |
+              v
+Dependency resolution
+              |
+              v
+Download selected packages
+              |
+              v
+Package signature / integrity verification
+              |
+              v
+Package installation by dpkg
+              |
+              v
+Package database updated
+              |
+              v
+Installation scripts may execute
+              |
+              v
+Files and configurations installed
+              |
+              v
+Installation completed
+```
+
+Some important details:
+
+- APT is the high-level dependency manager.
+- `dpkg` performs the lower-level package installation.
+- The package database records installed package information.
+- A package may contain maintainer scripts that perform setup tasks.
+- Installation does not automatically mean a service is operational.
+
+For example, installing Nginx and verifying that Nginx is running are two separate tasks.
+
+This distinction will become important in our future services module.
+
+## **8.5 What changes between distributions?**
+
+Imagine installing the same Nginx software.
+
+The application purpose is similar, but the system integration can differ.
+
+| Component                   | Ubuntu                                | RHEL / Amazon Linux                |
+| --------------------------- | ------------------------------------- | ---------------------------------- |
+| Installation manager        | APT                                   | DNF                                |
+| Package format              | DEB                                   | RPM                                |
+| Package database            | dpkg database                         | RPM database                       |
+| Repository configuration    | `/etc/apt/`                           | `/etc/yum.repos.d/`                |
+| Typical Apache package name | apache2                               | httpd                              |
+| Software repository policy  | Ubuntu archive and configured sources | Vendor and configured repositories |
+
+It is possible that the same software uses different default configuration paths, system user accounts or systemd unit settings.
+
+A Linux administrator must inspect the actual environment rather than assume every Linux distribution behaves identically.
+
+# **Part 9 — Real-world production scenarios**
+
+The objective is to teach the learner how distro knowledge is used in actual infrastructure work.
+
+## **Scenario 1: Installation instructions are failing on a production server**
+
+A developer receives these instructions:
+
+```
+sudo apt update
+sudo apt install nginx
+```
+
+They connect to a production server and receive:
+
+```
+sudo: apt: command not found
+```
+
+### **What happened?**
+
+The instructions assume a Debian-based distribution.
+
+But the server might be running RHEL or Amazon Linux.
+
+Those systems ordinarily use DNF rather than APT.
+
+### **How would an experienced administrator investigate?**
+
+First:
+
+```
+cat /etc/os-release
+```
+
+Then:
+
+```
+uname -a
+```
+
+Then:
+
+```
+command -v apt
+command -v dnf
+```
+
+Suppose the machine identifies itself as Amazon Linux 2023.
+
+The administrator understands that the software installation instructions are written for the wrong distribution.
+
+The appropriate installation command is:
+
+```
+sudo dnf install nginx
+```
+
+### **Why not simply install APT on the server?**
+
+Because installing another package-management executable does not transform the underlying distribution.
+
+APT does not automatically give you Ubuntu repositories, Ubuntu dependency packages or Ubuntu-compatible configuration.
+
+The correct approach is to use the native package ecosystem.
+
+**Engineering lesson:** Always identify the operating system before applying deployment instructions.
+
+## **Scenario 2: A developer installs a package, but the software does not start**
+
+A developer reports:
+
+> I installed Nginx successfully, but my application cannot connect to the web server.
+
+They show:
+
+```
+sudo apt install nginx
+```
+
+The installation completed successfully.
+
+A beginner may assume the software is now working.
+
+An experienced administrator knows that installation and service availability are different states.
+
+The next stage of investigation might involve:
+
+```
+command -v nginx
+```
+
+To determine where the executable is located.
+
+```
+nginx -v
+```
+
+To determine the installed Nginx version.
+
+Then, on a conventional systemd-based host:
+
+```
+systemctl status nginx
+```
+
+To inspect service state.
+
+The service may:
+
+- Be stopped.
+- Have failed during startup.
+- Be listening on another port.
+- Have an invalid configuration.
+- Be restricted by security policy.
+
+On WSL, `systemctl` availability depends on systemd configuration, so this final investigation must be adapted to that environment.
+
+We will study actual service management in Module 03.
+
+**Engineering lesson:** Package installation proves that installation succeeded. It does not prove that the application is operational.
+
+## **Scenario 3: An application works on Ubuntu but fails on Amazon Linux**
+
+A team develops an application on Ubuntu.
+
+Their deployment script contains:
+
+```
+sudo apt install nginx
+sudo apt install python3
+```
+
+They move the same script to an Amazon Linux 2023 server.
+
+It fails.
+
+The team notices that the distributions have different package managers.
+
+They update the deployment process to detect the operating system.
+
+Conceptually:
+
+```
+case "$ID" in
+    ubuntu|debian)
+        # Debian-family package installation
+        ;;
+    rhel|amzn)
+        # RPM-family package installation
+        ;;
+    *)
+        echo "Unsupported operating system" >&2
+        exit 1
+        ;;
+esac
+```
+
+This is only the decision structure, not a complete production-safe installer.
+
+The final implementation must also validate release versions, package availability, repository configuration and privileges.
+
+**Engineering lesson:** Cross-distribution automation must account for distribution identity, package names, repositories and system configuration.
+
+## **Scenario 4: A server is running an outdated operating system**
+
+A company has been operating an old Linux server for years.
+
+The application still works, but the operating system has reached the end of its security maintenance period.
+
+The administrator needs to determine:
+
+1. Which distribution is running?
+2. Which release is installed?
+3. Is the release still supported?
+4. Which security updates are available?
+5. Is an in-place upgrade supported?
+6. Does the application support the newer release?
+
+The investigation begins with:
+
+```
+cat /etc/os-release
+```
+
+Then the administrator checks the vendor's official release lifecycle documentation.
+
+For example:
+
+- Ubuntu: official Ubuntu release lifecycle.
+- Debian: official Debian releases.
+- RHEL: Red Hat Enterprise Linux lifecycle.
+- Amazon Linux: Amazon Linux release cadence.
+
+The administrator does not assume that every Linux distribution has the same five-year or ten-year support period.
+
+**Engineering lesson:** An operating system's support lifecycle is part of production security, not merely a documentation detail.
+
+# **Part 10 — Troubleshooting: Evidence before assumptions**
+
+A professional Linux administrator should have a repeatable investigation process.
+
+For distribution-related problems, use this sequence:
+
+```
+Problem reported
+      |
+      v
+Identify the operating system
+      |
+      v
+Identify the release version
+      |
+      v
+Identify the running kernel
+      |
+      v
+Identify the package ecosystem
+      |
+      v
+Check repository configuration
+      |
+      v
+Check package availability
+      |
+      v
+Apply distribution-correct fix
+      |
+      v
+Verify the result
+```
+
+## **10.1 Common problems and solutions**
+
+| Symptom                                   | Possible cause                               | Investigation                            |
+| ----------------------------------------- | -------------------------------------------- | ---------------------------------------- |
+| `apt: command not found`                  | Not a Debian-based environment               | `cat /etc/os-release`                    |
+| `dnf: command not found`                  | Not an RPM/DNF environment                   | `command -v dnf`                         |
+| Package not found                         | Wrong name or unavailable repository         | `apt-cache search` or `dnf search`       |
+| Package installation fails                | Repository or network problem                | Inspect package manager output           |
+| Unsupported package architecture          | Wrong CPU architecture package               | `uname -m`                               |
+| Application version differs from tutorial | Different distribution release or repository | Inspect package version                  |
+| Service name differs                      | Distribution-specific package conventions    | Inspect installed package and unit files |
+| WSL kernel does not match Ubuntu version  | WSL provides its own kernel                  | `uname -r` and `/etc/os-release`         |
+
+## **10.2 Problem:&#x20;**`apt`**&#x20;command not found**
+
+Investigate:
+
+```
+cat /etc/os-release
+```
+
+Then:
+
+```
+command -v apt
+command -v dnf
+command -v yum
+```
+
+Interpret the result.
+
+If `ID=amzn`, an Amazon Linux system is likely using DNF in AL2023.
+
+If `ID=rhel`, it is a Red Hat Enterprise Linux environment.
+
+If `ID=ubuntu` or `ID=debian`, APT should normally be available in a standard installation.
+
+Do not install a random package manager in an attempt to fix the problem.
+
+## **10.3 Problem: A package is not found**
+
+On Ubuntu:
+
+```
+apt-cache search nginx
+```
+
+This searches the package metadata available to APT.
+
+To inspect a particular package:
+
+```
+apt-cache policy nginx
+```
+
+This displays available version and repository information.
+
+On RHEL or Amazon Linux:
+
+```
+dnf search nginx
+```
+
+To inspect package information:
+
+```
+dnf info nginx
+```
+
+Interpretation:
+
+- Is the package listed?
+- Is a candidate version available?
+- Which repository provides it?
+- Is the required repository configured?
+- Is the package name correct for this distribution?
+
+An administrator should establish these facts before modifying repository configuration.
+
+## **10.4 Problem: APT reports outdated package information**
+
+APT maintains local metadata about package repositories.
+
+When repository metadata changes, the local index may become outdated.
+
+The correction is:
+
+```
+sudo apt update
+```
+
+What does this command do?
+
+It downloads and updates local package index information from configured repositories.
+
+It does not upgrade all installed software.
+
+That is the responsibility of:
+
+```
+sudo apt upgrade
+```
+
+This distinction is important.
+
+```
+apt update
+    |
+    v
+Refresh repository metadata
+    |
+    v
+apt upgrade
+    |
+    v
+Upgrade installed packages
+```
+
+## **10.5 Problem: WSL reports an unexpected Linux kernel**
+
+Suppose the learner executes:
+
+```
+uname -r
+```
+
+And sees:
+
+```
+6.x.x-microsoft-standard-WSL2
+```
+
+They might assume Ubuntu installed the wrong kernel.
+
+That conclusion is incorrect.
+
+WSL 2 supplies a Microsoft-maintained Linux kernel for the managed WSL environment.
+
+The Ubuntu distribution supplies userspace packages.
+
+Check:
+
+```
+cat /etc/os-release
+```
+
+And:
+
+```
+uname -r
+```
+
+These outputs identify two different components.
+
+Do not attempt to replace the WSL kernel with a conventional Ubuntu server kernel merely because the version string looks different.
+
+# **Part 11 — Advanced engineering notes**
+
+The following concepts help move the learner beyond basic Linux usage.
+
+## **11.1 Upstream and downstream development**
+
+These are common terms in open-source software development.
+
+**Upstream** is the original project or source from which another project receives software or changes.
+
+**Downstream** is a project or distribution that incorporates, modifies or packages upstream work.
+
+Example:
+
+```
+Linux kernel project
+        |
+        v
+Distribution kernel maintainers
+        |
+        v
+Linux distribution package
+        |
+        v
+Installed server
+```
+
+A similar relationship exists between Debian and Ubuntu.
+
+Ubuntu incorporates large amounts of Debian work but also maintains its own changes and packages.
+
+Why should an administrator care?
+
+Because a software issue may originate in:
+
+- The original upstream application.
+- A distribution-specific patch.
+- A package dependency.
+- A repository release.
+- Local system configuration.
+
+Understanding the software's origin helps narrow down bugs.
+
+## **11.2 Stable does not mean outdated**
+
+Consider these imaginary versions:
+
+```
+Package upstream:
+Version 5.0
+
+Distribution release:
+Version 4.7 + security patches
+```
+
+The distribution might maintain the earlier version while backporting security fixes.
+
+A beginner sees `4.7` and assumes the software is vulnerable.
+
+An experienced administrator checks:
+
+- Distribution security advisories.
+- Package release information.
+- Backported patches.
+- Installed package revision.
+- Support status.
+
+A version number alone is not proof that a vulnerability is present.
+
+## **11.3 Why do package names differ?**
+
+Linux packages are maintained by distribution-specific maintainers.
+
+They can choose different names, split applications into different packages or organize dependencies differently.
+
+For example:
+
+```
+Ubuntu:
+apache2
+```
+
+```
+RHEL:
+httpd
+```
+
+These are different distribution packaging conventions for the Apache HTTP Server.
+
+You should never assume that package names are universal.
+
+## **11.4 Why are package repositories important?**
+
+A package repository is a managed software source.
+
+Think of it as a trusted catalogue of available software packages and metadata.
+
+The package manager does not simply download random files from the internet.
+
+It typically works with configured repositories and metadata, including integrity and authenticity mechanisms.
+
+Administrators should be careful about adding third-party repositories.
+
+An untrusted repository could introduce:
+
+- Malicious packages.
+- Vulnerable dependencies.
+- Unexpected software replacements.
+- Dependency conflicts.
+- Packages with incompatible release assumptions.
+
+### **Security principle**
+
+Do not add an unknown package repository simply because an online tutorial tells you to.
+
+Verify:
+
+1. Who maintains it?
+2. Whether it supports the actual distribution release.
+3. Whether package signatures are verified.
+4. Whether the repository is appropriate for production.
+5. What packages it can replace or upgrade.
+
+## **11.5 Distribution release versus kernel release**
+
+A Linux server has multiple version numbers.
+
+For example:
+
+```
+Distribution:
+Ubuntu 24.04 LTS
+
+Kernel:
+Linux 6.x
+
+Nginx:
+1.x
+
+OpenSSL:
+3.x
+```
+
+These identify different software components.
+
+Updating a package does not necessarily upgrade the whole distribution.
+
+Similarly, upgrading the distribution does not necessarily mean every application immediately moves to the newest upstream version.
+
+A good Linux engineer knows which component is being updated and what dependencies might be affected.
+
+## **11.6 One WSL kernel, multiple Linux distributions**
+
+This is a particularly interesting WSL 2 detail.
+
+A WSL 2 environment can contain multiple installed Linux distributions.
+
+For example:
+
+```
+Windows
+  |
+  +-- WSL 2 managed virtual machine
+         |
+         +-- Linux kernel
+         |
+         +-- Ubuntu distribution
+         |     +-- Ubuntu root filesystem
+         |     +-- Ubuntu packages
+         |     +-- Ubuntu users
+         |
+         +-- Debian distribution
+               +-- Debian root filesystem
+               +-- Debian packages
+               +-- Debian users
+```
+
+The distributions have separate Linux userspaces and filesystems, but share the WSL-managed kernel and certain resources.
+
+Microsoft documents the namespace and resource-sharing behavior of WSL 2 distributions.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn
+
+
+
+This is similar to understanding the relationship between a shared kernel and isolated Linux environments.
+
+We will revisit this idea in Stage 03 when studying containers and namespaces.
+
+## **11.7 Why is WSL not a production server?**
+
+WSL 2 is a highly useful Linux environment, but there are important differences.
+
+| Area           | WSL 2                                        | Conventional Linux server                                        |
+| -------------- | -------------------------------------------- | ---------------------------------------------------------------- |
+| Kernel         | WSL-managed kernel                           | Installed and maintained in server OS                            |
+| Boot lifecycle | Managed by WSL                               | Normal Linux boot process                                        |
+| Hardware       | Virtualized and restricted                   | Hardware or hypervisor-controlled                                |
+| Networking     | WSL virtual network integration              | Server network interfaces and routing                            |
+| Storage        | Virtualized Linux storage and Windows mounts | Server block devices and filesystems                             |
+| Kernel modules | Restricted by WSL kernel configuration       | Supported modules subject to kernel and hardware                 |
+| Cloud metadata | Not inherently available                     | Available according to cloud provider and instance configuration |
+
+This matters because some production tasks cannot be demonstrated accurately in WSL.
+
+For this training path, use the following environment classification:
+
+**WSL READY**
+
+Normal practice
+
+Shell commands, distribution identification, package management, permissions, many process operations, scripting and much of userspace administration.
+
+**WSL LIMITED**
+
+Special considerations
+
+systemd behavior, system boot lifecycle, networking boundaries, some storage operations, resource management, device access and kernel investigation.
+
+**VM REQUIRED**
+
+Real Linux host
+
+Realistic bootloader management, destructive partition exercises, unrestricted hardware experiments, custom kernel/module development and authentic RHEL or Amazon Linux host administration.
+
+For this particular topic:
+
+- Ubuntu identification and package management: WSL READY.
+- Debian comparison: WSL READY if Debian is installed as a separate WSL distribution.
+- Actual RHEL package management: VM REQUIRED for a faithful RHEL environment.
+- Actual Amazon Linux administration: use a suitable Amazon Linux VM image where supported, or a disposable EC2 instance for AWS-specific validation.
+
+There is no need to purchase cloud infrastructure to learn the current topic.
+
+# **Part 12 — Practical lab: Identify and inspect a Linux distribution**
+
+WSL READY
+
+**LAB 01 — Linux Distribution Identification**
+
+Difficulty: Beginner · Environment: Ubuntu on WSL 2
+
+**Objective**
+
+Identify the Linux distribution, kernel, CPU architecture, package manager and package database.
+
+**Estimated hands-on duration:** 25–35 minutes.
+
+**Safety:** This lab makes no destructive system changes. One optional software installation can be reversed.
+
+## **12.1 Starting state**
+
+The learner should have:
+
+- Windows with WSL installed.
+- An Ubuntu distribution.
+- An Ubuntu terminal.
+- Internet access for the optional package installation.
+
+First, create a lab directory:
+
+```
+mkdir -p ~/linux-learning/lab-01
+cd ~/linux-learning/lab-01
+```
+
+Check:
+
+```
+pwd
+```
+
+Expected output pattern:
+
+```
+/home/your-user/linux-learning/lab-01
+```
+
+The username and output path will vary.
+
+## **12.2 Task 1: Identify the operating system**
+
+Execute:
+
+```
+cat /etc/os-release
+```
+
+Record these values:
+
+```
+NAME=
+ID=
+VERSION_ID=
+ID_LIKE=
+PRETTY_NAME=
+```
+
+The objective is to establish the distribution's identity, not memorize a version number.
+
+## **12.3 Task 2: Identify the kernel**
+
+Execute:
+
+```
+uname -a
+```
+
+Then:
+
+```
+uname -r
+```
+
+Record:
+
+- Kernel release.
+- Hostname.
+- Architecture.
+
+Determine whether the output indicates WSL 2.
+
+## **12.4 Task 3: Identify CPU architecture**
+
+Execute:
+
+```
+uname -m
+```
+
+Then:
+
+```
+dpkg --print-architecture
+```
+
+Compare both outputs.
+
+Understand why their naming conventions are different.
+
+## **12.5 Task 4: Identify the package manager**
+
+Execute these commands separately:
+
+```
+command -v apt
+```
+
+```
+command -v dpkg
+```
+
+```
+command -v dnf
+```
+
+```
+command -v rpm
+```
+
+Interpret the results.
+
+For a normal Ubuntu environment, APT and dpkg should be available.
+
+## **12.6 Task 5: Inspect APT repository metadata**
+
+Execute:
+
+```
+apt-cache policy
+```
+
+This displays package index and repository priority information.
+
+Now:
+
+```
+apt-cache search tree
+```
+
+This searches the available package metadata for packages matching the supplied search term.
+
+Find the package named `tree`.
+
+Then inspect it:
+
+```
+apt-cache policy tree
+```
+
+Representative output structure:
+
+```
+tree:
+  Installed: (none)
+  Candidate: <available-version>
+  Version table:
+     <available-version> ...
+        <repository-information>
+```
+
+The candidate version depends on the configured Ubuntu release and repositories.
+
+Explanation:
+
+- `Installed` shows whether the package is currently installed.
+- `Candidate` shows the version APT intends to install by default.
+- `Version table` lists available package versions and their repository priorities.
+
+## **12.7 Task 6: Update package metadata**
+
+Execute:
+
+```
+sudo apt update
+```
+
+What happens?
+
+1. APT reads configured repository sources.
+2. It connects to the repositories.
+3. It downloads package metadata.
+4. It updates its local index.
+5. It reports errors or repository information.
+
+Representative output may include:
+
+```
+Hit:1 ...
+Get:2 ...
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+```
+
+The actual repository names and output depend on the environment.
+
+Important:
+
+This command does not automatically upgrade all installed applications.
+
+Repeat:
+
+```
+apt-cache policy tree
+```
+
+Notice whether the available package information changed.
+
+## **12.8 Task 7: Install a simple package**
+
+Execute:
+
+```
+sudo apt install tree
+```
+
+APT will:
+
+- Find the package.
+- Resolve dependencies.
+- Retrieve the package.
+- Invoke the lower-level package installation process.
+- Update package records.
+
+When prompted for confirmation, read the proposed changes before accepting.
+
+Do not automatically approve package operations on production systems without reviewing what they will install or remove.
+
+## **12.9 Task 8: Verify installation**
+
+Execute:
+
+```
+tree --version
+```
+
+This should display the installed `tree` version.
+
+Now:
+
+```
+command -v tree
+```
+
+Expected output pattern:
+
+```
+/usr/bin/tree
+```
+
+Next:
+
+```
+dpkg -l tree
+```
+
+This displays the installed package's status and version.
+
+Finally:
+
+```
+dpkg -S "$(command -v tree)"
+```
+
+Expected output pattern:
+
+```
+tree: /usr/bin/tree
+```
+
+This demonstrates that the executable belongs to the `tree` package according to the package database.
+
+### **What did we establish?**
+
+The learner has now observed the relationship between:
+
+```
+Distribution identity
+        |
+        v
+Linux userspace
+        |
+        v
+APT repository
+        |
+        v
+APT dependency management
+        |
+        v
+dpkg package installation
+        |
+        v
+Installed executable
+```
+
+## **12.10 Task 9: Create a simple system information report**
+
+This exercise combines multiple commands.
+
+Execute:
+
+```
+{
+    echo "===== LINUX DISTRIBUTION ====="
+    cat /etc/os-release
+
+    echo
+    echo "===== KERNEL ====="
+    uname -r
+
+    echo
+    echo "===== ARCHITECTURE ====="
+    uname -m
+
+    echo
+    echo "===== CURRENT USER ====="
+    whoami
+
+    echo
+    echo "===== CURRENT DIRECTORY ====="
+    pwd
+
+    echo
+    echo "===== PACKAGE MANAGER ====="
+    command -v apt || true
+    command -v dnf || true
+
+} > system-report.txt
+```
+
+This command uses a shell group:
+
+```
+{
+    commands
+}
+```
+
+The commands inside execute sequentially in the current shell context.
+
+The `>` operator redirects standard output to a file.
+
+We will study grouping and redirection in Module 01, Topic 05.
+
+For now, understand that the group generates a report.
+
+Read it:
+
+```
+cat system-report.txt
+```
+
+Verify the file:
+
+```
+ls -lh system-report.txt
+```
+
+This is a basic example of system inventory reporting.
+
+## **12.11 Success criteria**
+
+**LAB COMPLETION CHECKLIST**
+
+These are practical completion criteria, not a quiz.
+
+0 of 8 completed
+
+## **0%**
+
+Identified the Linux distribution and release
+
+Identified the running WSL kernel
+
+Identified CPU architecture
+
+Located the native package manager
+
+Inspected configured package metadata
+
+Installed and verified the tree package
+
+Created and read system-report.txt
+
+Explained the difference between kernel and distribution
+
+Reset checklist
+
+## **12.12 Lab cleanup**
+
+The lab directory and system report can remain for future lessons.
+
+If `tree` was not installed before this lab and you want to reverse the optional installation:
+
+```
+sudo apt remove tree
+```
+
+This removes the package, but may leave unrelated dependencies installed.
+
+Do not remove `tree` if it was already installed before the lab.
+
+There is no need to remove the lab directory.
+
+# **Part 13 — Optional extension: Run Debian alongside Ubuntu in WSL**
+
+Optional · WSL READY
+
+This extension demonstrates that multiple distributions can operate under WSL 2.
+
+It is useful but not required to finish the topic.
+
+### **Step 1: Check available distributions**
+
+Run in PowerShell:
+
+```
+wsl --list --online
+```
+
+Find the exact Debian distribution name.
+
+### **Step 2: Install Debian**
+
+```
+wsl --install -d Debian
+```
+
+Complete the initial Debian setup.
+
+### **Step 3: Open Debian**
+
+```
+wsl -d Debian
+```
+
+### **Step 4: Identify Debian**
+
+Inside the Debian terminal:
+
+```
+cat /etc/os-release
+```
+
+Then:
+
+```
+uname -r
+```
+
+Compare these results with Ubuntu.
+
+You should see a different distribution identity and userspace, while the WSL 2 environment uses its managed Linux kernel.
+
+### **Step 5: Compare package managers**
+
+Inside Debian:
+
+```
+command -v apt
+```
+
+```
+command -v dpkg
+```
+
+You should find the same fundamental package-management tools as Ubuntu.
+
+### **Step 6: Return to Ubuntu**
+
+Exit Debian:
+
+```
+exit
+```
+
+Then open Ubuntu:
+
+```
+wsl -d Ubuntu
+```
+
+This assumes the installed distribution is named `Ubuntu`; use its actual name if it differs.
+
+**What this demonstrates:** Ubuntu and Debian have different userspace distributions and package repositories, but share many foundational components of the Debian package ecosystem.
+
+# **Part 14 — When WSL is insufficient: Preparing a real Linux VM**
+
+We will need a proper virtual machine during the later stages of the curriculum.
+
+For this topic, learning distribution identification and package-management differences is enough. We do not need to build additional operating systems immediately.
+
+However, it is useful to understand the available options.
+
+## **14.1 RHEL virtual machine**
+
+Red Hat publishes installation media and documentation for installing RHEL as a virtual machine.
+
+A conventional learning environment would look like:
+
+<ArchitectureDiagram
+    title="Linux learning environments"
+    root="Windows"
+>
+    <EnvironmentCard
+        name="Ubuntu WSL 2"
+        description="Linux development environment"
+        variant="ubuntu"
+    >
+        <TopicNode>Linux fundamentals</TopicNode>
+        <TopicNode>Shell engineering</TopicNode>
+        <TopicNode>Basic administration</TopicNode>
+    </EnvironmentCard>
+    <EnvironmentCard
+        name="RHEL virtual machine"
+        description="Enterprise Linux environment"
+        variant="rhel"
+    >
+        <TopicNode>DNF / RPM</TopicNode>
+        <TopicNode>SELinux</TopicNode>
+        <TopicNode>systemd</TopicNode>
+        <TopicNode>Enterprise administration</TopicNode>
+    </EnvironmentCard>
+</ArchitectureDiagram>
+
+RHEL image access and subscription eligibility depend on the applicable Red Hat program.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.redhat.com\&sz=32)
+
+Red Hat Documentation+1
+
+
+
+Official resource: [Red Hat Customer Portal](https://access.redhat.com/?utm_source=chatgpt.com).
+
+## **14.2 Amazon Linux 2023 virtual machine**
+
+There is an especially useful feature here.
+
+Amazon Linux 2023 is not restricted to running directly on EC2.
+
+AWS provides VM images for:
+
+- KVM (`qcow2`).
+- VMware (`OVA`).
+- Hyper-V (`VHDX`).
+
+These can be used to learn and test Amazon Linux without purchasing an EC2 instance. The VM must be configured according to the image's requirements, including its initial access configuration.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.aws.amazon.com\&sz=32)
+
+Amazon Linux 2023+2
+
+
+
+Official resource: [Amazon Linux 2023 outside EC2](https://docs.aws.amazon.com/linux/al2023/ug/outside-ec2.html?utm_source=chatgpt.com).
+
+**Our strategy:** Use Ubuntu WSL for fundamentals, then introduce actual RHEL and Amazon Linux environments when their administration becomes relevant.
+
+# **Part 15 — Topic 01: Mastery standard**
+
+The learner has completed the topic when they can independently demonstrate these practical capabilities.
+
+### **Conceptual understanding**
+
+1. Explain what an operating system is.
+2. Explain the difference between a Linux kernel and a Linux distribution.
+3. Explain what userspace means.
+4. Explain how WSL 2 runs Linux.
+5. Explain the difference between WSL 1 and WSL 2.
+6. Describe Ubuntu, Debian, RHEL and Amazon Linux.
+7. Explain why organizations use different distributions.
+
+### **Technical understanding**
+
+8. Differentiate DEB and RPM.
+9. Differentiate APT and DNF.
+10. Explain the role of dpkg and RPM.
+11. Understand package repositories.
+12. Explain the difference between a kernel version and distribution version.
+13. Understand distribution release lifecycles.
+14. Explain why package names and service configurations can differ.
+
+### **Practical administration**
+
+15. Identify an unknown distribution using `/etc/os-release`.
+16. Identify the kernel using `uname`.
+17. Identify CPU architecture.
+18. Identify the installed package manager.
+19. Inspect package availability.
+20. Install and verify a package using the distribution's native package manager.
+21. Diagnose an installation command that belongs to the wrong distribution.
+
+## **The real mastery gate**
+
+**Independent implementation standard**
+
+The learner should be able to inspect an unfamiliar Linux environment and produce a short report containing:
+
+- Operating system name and version.
+- Kernel version.
+- Architecture.
+- Package-management ecosystem.
+- Available package repositories.
+- Distribution-specific installation command.
+- Support lifecycle considerations.
+
+They should also be able to explain why an Ubuntu installation instruction cannot automatically be applied to Amazon Linux.
+
+# **Part 16 — Teaching summary and reference sheet**
+
+## **16.1 The four distributions at a glance**
+
+| Distribution      | Package format | Package manager | Main emphasis                                     |
+| ----------------- | -------------- | --------------- | ------------------------------------------------- |
+| Ubuntu            | DEB            | APT             | General-purpose, developer and cloud environments |
+| Debian            | DEB            | APT             | Stable, integrated Linux system                   |
+| RHEL              | RPM            | DNF             | Enterprise infrastructure                         |
+| Amazon Linux 2023 | RPM            | DNF             | AWS cloud infrastructure                          |
+
+## **16.2 Important commands learned**
+
+| Command                     | Purpose                                            |
+| --------------------------- | -------------------------------------------------- |
+| `cat /etc/os-release`       | Identify Linux distribution                        |
+| `uname -a`                  | Display system information                         |
+| `uname -r`                  | Display kernel release                             |
+| `uname -m`                  | Display processor architecture                     |
+| `whoami`                    | Display current user                               |
+| `pwd`                       | Display current working directory                  |
+| `command -v apt`            | Identify APT command availability                  |
+| `command -v dnf`            | Identify DNF command availability                  |
+| `dpkg --print-architecture` | Display Debian package architecture                |
+| `apt-cache search tree`     | Search available package metadata                  |
+| `apt-cache policy tree`     | Inspect package versions and repository priorities |
+| `sudo apt update`           | Refresh APT repository metadata                    |
+| `sudo apt install tree`     | Install a package                                  |
+| `dpkg -l tree`              | Inspect package installation status                |
+| `dpkg -S /usr/bin/tree`     | Identify the package owning a file                 |
+
+## **16.3 Important configuration and identification files**
+
+| File                                     | Purpose                                                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------ |
+| `/etc/os-release`                        | Distribution identity and version                                        |
+| `/etc/apt/sources.list`                  | Traditional APT repository configuration                                 |
+| `/etc/apt/sources.list.d/`               | Additional APT repository configuration                                  |
+| `/etc/apt/sources.list.d/ubuntu.sources` | Modern Ubuntu repository configuration, commonly used since Ubuntu 24.04 |
+| `/etc/yum.repos.d/`                      | DNF/YUM repository configuration on RPM-based systems                    |
+
+## **16.4 Important terminology**
+
+| Term            | Meaning                                                              |
+| --------------- | -------------------------------------------------------------------- |
+| Kernel          | Core OS component managing hardware and resources                    |
+| Distribution    | Complete operating system built around a kernel                      |
+| Userspace       | Environment where ordinary programs execute                          |
+| Shell           | Program that interprets commands                                     |
+| Terminal        | Interface used to interact with a shell                              |
+| Package         | Structured software installation unit                                |
+| Package manager | Tool for installing and managing packages                            |
+| Repository      | Managed collection of software packages and metadata                 |
+| LTS             | Long-Term Support                                                    |
+| Upstream        | Original software project or source                                  |
+| Downstream      | Project that incorporates upstream software                          |
+| Backport        | Applying a fix from newer development to an older maintained version |
+| WSL             | Windows Subsystem for Linux                                          |
+| VM              | Virtual machine                                                      |
+
+## **16.5 Important misconceptions to eliminate**
+
+**Linux is Ubuntu.**
+
+Linux is a kernel. Ubuntu is one Linux distribution.
+
+**All Linux distributions use APT.**
+
+Ubuntu and Debian use APT. RHEL and Amazon Linux 2023 use DNF.
+
+**WSL is just a terminal emulator.**
+
+WSL 2 runs a real Linux kernel inside a lightweight virtual machine.
+
+**The newest Linux package version is always the best choice.**
+
+Production systems also require compatibility, security maintenance and predictable upgrades.
+
+**All distributions with DNF are identical.**
+
+Sharing a package-management tool does not make distributions or their repositories interchangeable.
+
+**Installing a package means the application is running.**
+
+Installation, configuration, service startup and application availability are separate operational states.
+
+# **Part 17 — Official documentation and further reading**
+
+These are the official resources to use when teaching, verifying details or exploring the subject further.
+
+[image](https://www.google.com/s2/favicons?domain=https://ubuntu.com\&sz=32)
+
+**Ubuntu documentation**
+
+[Ubuntu Server documentation](https://ubuntu.com/server/docs/?utm_source=chatgpt.com)[Ubuntu release lifecycle](https://ubuntu.com/about/release-cycle?utm_source=chatgpt.com)[Ubuntu package management](https://ubuntu.com/server/docs/how-to/software/package-management/?utm_source=chatgpt.com)
+
+[image](https://www.google.com/s2/favicons?domain=https://www.debian.org\&sz=32)
+
+**Debian documentation**
+
+[Debian releases](https://www.debian.org/releases/?utm_source=chatgpt.com)[Debian documentation](https://www.debian.org/doc/?utm_source=chatgpt.com)[Debian Administrator's Handbook](https://www.debian.org/doc/manuals/debian-handbook/?utm_source=chatgpt.com)
+
+[image](https://www.google.com/s2/favicons?domain=https://www.redhat.com\&sz=32)
+
+**Red Hat documentation**
+
+[RHEL lifecycle](https://access.redhat.com/support/policy/updates/errata?utm_source=chatgpt.com)[Managing software with DNF](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/managing_software_with_the_dnf_tool/?utm_source=chatgpt.com)
+
+[image](https://www.google.com/s2/favicons?domain=https://aws.amazon.com\&sz=32)
+
+**AWS documentation**
+
+[Amazon Linux 2023 User Guide](https://docs.aws.amazon.com/linux/al2023/ug/?utm_source=chatgpt.com)[Amazon Linux release cadence](https://docs.aws.amazon.com/linux/al2023/ug/release-cadence.html?utm_source=chatgpt.com)[Amazon Linux package management](https://docs.aws.amazon.com/linux/al2023/ug/package-management.html?utm_source=chatgpt.com)
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+**Microsoft WSL documentation**
+
+[Understanding WSL](https://learn.microsoft.com/en-us/windows/wsl/about?utm_source=chatgpt.com)[Comparing WSL 1 and WSL 2](https://learn.microsoft.com/en-us/windows/wsl/compare-versions?utm_source=chatgpt.com)[WSL command reference](https://learn.microsoft.com/en-us/windows/wsl/basic-commands?utm_source=chatgpt.com)
+
+# **Final teaching takeaway**
+
+The biggest conceptual achievement in this first topic is understanding that **Linux is an operating system foundation, while distributions provide different implementations and operational environments around that foundation.**
+
+A Linux administrator should not simply know that Ubuntu uses APT or RHEL uses DNF.
+
+They should understand why those tools exist, how distributions are maintained, how package repositories work, why release lifecycles matter, and how to identify an unfamiliar system before modifying it.
+
+That is the difference between someone who can copy Linux commands and someone who can administer Linux infrastructure.
+
+**STAGE 01 · MODULE 01**
+
+Topic 01 material complete
+
+# **Next: Topic 02**
+
+**Filesystem hierarchy**
+
+The next lesson will explain how Linux organizes everything under `/`, including `/bin`, `/etc`, `/home`, `/root`, `/usr`, `/var`, `/proc`, `/sys`, `/dev` and `/tmp`.
+
+It will connect the filesystem layout to actual operating-system behavior and production server administration.

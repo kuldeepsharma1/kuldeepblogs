@@ -1,0 +1,3188 @@
+---
+title: "Pipes and Redirection"
+description: "Understand standard streams, file descriptors, redirection and pipelines for command-line workflows."
+slug: "05-pipes-and-redirection"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 5
+readingTime: "42 min"
+tags: ['linux', 'linux-fundamentals', 'bash', 'wsl', 'shell', 'filesystem']
+toc: true
+---
+
+# **Part 1 — Introduction: Why do pipes and redirection matter?**
+
+Imagine that a Linux server is running an application.
+
+The application generates thousands of log messages:
+
+```
+INFO Application started
+INFO Database connected
+INFO Request received
+WARNING Response took 3 seconds
+ERROR Database connection failed
+INFO Retry initiated
+ERROR Database connection failed
+```
+
+An administrator wants to:
+
+- Display only error messages.
+- Save those errors into another file.
+- Count how many errors occurred.
+- Monitor new log messages continuously.
+- Send normal output and errors into separate files.
+- Connect several commands to produce one useful report.
+
+Without pipes and redirection, the administrator would need to repeatedly run commands, manually inspect results and copy information between tools.
+
+Linux provides a better approach.
+
+**Commands can communicate through standard input and output, and the shell can connect those streams together.**
+
+For example:
+
+```
+cat application.log | grep ERROR
+```
+
+This takes the output of one command and provides it as input to another command.
+
+Another example:
+
+```
+ls -l > directory-report.txt
+```
+
+This sends the command's normal output into a file instead of displaying it in the terminal.
+
+And:
+
+```
+find /var/log -type f 2> errors.txt
+```
+
+This redirects error output into a separate file.
+
+These mechanisms are fundamental to Linux administration, automation, troubleshooting and shell engineering.
+
+## **1.1 The central concept**
+
+Linux programs do not need to know which application will consume their output.
+
+A program can simply write data to standard output.
+
+That output can then be:
+
+- Displayed in a terminal.
+- Written to a file.
+- Sent into another command.
+- Captured by a monitoring system.
+- Discarded.
+- Forwarded through multiple commands.
+
+This separation makes Linux command-line tools highly composable.
+
+# **Part 2 — Understanding standard input, output and error**
+
+Before learning pipes, the learner must understand three fundamental streams.
+
+These are commonly called the **standard streams**.
+
+Every normal Linux process starts with three standard file descriptors.
+
+| File descriptor | Name                       | Purpose                              |
+| --------------- | -------------------------- | ------------------------------------ |
+| `0`             | Standard input (`stdin`)   | Receives input                       |
+| `1`             | Standard output (`stdout`) | Produces normal output               |
+| `2`             | Standard error (`stderr`)  | Produces error and diagnostic output |
+
+These descriptors are normally established when a process starts.
+
+## **2.1 Standard input — stdin**
+
+Standard input is the stream through which a program receives input.
+
+For an interactive terminal, it usually comes from the keyboard.
+
+Example:
+
+```
+cat
+```
+
+Run this command without a filename.
+
+The `cat` program reads from standard input and copies received data to standard output.
+
+Type:
+
+```
+Linux is powerful
+```
+
+It displays:
+
+```
+Linux is powerful
+```
+
+Now type:
+
+```
+Operating systems
+```
+
+It displays:
+
+```
+Operating systems
+```
+
+To finish input, press:
+
+```
+Ctrl + D
+```
+
+`Ctrl + D` sends an end-of-file indication to the terminal input stream when entered at the beginning of an input line.
+
+The `cat` process then exits.
+
+### **What happened internally?**
+
+```
+Keyboard
+   |
+   v
+Terminal input
+   |
+   v
+stdin (FD 0)
+   |
+   v
+cat process
+   |
+   v
+stdout (FD 1)
+   |
+   v
+Terminal display
+```
+
+The `cat` program did not need to understand whether the input came from a keyboard or a file.
+
+It simply read from its standard input.
+
+## **2.2 Standard output — stdout**
+
+Standard output is where a program sends normal results.
+
+Example:
+
+```
+echo "Linux administration"
+```
+
+Output:
+
+```
+Linux administration
+```
+
+The `echo` command writes text to standard output.
+
+Normally, standard output is connected to the terminal.
+
+But it does not have to be.
+
+We can redirect it to a file:
+
+```
+echo "Linux administration" > output.txt
+```
+
+Now the text goes into `output.txt` instead of appearing on the terminal.
+
+The important distinction:
+
+The program still writes to standard output.
+
+The shell changes where that output goes.
+
+## **2.3 Standard error — stderr**
+
+Standard error is a separate stream intended for diagnostic and error messages.
+
+Consider:
+
+```
+ls /home/student
+```
+
+If the directory exists and is accessible, the command displays its contents.
+
+Now:
+
+```
+ls /directory-that-does-not-exist
+```
+
+Typical output:
+
+```
+ls: cannot access '/directory-that-does-not-exist':
+No such file or directory
+```
+
+This is diagnostic output.
+
+For many standard utilities, diagnostic messages are written to standard error.
+
+Why keep errors separate from normal output?
+
+Imagine a command produces a report containing 1,000 filenames, but one directory cannot be accessed.
+
+If errors and normal output were mixed into one stream, it would be harder for another program to process the actual filename results.
+
+Separating the streams allows administrators to handle them independently.
+
+## **2.4 Visual understanding of the three streams**
+
+**A normal Linux process**
+
+**Process**
+
+Example: find, grep, ls, Python application
+
+**FD 0**
+
+**stdin**
+
+Input received
+
+**FD 1**
+
+**stdout**
+
+Normal output
+
+**FD 2**
+
+**stderr**
+
+Diagnostics
+
+The shell determines where these descriptors point when the process starts.
+
+They may point to:
+
+- A terminal.
+- A regular file.
+- A pipe.
+- A device.
+- Another inherited file descriptor.
+
+That is the foundation of redirection.
+
+# **Part 3 — What is a file descriptor?**
+
+A file descriptor is a small non-negative integer used by a process to refer to an open file or another kernel-managed I/O resource.
+
+It is not necessarily a regular file.
+
+A descriptor can refer to:
+
+- A terminal.
+- A regular file.
+- A pipe.
+- A socket.
+- A device.
+- Other supported I/O resources.
+
+For a typical Linux process:
+
+```
+FD 0 → Standard input
+FD 1 → Standard output
+FD 2 → Standard error
+FD 3 → Another opened resource
+FD 4 → Another opened resource
+...
+```
+
+## **3.1 Inspect file descriptors**
+
+On Linux, process descriptors are exposed through:
+
+```
+/proc/PID/fd/
+```
+
+For the current Bash process, use:
+
+```
+ls -l /proc/$$/fd/
+```
+
+Explanation:
+
+- `$$` is a Bash special parameter containing the current shell's process ID.
+- `/proc` is a virtual filesystem exposing process information.
+- `fd` contains symbolic links representing open file descriptors.
+
+Representative output:
+
+```
+0 -> /dev/pts/0
+1 -> /dev/pts/0
+2 -> /dev/pts/0
+255 -> /dev/pts/0
+```
+
+The exact entries depend on the shell and environment.
+
+The first three are the standard descriptors.
+
+The terminal pathname may be different.
+
+## **3.2 Why does the shell use descriptors?**
+
+Because it allows programs to perform input and output without being tightly coupled to a particular destination.
+
+For example, a program can write:
+
+```
+Hello Linux
+```
+
+to descriptor `1`.
+
+It does not need to know whether descriptor `1` is connected to:
+
+```
+Terminal
+```
+
+or:
+
+```
+output.txt
+```
+
+or:
+
+```
+Another process through a pipe
+```
+
+This design is one of the reasons Unix-style tools are composable.
+
+## **3.3 Shell built-ins versus external programs**
+
+Remember the distinction from previous topics.
+
+Examples of Bash built-ins:
+
+```
+echo
+read
+printf
+cd
+pwd
+```
+
+Some commands, such as `pwd`, can also exist as external utilities.
+
+Examples of external programs:
+
+```
+ls
+cat
+grep
+find
+sort
+wc
+tee
+```
+
+Check command resolution:
+
+```
+type echo
+type ls
+type pwd
+type grep
+```
+
+Typical output identifies whether each is a shell builtin or an executable.
+
+Why does this matter?
+
+Because the shell performs redirection before executing the command or builtin.
+
+Even Bash built-ins can have their standard streams redirected.
+
+For example:
+
+```
+echo "Hello" > output.txt
+```
+
+Bash handles the redirection, then executes its built-in `echo` with the modified output descriptor.
+
+# **Part 4 — Output redirection:&#x20;**`>`
+
+Core command-line concept
+
+## **4.1 What is output redirection?**
+
+The `>` operator redirects standard output into a file.
+
+Syntax:
+
+```
+COMMAND > FILE
+```
+
+Example:
+
+```
+echo "Linux is interesting" > message.txt
+```
+
+Instead of displaying the message on the terminal, Bash directs standard output to `message.txt`.
+
+## **4.2 Demonstration**
+
+Execute:
+
+```
+echo "Linux is interesting" > message.txt
+```
+
+Now inspect:
+
+```
+cat message.txt
+```
+
+Output:
+
+```
+Linux is interesting
+```
+
+Notice that the first command did not display the message.
+
+Why?
+
+Because stdout was redirected into the file.
+
+## **4.3 What happens internally?**
+
+Conceptually:
+
+```
+Bash receives:
+
+echo "Linux is interesting" > message.txt
+
+           |
+           v
+
+Bash opens message.txt
+for output, truncating if it exists
+           |
+           v
+
+Bash connects FD 1
+to the opened file
+           |
+           v
+
+Bash executes echo
+           |
+           v
+
+echo writes to FD 1
+           |
+           v
+
+Text enters message.txt
+```
+
+The `echo` program does not need special knowledge about the redirection.
+
+The shell establishes the destination before the command executes.
+
+## **4.4 Important:&#x20;**`>`**&#x20;overwrites existing content**
+
+Create a file:
+
+```
+echo "First line" > report.txt
+```
+
+Inspect:
+
+```
+cat report.txt
+```
+
+Output:
+
+```
+First line
+```
+
+Now execute:
+
+```
+echo "Second line" > report.txt
+```
+
+Inspect again:
+
+```
+cat report.txt
+```
+
+Output:
+
+```
+Second line
+```
+
+The original content has been replaced.
+
+Why?
+
+For an ordinary regular file, the shell opens the destination with output redirection that truncates an existing file before the command writes.
+
+This is an extremely important operational behavior.
+
+`>`**&#x20;does not append. It replaces the existing file contents.**
+
+## **4.5 Redirect command output**
+
+Example:
+
+```
+ls -lah > directory-list.txt
+```
+
+Explanation:
+
+- `ls` lists directory entries.
+- `-l` displays detailed metadata.
+- `-a` includes hidden entries.
+- `-h` uses human-readable sizes.
+- `>` redirects standard output.
+- `directory-list.txt` receives the output.
+
+Verify:
+
+```
+cat directory-list.txt
+```
+
+This is useful for creating reports and capturing command results.
+
+## **4.6 Redirecting output to an absolute path**
+
+Example:
+
+```
+date > "$HOME/linux-learning/current-date.txt"
+```
+
+The command writes the current date and time into the specified file.
+
+Verify:
+
+```
+cat "$HOME/linux-learning/current-date.txt"
+```
+
+The output depends on the system's configured date, time and timezone.
+
+# **Part 5 — Append redirection:&#x20;**`>>`
+
+## **5.1 What is append redirection?**
+
+The `>>` operator appends standard output to the end of an existing file.
+
+Syntax:
+
+```
+COMMAND >> FILE
+```
+
+Unlike `>`, it does not normally discard existing file contents.
+
+## **5.2 Demonstration**
+
+Create a file:
+
+```
+echo "First event" > events.log
+```
+
+Append:
+
+```
+echo "Second event" >> events.log
+```
+
+Append again:
+
+```
+echo "Third event" >> events.log
+```
+
+Inspect:
+
+```
+cat events.log
+```
+
+Expected:
+
+```
+First event
+Second event
+Third event
+```
+
+## **5.3 Internal behavior**
+
+The shell opens the file for output in append mode.
+
+Writes are directed to the end of the file according to append semantics.
+
+The existing content is retained.
+
+This is why `>>` is commonly used when building simple logs.
+
+## **5.4 Production example: Application event logging**
+
+Suppose a deployment script needs to record its progress.
+
+```
+echo "Deployment started" >> deployment.log
+echo "Files copied" >> deployment.log
+echo "Deployment completed" >> deployment.log
+```
+
+The resulting log contains all three entries.
+
+In production, a real application should generally use a proper logging framework or logging service rather than rely on uncontrolled `echo` statements.
+
+However, append redirection is extremely useful for understanding how simple scripts record operational activity.
+
+## **5.5 Compare&#x20;**`>`**&#x20;and&#x20;**`>>`
+
+| Operator | Behavior        | Existing content   |
+| -------- | --------------- | ------------------ |
+| `>`      | Redirect stdout | Replaced/truncated |
+| `>>`     | Append stdout   | Preserved          |
+| `<`      | Redirect stdin  | Reads from a file  |
+
+Remember these three operators.
+
+They form the foundation of basic shell redirection.
+
+# **Part 6 — Input redirection:&#x20;**`<`
+
+## **6.1 What is input redirection?**
+
+The `<` operator redirects a file into a command's standard input.
+
+Syntax:
+
+```
+COMMAND < FILE
+```
+
+Normally, a command may receive input from a keyboard.
+
+With input redirection, the command receives input from a file instead.
+
+## **6.2 Demonstration using&#x20;**`cat`
+
+Create a file:
+
+```
+echo "Linux input redirection" > input.txt
+```
+
+Now execute:
+
+```
+cat < input.txt
+```
+
+Output:
+
+```
+Linux input redirection
+```
+
+Compare:
+
+```
+cat input.txt
+```
+
+And:
+
+```
+cat < input.txt
+```
+
+Both display the file's contents.
+
+However, they are not exactly the same.
+
+In the first example, `cat` receives a filename argument and opens the file itself.
+
+In the second example, Bash opens the file and connects it to `cat`'s standard input.
+
+This distinction matters when working with programs designed to consume standard input.
+
+## **6.3 Demonstration using&#x20;**`wc`
+
+The `wc` command counts lines, words and bytes.
+
+Create:
+
+```
+cat > students.txt <<'EOF'
+Alice
+Bob
+Charlie
+David
+EOF
+```
+
+Now:
+
+```
+wc -l < students.txt
+```
+
+Expected:
+
+```
+4
+```
+
+Why is the filename not displayed?
+
+Because `wc` receives the file through standard input, rather than receiving its pathname as an argument.
+
+Compare:
+
+```
+wc -l students.txt
+```
+
+Representative output:
+
+```
+4 students.txt
+```
+
+And:
+
+```
+wc -l < students.txt
+```
+
+Output:
+
+```
+4
+```
+
+This is a useful demonstration of the difference between command arguments and standard input.
+
+## **6.4 Production scenario**
+
+An application needs to process a list of customer identifiers stored in a file.
+
+Instead of manually entering them, the administrator can redirect the file into a program:
+
+```
+./process-customers < customers.txt
+```
+
+The application receives the contents through stdin.
+
+This is useful for:
+
+- Batch processing.
+- Automated scripts.
+- Data transformation.
+- Testing.
+- Reproducible command execution.
+
+# **Part 7 — Here documents:&#x20;**`<<`
+
+## **7.1 What is a here document?**
+
+A here document allows a shell script or command to receive multiple lines of input directly from the command line.
+
+Syntax:
+
+```
+COMMAND <<DELIMITER
+line 1
+line 2
+line 3
+DELIMITER
+```
+
+Example:
+
+```
+cat <<EOF
+Welcome to Linux.
+We are learning shell redirection.
+This is a multiline input.
+EOF
+```
+
+Output:
+
+```
+Welcome to Linux.
+We are learning shell redirection.
+This is a multiline input.
+```
+
+The shell supplies these lines to the command through its standard input.
+
+## **7.2 Why is it useful?**
+
+It is useful for:
+
+- Creating configuration files.
+- Generating scripts.
+- Supplying multiline input.
+- Writing installation files.
+- Automating administrative tasks.
+
+Example:
+
+```
+cat > application.conf <<'EOF'
+APP_NAME=inventory
+APP_PORT=8080
+APP_ENV=production
+EOF
+```
+
+This creates a file containing the supplied lines.
+
+## **7.3 Why quote the delimiter?**
+
+Compare:
+
+```
+NAME="Linux"
+
+cat <<EOF
+Hello $NAME
+EOF
+```
+
+Output:
+
+```
+Hello Linux
+```
+
+The shell performs variable expansion because the delimiter is unquoted.
+
+Now:
+
+```
+NAME="Linux"
+
+cat <<'EOF'
+Hello $NAME
+EOF
+```
+
+Output:
+
+```
+Hello $NAME
+```
+
+Quoting the delimiter prevents parameter expansion and other shell expansions in the here-document body.
+
+This is particularly useful when creating scripts that contain variables intended to be evaluated later.
+
+## **7.4 Here strings:&#x20;**`<<<`
+
+Bash also supports here strings.
+
+Example:
+
+```
+grep Linux <<< "Linux is an operating system"
+```
+
+Output:
+
+```
+Linux is an operating system
+```
+
+The string is supplied to standard input, with a trailing newline added.
+
+Another example:
+
+```
+wc -w <<< "Linux administration fundamentals"
+```
+
+Expected:
+
+```
+3
+```
+
+Here strings are a Bash feature, not a universal POSIX shell feature.
+
+# **Part 8 — Error redirection:&#x20;**`2>`
+
+Important for troubleshooting
+
+## **8.1 Why is error redirection necessary?**
+
+Consider:
+
+```
+find /etc /directory-does-not-exist -type f
+```
+
+The command may produce valid results from `/etc` while also reporting an error for the nonexistent directory.
+
+There are two separate streams:
+
+- Normal results go to stdout.
+- Diagnostic messages generally go to stderr.
+
+If we redirect only stdout, errors may still appear on the terminal.
+
+## **8.2 Redirect errors into a file**
+
+Syntax:
+
+```
+COMMAND 2> ERROR_FILE
+```
+
+Example:
+
+```
+ls /directory-does-not-exist 2> errors.txt
+```
+
+Now inspect:
+
+```
+cat errors.txt
+```
+
+Representative output:
+
+```
+ls: cannot access '/directory-does-not-exist':
+No such file or directory
+```
+
+The error was saved in the file.
+
+## **8.3 Why does&#x20;**`2>`**&#x20;work?**
+
+The number `2` represents the standard error file descriptor.
+
+Therefore:
+
+```
+2>
+```
+
+means:
+
+Redirect file descriptor 2.
+
+Similarly:
+
+```
+1>
+```
+
+means redirect standard output.
+
+And:
+
+```
+0<
+```
+
+means redirect standard input.
+
+Because stdout is descriptor 1 by default, the following are equivalent for ordinary output redirection:
+
+```
+echo "Hello" > output.txt
+```
+
+```
+echo "Hello" 1> output.txt
+```
+
+The first is simply shorter.
+
+## **8.4 Save normal output and errors separately**
+
+Suppose a command generates both successful results and errors.
+
+Use:
+
+```
+find /etc /directory-does-not-exist \
+    -type f \
+    > results.txt \
+    2> errors.txt
+```
+
+Now inspect:
+
+```
+head results.txt
+```
+
+Then:
+
+```
+cat errors.txt
+```
+
+The successful results and diagnostic messages are separated.
+
+This is extremely useful for system investigations.
+
+## **8.5 Append errors instead of overwriting them**
+
+Use:
+
+```
+COMMAND 2>> errors.log
+```
+
+Example:
+
+```
+ls /missing-directory 2>> errors.log
+```
+
+This adds the new error to the existing error log.
+
+# **Part 9 — Redirect both stdout and stderr**
+
+## **9.1 Redirect both streams into one file**
+
+A common requirement is to capture everything produced by a command.
+
+In Bash:
+
+```
+COMMAND > output.log 2>&1
+```
+
+This means:
+
+1. Redirect stdout into `output.log`.
+2. Redirect stderr to wherever stdout currently points.
+
+Both streams now go to the same destination.
+
+Example:
+
+```
+find /etc /missing-directory \
+    -type f \
+    > complete.log 2>&1
+```
+
+Inspect:
+
+```
+cat complete.log
+```
+
+The file can contain both normal results and error messages.
+
+## **9.2 Understand&#x20;**`2>&1`
+
+This syntax is particularly important.
+
+```
+2>&1
+```
+
+Means:
+
+Make file descriptor 2 refer to the same destination currently referenced by file descriptor 1.
+
+The `&` indicates that `1` is a file descriptor, not a filename.
+
+Compare:
+
+```
+2>1
+```
+
+This redirects stderr into a file literally named `1`.
+
+Whereas:
+
+```
+2>&1
+```
+
+duplicates stdout's current destination onto stderr.
+
+This is a major distinction.
+
+## **9.3 Redirection order matters**
+
+Compare these commands.
+
+**Command A:**
+
+```
+command > output.log 2>&1
+```
+
+First stdout is redirected to `output.log`.
+
+Then stderr is directed to stdout's new destination.
+
+Both streams go to the same file.
+
+**Command B:**
+
+```
+command 2>&1 > output.log
+```
+
+First stderr is directed to the original stdout destination.
+
+Then stdout is redirected to `output.log`.
+
+Result:
+
+- stdout goes into `output.log`.
+- stderr remains connected to the original stdout destination, commonly the terminal.
+
+These commands are not equivalent.
+
+### **Visual comparison**
+
+`> output.log 2>&1`
+
+**stdout → output.log**
+
+**stderr → output.log**
+
+`2>&1 > output.log`
+
+**stdout → output.log**
+
+**stderr → original stdout destination**
+
+## **9.4 Modern Bash shorthand:&#x20;**`&>`
+
+Bash also supports:
+
+```
+COMMAND &> output.log
+```
+
+This redirects both standard output and standard error to the same file.
+
+Appending both streams:
+
+```
+COMMAND &>> output.log
+```
+
+These are convenient Bash-specific forms.
+
+For portability across POSIX-compatible shells, prefer the explicit form:
+
+```
+COMMAND > output.log 2>&1
+```
+
+## **9.5 Production scenario: Capture deployment logs**
+
+A deployment script might execute:
+
+```
+./deploy.sh > deployment.log 2>&1
+```
+
+Now both normal messages and errors are recorded.
+
+An administrator can inspect:
+
+```
+tail -n 50 deployment.log
+```
+
+This is useful when a deployment fails without displaying all relevant information in the terminal.
+
+# **Part 10 — Discard output:&#x20;**`/dev/null`
+
+## **10.1 What is&#x20;**`/dev/null`**?**
+
+`/dev/null` is a special device provided by Linux.
+
+It behaves like a data sink.
+
+Anything written to it is discarded.
+
+Reading from it returns end-of-file.
+
+Think of it as a destination that accepts data but does not retain it.
+
+## **10.2 Discard standard output**
+
+Example:
+
+```
+ls /etc > /dev/null
+```
+
+The command executes, but its normal output is discarded.
+
+## **10.3 Discard errors**
+
+```
+ls /missing-directory 2> /dev/null
+```
+
+The diagnostic message is discarded.
+
+The command still fails.
+
+Only its error output has been hidden.
+
+## **10.4 Discard everything**
+
+```
+ls /etc /missing-directory > /dev/null 2>&1
+```
+
+Both normal output and errors are discarded.
+
+This can be useful when the command's output is irrelevant and its exit status is what matters.
+
+For example:
+
+```
+if grep -q "ERROR" application.log > /dev/null 2>&1; then
+    echo "Errors found"
+else
+    echo "No matching errors"
+fi
+```
+
+A cleaner version is:
+
+```
+if grep -q "ERROR" application.log; then
+    echo "Errors found"
+else
+    echo "No matching errors"
+fi
+```
+
+The `-q` option already suppresses normal matching output.
+
+## **10.5 Important:&#x20;**`/dev/null`**&#x20;does not fix errors**
+
+Consider:
+
+```
+sudo command-that-does-not-exist 2> /dev/null
+```
+
+The error is hidden.
+
+But the command remains invalid.
+
+Hiding errors is not troubleshooting.
+
+In production, administrators should suppress output only when they have deliberately decided that the information is unnecessary.
+
+# **Part 11 — Pipes: Connecting Linux commands**
+
+Most important section
+
+## **11.1 What is a pipe?**
+
+A pipe connects the standard output of one process to the standard input of another process.
+
+The pipe operator is:
+
+```
+|
+```
+
+Syntax:
+
+```
+COMMAND_1 | COMMAND_2
+```
+
+The output produced by the first command becomes the input consumed by the second command.
+
+This allows multiple small programs to work together.
+
+## **11.2 First demonstration**
+
+Execute:
+
+```
+ls /etc | head
+```
+
+Understand each command.
+
+**First command:**
+
+```
+ls /etc
+```
+
+Lists entries in `/etc`.
+
+**Second command:**
+
+```
+head
+```
+
+Displays the first 10 lines of its input by default.
+
+**Pipe:**
+
+```
+|
+```
+
+Connects the output of `ls` to the input of `head`.
+
+Representative flow:
+
+```
+ls /etc
+    |
+    | Standard output
+    v
+Linux pipe
+    |
+    | Standard input
+    v
+head
+    |
+    v
+Terminal
+```
+
+The result is a limited portion of the directory listing.
+
+## **11.3 Why are pipes powerful?**
+
+Imagine a log file contains 100,000 lines.
+
+You want to identify all error messages.
+
+First:
+
+```
+cat application.log
+```
+
+This produces the entire file.
+
+You could manually search through it, but that is inefficient.
+
+Instead:
+
+```
+cat application.log | grep ERROR
+```
+
+The `grep` command receives the output and selects matching lines.
+
+A simpler and generally preferable command is:
+
+```
+grep ERROR application.log
+```
+
+Why?
+
+Because `grep` already accepts a filename as an argument.
+
+The pipe is valuable when you need to combine different operations, not merely add an unnecessary command.
+
+## **11.4 Understanding&#x20;**`grep`
+
+`grep` searches text for matching patterns.
+
+Syntax:
+
+```
+grep [OPTIONS] PATTERN FILE
+```
+
+Example:
+
+```
+grep ERROR application.log
+```
+
+Finds lines containing `ERROR`.
+
+Important options:
+
+| Option | Purpose                                 |
+| ------ | --------------------------------------- |
+| `-i`   | Ignore case                             |
+| `-n`   | Display line numbers                    |
+| `-v`   | Invert matching; show nonmatching lines |
+| `-c`   | Count matching lines                    |
+| `-r`   | Search recursively                      |
+| `-E`   | Use extended regular expressions        |
+| `-q`   | Quiet mode; suppress normal output      |
+
+Examples:
+
+```
+grep -i error application.log
+```
+
+Matches `error`, `ERROR`, `Error` and similar case variations.
+
+```
+grep -n ERROR application.log
+```
+
+Displays matching line numbers.
+
+```
+grep -v INFO application.log
+```
+
+Displays lines that do not match `INFO`.
+
+```
+grep -c ERROR application.log
+```
+
+Counts matching lines.
+
+## **11.5 Build a multi-command pipeline**
+
+Suppose an application log contains:
+
+```
+INFO Application started
+INFO Database connected
+ERROR Database timeout
+WARNING Slow response
+ERROR Database timeout
+INFO Retry successful
+ERROR Authentication failed
+```
+
+You want to:
+
+1. Select error messages.
+2. Sort them.
+3. Count occurrences.
+
+Execute:
+
+```
+grep ERROR application.log | sort | uniq -c
+```
+
+Conceptually:
+
+```
+application.log
+      |
+      v
+grep ERROR
+      |
+      v
+Only error lines
+      |
+      v
+sort
+      |
+      v
+Sorted matching lines
+      |
+      v
+uniq -c
+      |
+      v
+Count repeated adjacent lines
+      |
+      v
+Final report
+```
+
+Representative output:
+
+```
+1 ERROR Authentication failed
+2 ERROR Database timeout
+```
+
+This is a practical demonstration of command composition.
+
+## **11.6 Why is&#x20;**`sort`**&#x20;necessary before&#x20;**`uniq`**?**
+
+The `uniq` command identifies repeated adjacent lines.
+
+It does not automatically find all duplicates scattered throughout an unsorted file.
+
+For example:
+
+```
+ERROR A
+ERROR B
+ERROR A
+```
+
+Running:
+
+```
+uniq -c
+```
+
+does not combine the two occurrences of `ERROR A` because they are not adjacent.
+
+But:
+
+```
+sort | uniq -c
+```
+
+groups identical lines together before counting them.
+
+This is a common and useful Linux text-processing pattern.
+
+## **11.7 More pipeline examples**
+
+**Count files in a directory:**
+
+```
+find /etc -maxdepth 1 -type f | wc -l
+```
+
+**Find the five largest files in a known directory:**
+
+```
+find /var/log -type f -printf '%s %p\n' |
+    sort -nr |
+    head -n 5
+```
+
+Explanation:
+
+- `find` discovers files.
+- `-printf` prints file size and pathname.
+- `sort -nr` sorts numeric values in descending order.
+- `head -n 5` selects the first five entries.
+
+GNU `find` supports `-printf`; this syntax is not portable to every implementation.
+
+**Find processes matching a name:**
+
+```
+ps aux | grep nginx
+```
+
+This works as a demonstration, but may also match the `grep nginx` command itself.
+
+A better option on systems with `pgrep` is:
+
+```
+pgrep -a nginx
+```
+
+## **11.8 What happens internally when a pipe executes?**
+
+This is important for understanding operating systems.
+
+Consider:
+
+```
+ls /etc | grep ssh
+```
+
+Bash does not simply execute the first command, collect all output in a temporary text variable and then pass it to the second command.
+
+Instead, it creates a pipe and connects process file descriptors.
+
+Conceptually:
+
+```
+                 Bash
+                  |
+                  v
+            Create pipe
+             /       \
+            /         \
+           v           v
+       ls process   grep process
+           |           ^
+           |           |
+       stdout (1)   stdin (0)
+           |           ^
+           +--- PIPE --+
+                       |
+                       v
+                    Terminal
+```
+
+The kernel provides a pipe object with a read end and a write end.
+
+- The first process writes bytes to the pipe.
+- The second process reads bytes from the pipe.
+- The kernel manages buffering and synchronization.
+
+The processes can execute concurrently.
+
+The pipe has finite buffering capacity.
+
+If the receiving process reads slowly, the writing process can block when the pipe buffer fills.
+
+If all write ends are closed, the reader eventually receives end-of-file after consuming buffered data.
+
+If all read ends are closed, a writer can receive a broken-pipe condition, typically resulting in `SIGPIPE` unless handled differently.
+
+This behavior is fundamental to Unix process communication.
+
+## **11.9 Pipes are streams, not filenames**
+
+This distinction is essential.
+
+When you execute:
+
+```
+ls | grep ssh
+```
+
+The pipe does not create a permanent file named `output`.
+
+It provides a communication channel between processes.
+
+A regular file stores data in the filesystem.
+
+A pipe provides a stream of data between processes.
+
+| Regular file                             | Pipe                                              |
+| ---------------------------------------- | ------------------------------------------------- |
+| Stored in filesystem                     | Kernel-managed communication channel              |
+| Can persist after process exits          | Exists while references to it remain              |
+| Can be read repeatedly                   | Data is consumed as read                          |
+| Supports pathname access                 | Accessed through file descriptors                 |
+| Can be used by unrelated processes later | Usually established between cooperating processes |
+
+## **11.10 Connect more than two commands**
+
+A pipeline can contain many commands.
+
+Example:
+
+```
+cat application.log |
+    grep ERROR |
+    sort |
+    uniq -c |
+    sort -nr
+```
+
+This pipeline:
+
+1. Reads the log.
+2. Selects errors.
+3. Sorts matching lines.
+4. Counts duplicates.
+5. Sorts the counts from highest to lowest.
+
+The final result is a basic error-frequency report.
+
+In production, the same result can be generated more directly without `cat`:
+
+```
+grep ERROR application.log |
+    sort |
+    uniq -c |
+    sort -nr
+```
+
+The second form avoids an unnecessary process.
+
+# **Part 12 — The&#x20;**`tee`**&#x20;command**
+
+## **12.1 What is&#x20;**`tee`**?**
+
+`tee` reads data from standard input and writes it to:
+
+1. Standard output.
+2. One or more files.
+
+It allows the same stream to be displayed and saved simultaneously.
+
+Syntax:
+
+```
+COMMAND | tee FILE
+```
+
+## **12.2 Demonstration**
+
+Execute:
+
+```
+ls /etc | tee directory-list.txt
+```
+
+What happens?
+
+- `ls` generates a directory listing.
+- The pipe sends it to `tee`.
+- `tee` writes the data to `directory-list.txt`.
+- `tee` also sends the same data to its standard output.
+- The terminal displays that output.
+
+Verify:
+
+```
+cat directory-list.txt
+```
+
+The file contains the listing.
+
+## **12.3 Why is&#x20;**`tee`**&#x20;useful?**
+
+Suppose an administrator runs a long diagnostic command.
+
+They want to:
+
+- See its output immediately.
+- Preserve the output for later analysis.
+
+Use:
+
+```
+find /var/log -type f | tee log-file-list.txt
+```
+
+The results appear in the terminal and are saved.
+
+This is useful during troubleshooting and operational investigations.
+
+## **12.4 Append with&#x20;**`tee`
+
+By default, `tee` overwrites existing files.
+
+To append instead:
+
+```
+COMMAND | tee -a output.log
+```
+
+Example:
+
+```
+date | tee -a events.log
+```
+
+Each execution adds another timestamp.
+
+## **12.5 Use&#x20;**`tee`**&#x20;with&#x20;**`sudo`
+
+A common Linux problem:
+
+```
+sudo echo "Example" > /etc/example.conf
+```
+
+Why can this fail?
+
+Because the shell performs the redirection before executing `sudo`.
+
+The shell itself tries to open `/etc/example.conf` with the current user's permissions.
+
+`sudo` only elevates the `echo` command, not the shell's redirection operation.
+
+A common solution:
+
+```
+echo "Example" | sudo tee /etc/example.conf
+```
+
+Now:
+
+1. The ordinary shell executes `echo`.
+2. The pipe sends its output to `tee`.
+3. `sudo` executes `tee` with elevated privileges.
+4. `tee` opens the destination file as the elevated process.
+
+**Understanding the permission boundary**
+
+Normal user shell
+
+`echo "Example"`
+
+Pipe
+
+`sudo tee /etc/example.conf`
+
+Elevated process opens the destination
+
+This is a very useful production administration technique.
+
+**Safety:** The example replaces the destination file's contents. For an important configuration file, preserve a backup and validate the new configuration before applying it.
+
+# **Part 13 — Pipeline exit status and&#x20;**`pipefail`
+
+This section introduces an important distinction between successful output and successful execution.
+
+## **13.1 What is an exit status?**
+
+When a Linux command finishes, it normally returns an integer exit status.
+
+Conventionally:
+
+| Exit status | Meaning                                   |
+| ----------- | ----------------------------------------- |
+| `0`         | Success                                   |
+| Non-zero    | Some kind of failure or special condition |
+
+The shell exposes the most recent command's exit status through:
+
+```
+$?
+```
+
+Example:
+
+```
+true
+echo $?
+```
+
+Output:
+
+```
+0
+```
+
+Now:
+
+```
+false
+echo $?
+```
+
+Output:
+
+```
+1
+```
+
+The `true` and `false` commands are commonly used for testing shell behavior.
+
+## **13.2 What happens with a pipeline?**
+
+Consider:
+
+```
+false | true
+```
+
+Now:
+
+```
+echo $?
+```
+
+In ordinary Bash configuration, this returns:
+
+```
+0
+```
+
+Why?
+
+By default, the pipeline's exit status is generally the status of its last command.
+
+The last command was:
+
+```
+true
+```
+
+It succeeded.
+
+But the first command failed.
+
+This can hide failures in scripts.
+
+## **13.3 Enable&#x20;**`pipefail`
+
+Bash provides:
+
+```
+set -o pipefail
+```
+
+This changes pipeline status behavior.
+
+With `pipefail`, the pipeline returns a non-zero status if a command in the pipeline fails, using the status of the rightmost failing command.
+
+Demonstration:
+
+```
+set -o pipefail
+
+false | true
+
+echo $?
+```
+
+Output:
+
+```
+1
+```
+
+The pipeline now reports failure.
+
+Reset the shell setting:
+
+```
+set +o pipefail
+```
+
+## **13.4 Why does this matter in production?**
+
+Imagine:
+
+```
+backup-generator | gzip > backup.gz
+```
+
+Suppose `backup-generator` fails.
+
+But `gzip` receives incomplete or empty input and exits successfully.
+
+Without `pipefail`, the overall pipeline may report success because the last command succeeded.
+
+An automation script could incorrectly report a successful backup.
+
+Using:
+
+```
+set -o pipefail
+```
+
+helps expose failures earlier in the pipeline.
+
+However, pipeline failure handling still needs careful design.
+
+For example, some commands intentionally stop early, causing upstream commands to receive `SIGPIPE`. A pipeline using `head` may therefore have non-zero upstream statuses even when the intended output was produced.
+
+Do not treat every non-zero pipeline status as proof of an application failure without understanding the pipeline's design.
+
+## **13.5 Inspect individual pipeline statuses with&#x20;**`PIPESTATUS`
+
+Bash provides an array:
+
+```
+PIPESTATUS
+```
+
+It contains the exit statuses of commands in the most recently executed foreground pipeline.
+
+Example:
+
+```
+false | true | false
+```
+
+Immediately inspect:
+
+```
+printf '%s\n' "${PIPESTATUS[@]}"
+```
+
+Expected:
+
+```
+1
+0
+1
+```
+
+Important:
+
+The next command overwrites `PIPESTATUS`.
+
+Capture it immediately if you need to examine the results later.
+
+This is a Bash-specific feature and will become useful in Stage 04 production scripting.
+
+# **Part 14 — Command chaining:&#x20;**`;`**,&#x20;**`&&`**&#x20;and&#x20;**`||`
+
+Command chaining controls how commands execute in sequence.
+
+## **14.1 The semicolon&#x20;**`;`
+
+The semicolon separates commands.
+
+Example:
+
+```
+date; pwd; whoami
+```
+
+All three commands execute sequentially.
+
+The shell continues even if an earlier command fails.
+
+Example:
+
+```
+false; echo "This still executes"
+```
+
+Output:
+
+```
+This still executes
+```
+
+Use `;` when commands should run independently of previous success.
+
+## **14.2 The&#x20;**`&&`**&#x20;operator**
+
+`&&` executes the next command only if the preceding command succeeds.
+
+Example:
+
+```
+mkdir test-directory && echo "Directory created"
+```
+
+If directory creation succeeds, the message appears.
+
+If it fails, the message is not executed.
+
+This is called conditional command execution.
+
+Another example:
+
+```
+mkdir application && cd application
+```
+
+The shell attempts `cd` only if `mkdir` succeeds.
+
+However, note that `mkdir` returning success because a directory already exists is not automatic with every option. For repeatable setup, use:
+
+```
+mkdir -p application && cd application
+```
+
+## **14.3 The&#x20;**`||`**&#x20;operator**
+
+`||` executes the next command if the preceding command fails.
+
+Example:
+
+```
+mkdir application || echo "Directory creation failed"
+```
+
+If `mkdir` fails, the error message is displayed.
+
+Another example:
+
+```
+grep -q ERROR application.log || echo "No errors found"
+```
+
+This prints the message if `grep` does not find a matching line.
+
+But be careful: `grep` has exit statuses that distinguish matching, no matching and actual errors.
+
+A more accurate interpretation is:
+
+- `0`: At least one match.
+- `1`: No match.
+- `2` or another non-zero status: Error, depending on the situation and implementation.
+
+Therefore, `||` does not always mean "the condition was false"; it means the preceding command returned non-zero.
+
+## **14.4 Compare the three operators**
+
+\| Operator | Behavior |\
+\|---|---|\
+\| `;` | Execute the next command regardless of previous status |\
+\| `&&` | Execute next command only after success |\
+\| `||` | Execute next command only after failure |
+
+## **14.5 Combine them**
+
+Example:
+
+```
+mkdir -p application &&
+echo "Directory ready" ||
+echo "Setup failed"
+```
+
+The intended flow:
+
+```
+mkdir -p application
+         |
+         v
+    Success?
+      /   \
+    Yes    No
+     |      |
+     v      v
+  Ready   Failed
+```
+
+However, when chaining becomes complicated, use an explicit Bash script with `if` statements.
+
+That is usually easier to understand and maintain.
+
+# **Part 15 — Process substitution and advanced pipelines**
+
+This is an introduction to a more advanced Bash feature.
+
+## **15.1 What is process substitution?**
+
+Bash supports:
+
+```
+<(COMMAND)
+```
+
+This allows the output of a command to be exposed as a filename-like input source.
+
+Example:
+
+```
+diff <(sort file1.txt) <(sort file2.txt)
+```
+
+Conceptually:
+
+1. Bash executes the first `sort`.
+2. Bash executes the second `sort`.
+3. Each output is exposed through a process-substitution path.
+4. `diff` compares the two resulting streams.
+
+This can be useful when comparing generated outputs without creating temporary files manually.
+
+Process substitution is a Bash feature, not a universal POSIX shell feature.
+
+## **15.2 Example**
+
+Create:
+
+```
+printf 'banana\napple\norange\n' > file1.txt
+printf 'orange\nbanana\napple\n' > file2.txt
+```
+
+Compare:
+
+```
+diff <(sort file1.txt) <(sort file2.txt)
+```
+
+No output means the sorted contents match.
+
+This is a powerful pattern for comparing reports, generated configuration and command output.
+
+## **15.3 When should a beginner learn this?**
+
+Do not use process substitution everywhere.
+
+First understand:
+
+- Standard streams.
+- Redirection.
+- Pipes.
+- Exit statuses.
+
+Then use process substitution when it makes a workflow simpler.
+
+The goal is clarity, not writing the shortest possible shell command.
+
+# **Part 16 — Real-world production troubleshooting scenarios**
+
+Now connect the concepts to situations that Linux administrators actually encounter.
+
+## **Scenario 1: Application generates too many error messages**
+
+A production application produces a large log:
+
+```
+/var/log/inventory/application.log
+```
+
+The administrator wants only error messages.
+
+Execute:
+
+```
+grep -i ERROR /var/log/inventory/application.log
+```
+
+Now save the matching lines:
+
+```
+grep -i ERROR /var/log/inventory/application.log \
+    > application-errors.log
+```
+
+Count them:
+
+```
+grep -ic ERROR /var/log/inventory/application.log
+```
+
+Find the five most frequently repeated error messages:
+
+```
+grep -i ERROR /var/log/inventory/application.log |
+    sort |
+    uniq -c |
+    sort -nr |
+    head -n 5
+```
+
+### **Administrator's approach**
+
+The administrator does not read the entire log manually.
+
+They progressively reduce the information:
+
+```
+100,000 log lines
+       |
+       v
+Filter ERROR messages
+       |
+       v
+Sort identical messages
+       |
+       v
+Count occurrences
+       |
+       v
+Identify most frequent errors
+```
+
+This is basic operational log analysis.
+
+## **Scenario 2: A command produces both results and permission errors**
+
+An administrator executes:
+
+```
+find /var/log -type f
+```
+
+The command returns some filenames but also reports:
+
+```
+Permission denied
+```
+
+The administrator wants to preserve both outputs separately.
+
+Execute:
+
+```
+find /var/log -type f \
+    > discovered-files.txt \
+    2> discovery-errors.txt
+```
+
+Now:
+
+```
+head discovered-files.txt
+```
+
+And:
+
+```
+cat discovery-errors.txt
+```
+
+This allows the administrator to inspect successfully discovered files and separately investigate access restrictions.
+
+**Important:** Do not immediately execute the search using `sudo`. First determine whether the inaccessible directories are expected to be restricted.
+
+## **Scenario 3: Deployment script fails but the error is not visible**
+
+A deployment command runs:
+
+```
+./deploy.sh
+```
+
+It appears to finish without displaying useful information.
+
+The administrator captures all output:
+
+```
+./deploy.sh > deployment.log 2>&1
+```
+
+Then inspects:
+
+```
+tail -n 50 deployment.log
+```
+
+To monitor output continuously while the command runs, use:
+
+```
+./deploy.sh 2>&1 | tee deployment.log
+```
+
+This shows output in the terminal and records it.
+
+To append instead of overwriting:
+
+```
+./deploy.sh 2>&1 | tee -a deployment.log
+```
+
+Note that a script's exit status must also be checked. Capturing its output does not automatically guarantee that the deployment succeeded.
+
+## **Scenario 4: An administrator needs to monitor new errors**
+
+A log file is continuously updated by an application.
+
+Execute:
+
+```
+tail -f /var/log/inventory/application.log
+```
+
+This follows new lines as they are appended.
+
+To display only new error messages:
+
+```
+tail -f /var/log/inventory/application.log |
+    grep --line-buffered -i ERROR
+```
+
+Why `--line-buffered`?
+
+Some programs buffer their output.
+
+When `grep` is connected to a pipe rather than a terminal, its output behavior can differ.
+
+Line buffering requests that matching output be delivered line by line rather than waiting for a larger buffer to fill.
+
+This is useful for real-time log monitoring.
+
+Press `Ctrl + C` to stop following the file.
+
+## **Scenario 5: A backup command appears successful despite a failure**
+
+Consider:
+
+```
+backup-generator | gzip > backup.gz
+```
+
+The backup generator encounters an error, but `gzip` exits successfully after processing the data it received.
+
+The shell may report a successful pipeline because the final command succeeded.
+
+A more reliable Bash approach:
+
+```
+set -o pipefail
+
+backup-generator | gzip > backup.gz
+```
+
+Now a failure in an earlier pipeline component can be reflected in the pipeline's exit status.
+
+However, a production backup script needs additional checks:
+
+- Verify the source data.
+- Verify the backup file exists.
+- Check its size.
+- Test archive integrity.
+- Perform restore tests.
+- Record the exit status.
+- Ensure partial backup files are not mistaken for completed backups.
+
+A successful compression command is not proof of a valid backup.
+
+## **Scenario 6: The administrator wants to save output and inspect it**
+
+A diagnostic command generates important results.
+
+Instead of:
+
+```
+ip addr
+```
+
+Use:
+
+```
+ip addr | tee network-report.txt
+```
+
+The output is displayed and saved.
+
+For a privileged command:
+
+```
+sudo some-diagnostic-command |& tee diagnostic.log
+```
+
+In Bash, `|&` connects both standard output and standard error to the pipe.
+
+This is convenient for interactive diagnosis.
+
+# **Part 17 — Practical Lab: Pipes and redirection**
+
+**LAB 05 — Shell I/O**
+
+WSL READY
+
+## **Build a Linux log-processing workflow**
+
+**Objective:** Create sample application logs, separate output streams, build pipelines, process errors, capture reports and inspect command exit statuses.
+
+Difficulty: Beginner → Intermediate · Estimated hands-on time: 45–60 minutes
+
+**Safety:** All operations take place under the user's home directory.
+
+## **17.1 Prepare the lab**
+
+Execute:
+
+```
+mkdir -p ~/linux-learning/lab-05
+cd ~/linux-learning/lab-05
+```
+
+Create the log file:
+
+```
+cat > application.log <<'EOF'
+2026-11-15 09:00:00 INFO Application started
+2026-11-15 09:01:00 INFO Database connected
+2026-11-15 09:02:00 WARNING Slow API response
+2026-11-15 09:03:00 ERROR Database connection timeout
+2026-11-15 09:04:00 INFO Retry initiated
+2026-11-15 09:05:00 ERROR Database connection timeout
+2026-11-15 09:06:00 WARNING Memory usage elevated
+2026-11-15 09:07:00 ERROR Authentication failed
+2026-11-15 09:08:00 INFO Request completed
+2026-11-15 09:09:00 ERROR Authentication failed
+EOF
+```
+
+Verify:
+
+```
+cat application.log
+```
+
+## **17.2 Task 1 — Redirect normal output**
+
+Execute:
+
+```
+date > current-date.txt
+```
+
+Inspect:
+
+```
+cat current-date.txt
+```
+
+Now:
+
+```
+pwd > current-directory.txt
+```
+
+Inspect:
+
+```
+cat current-directory.txt
+```
+
+Expected result: the files contain the output of the respective commands.
+
+## **17.3 Task 2 — Understand overwrite versus append**
+
+Create:
+
+```
+echo "First deployment" > deployment.log
+```
+
+Append:
+
+```
+echo "Second deployment" >> deployment.log
+```
+
+Append again:
+
+```
+echo "Third deployment" >> deployment.log
+```
+
+Inspect:
+
+```
+cat deployment.log
+```
+
+Now overwrite:
+
+```
+echo "Replacement content" > deployment.log
+```
+
+Inspect again:
+
+```
+cat deployment.log
+```
+
+The previous three entries should have been replaced.
+
+This experiment makes the distinction between `>` and `>>` concrete.
+
+## **17.4 Task 3 — Redirect standard input**
+
+Create:
+
+```
+cat > names.txt <<'EOF'
+Alice
+Bob
+Charlie
+David
+Eve
+EOF
+```
+
+Count lines:
+
+```
+wc -l < names.txt
+```
+
+Expected:
+
+```
+5
+```
+
+Now compare:
+
+```
+wc -l names.txt
+```
+
+Explain why the filename appears in one result but not the other.
+
+## **17.5 Task 4 — Separate normal output and errors**
+
+Execute:
+
+```
+find /etc /this-directory-does-not-exist \
+    -type f \
+    > files-found.txt \
+    2> errors-found.txt
+```
+
+Inspect successful output:
+
+```
+head files-found.txt
+```
+
+Inspect errors:
+
+```
+cat errors-found.txt
+```
+
+The exact error text depends on the system.
+
+Explain that the two output streams are independent.
+
+## **17.6 Task 5 — Combine output streams**
+
+Execute:
+
+```
+find /etc /this-directory-does-not-exist \
+    -type f \
+    > complete-report.txt 2>&1
+```
+
+Inspect:
+
+```
+cat complete-report.txt
+```
+
+The file should contain both successful results and diagnostic messages.
+
+## **17.7 Task 6 — Practice&#x20;**`/dev/null`
+
+Execute:
+
+```
+ls /etc > /dev/null
+```
+
+Nothing is displayed.
+
+Now:
+
+```
+ls /missing-directory 2> /dev/null
+```
+
+The error is suppressed.
+
+Finally:
+
+```
+ls /etc /missing-directory > /dev/null 2>&1
+```
+
+Both output streams are discarded.
+
+Explain that discarding output does not mean the command succeeded.
+
+Check the exit status:
+
+```
+echo $?
+```
+
+For the final command, a non-zero status is expected because one requested directory does not exist.
+
+## **17.8 Task 7 — Create a basic log-filtering pipeline**
+
+Find all errors:
+
+```
+grep ERROR application.log
+```
+
+Find only warnings:
+
+```
+grep WARNING application.log
+```
+
+Count errors:
+
+```
+grep -c ERROR application.log
+```
+
+Expected:
+
+```
+4
+```
+
+Display matching lines with line numbers:
+
+```
+grep -n ERROR application.log
+```
+
+Count errors without case sensitivity:
+
+```
+grep -ic error application.log
+```
+
+## **17.9 Task 8 — Build an error-frequency report**
+
+Execute:
+
+```
+grep ERROR application.log |
+    sort |
+    uniq -c |
+    sort -nr
+```
+
+Expected output pattern:
+
+```
+2 ... ERROR Authentication failed
+2 ... ERROR Database connection timeout
+```
+
+The exact spacing and order of equal-frequency entries can differ.
+
+Now save the report:
+
+```
+grep ERROR application.log |
+    sort |
+    uniq -c |
+    sort -nr \
+    > error-frequency.txt
+```
+
+Inspect:
+
+```
+cat error-frequency.txt
+```
+
+## **17.10 Task 9 — Use&#x20;**`tee`
+
+Execute:
+
+```
+grep ERROR application.log |
+    tee errors-only.txt
+```
+
+The matching lines should appear on the terminal and be saved in the file.
+
+Now append another report:
+
+```
+grep WARNING application.log |
+    tee -a errors-only.txt
+```
+
+Inspect:
+
+```
+cat errors-only.txt
+```
+
+Explain why the warning entries have been appended even though the file is named `errors-only.txt`.
+
+The filename is just a name; it does not enforce what data the file contains.
+
+## **17.11 Task 10 — Build a complete reporting pipeline**
+
+Execute:
+
+```
+grep -E 'ERROR|WARNING' application.log |
+    sort |
+    tee filtered-events.txt |
+    wc -l
+```
+
+This pipeline:
+
+1. Selects errors and warnings.
+2. Sorts matching events.
+3. Saves the sorted results through `tee`.
+4. Passes the same stream to `wc -l`.
+5. Displays the total number of matching lines.
+
+Expected count:
+
+```
+6
+```
+
+The output file should contain all six matching events.
+
+Verify:
+
+```
+cat filtered-events.txt
+```
+
+## **17.12 Task 11 — Understand pipeline failure**
+
+Execute:
+
+```
+false | true
+echo $?
+```
+
+Under default Bash pipeline behavior, the result is:
+
+```
+0
+```
+
+Now:
+
+```
+set -o pipefail
+false | true
+echo $?
+```
+
+Expected:
+
+```
+1
+```
+
+Reset:
+
+```
+set +o pipefail
+```
+
+Explain why the pipeline's exit status changed.
+
+## **17.13 Task 12 — Practice command chaining**
+
+Execute:
+
+```
+mkdir -p successful-directory &&
+echo "Directory setup successful"
+```
+
+Expected:
+
+```
+Directory setup successful
+```
+
+Now:
+
+```
+mkdir /root/this-will-fail ||
+echo "Directory creation failed"
+```
+
+In a normal unprivileged WSL shell, the second message should appear because the user cannot normally create directories directly under `/root`.
+
+This is a controlled demonstration of `||`.
+
+Now:
+
+```
+echo "First"; echo "Second"; echo "Third"
+```
+
+All three messages appear.
+
+This demonstrates `;`.
+
+## **17.14 Task 13 — Capture command output with&#x20;**`tee`
+
+Execute:
+
+```
+find . -maxdepth 2 -type f |
+    tee filesystem-report.txt
+```
+
+The discovered file paths appear on the terminal and are stored in the report.
+
+Now inspect:
+
+```
+cat filesystem-report.txt
+```
+
+## **17.15 Task 14 — Inspect the lab results**
+
+Execute:
+
+```
+ls -lah
+```
+
+Then:
+
+```
+find . -maxdepth 2 -type f -print
+```
+
+The learner should see files containing:
+
+- Command output.
+- Error output.
+- Combined output.
+- Filtered log entries.
+- Error-frequency reports.
+- Pipeline reports.
+
+## **17.16 Success criteria**
+
+The learner should independently be able to:
+
+- Explain stdin, stdout and stderr.
+- Identify descriptors `0`, `1` and `2`.
+- Redirect output with `>`.
+- Append output with `>>`.
+- Redirect input using `<`.
+- Create a here document.
+- Separate errors using `2>`.
+- Combine output using `2>&1`.
+- Explain why redirection order matters.
+- Use `/dev/null`.
+- Connect commands using pipes.
+- Process log data using `grep`, `sort`, `uniq` and `wc`.
+- Save output using `tee`.
+- Explain pipeline exit status.
+- Use `&&`, `||` and `;`.
+
+## **17.17 Cleanup**
+
+The lab can be retained for later review.
+
+When finished:
+
+```
+cd ~
+```
+
+Inspect:
+
+```
+ls -la ~/linux-learning/lab-05
+```
+
+To remove only this lab:
+
+```
+rm -r -- ~/linux-learning/lab-05
+```
+
+This permanently removes the exercise files. Confirm the exact path before execution.
+
+# **Part 18 — Complete command and operator reference**
+
+## **18.1 Redirection operators**
+
+| Operator | Meaning                                     | Example                    |
+| -------- | ------------------------------------------- | -------------------------- |
+| `>`      | Redirect stdout, overwrite                  | `echo hi > file.txt`       |
+| `>>`     | Redirect stdout, append                     | `echo hi >> file.txt`      |
+| `<`      | Redirect stdin                              | `wc -l < file.txt`         |
+| `2>`     | Redirect stderr                             | `find /etc 2> errors.txt`  |
+| `2>>`    | Append stderr                               | `command 2>> errors.txt`   |
+| `2>&1`   | Send stderr to stdout's current destination | `command > all.log 2>&1`   |
+| `&>`     | Redirect stdout and stderr in Bash          | `command &> all.log`       |
+| `&>>`    | Append both streams in Bash                 | `command &>> all.log`      |
+| `<<`     | Here document                               | `cat <<EOF`                |
+| `<<<`    | Here string                                 | `grep Linux <<< "Linux"`   |
+| `\\|`    | Pipe stdout into another command's stdin    | `ls \\| grep ssh`          |
+| `\\|&`   | Pipe stdout and stderr in Bash              | `command \\|& tee log.txt` |
+
+## **18.2 Important commands**
+
+| Command   | Purpose                                  |
+| --------- | ---------------------------------------- |
+| `cat`     | Display or concatenate file contents     |
+| `echo`    | Display text                             |
+| `printf`  | Format and display output                |
+| `head`    | Display beginning of input               |
+| `tail`    | Display end of input                     |
+| `grep`    | Search matching text                     |
+| `sort`    | Sort lines                               |
+| `uniq`    | Identify adjacent duplicate lines        |
+| `wc`      | Count lines, words and bytes             |
+| `tee`     | Display and save input simultaneously    |
+| `cut`     | Extract selected fields                  |
+| `tr`      | Translate or delete characters           |
+| `sed`     | Stream editing                           |
+| `awk`     | Text processing and field-based analysis |
+| `xargs`   | Build command arguments from input       |
+| `diff`    | Compare files                            |
+| `find`    | Search filesystem objects                |
+| `ps`      | Inspect processes                        |
+| `tail -f` | Follow a growing file                    |
+| `true`    | Return success                           |
+| `false`   | Return failure                           |
+
+We will study `sed`, `awk` and parallel `xargs` processing more deeply in Stage 04.
+
+## **18.3 Important internal concepts**
+
+| Concept         | Meaning                                                 |
+| --------------- | ------------------------------------------------------- |
+| File descriptor | Integer reference to an open I/O resource               |
+| stdin           | Standard input, FD 0                                    |
+| stdout          | Standard output, FD 1                                   |
+| stderr          | Standard error, FD 2                                    |
+| Pipe            | Kernel-managed interprocess byte stream                 |
+| Redirection     | Shell changes a process's input/output destinations     |
+| Exit status     | Integer result returned by a command                    |
+| `PIPESTATUS`    | Bash array containing individual pipeline exit statuses |
+| `pipefail`      | Bash option that exposes pipeline failures              |
+| Here document   | Multiline shell-supplied input                          |
+| Here string     | Single-string shell-supplied input                      |
+| `/dev/null`     | Special device that discards written data               |
+
+# **Part 19 — Advanced engineering notes**
+
+Before finishing, reinforce these five principles.
+
+**1. A pipe is not a file.**
+
+A pipe is a kernel-managed communication channel. It allows processes to exchange data without creating a permanent file.
+
+**2. Redirection happens through the shell.**
+
+The shell establishes the file descriptors before executing the command. This explains why `sudo echo ... > /etc/file` may fail while `echo ... | sudo tee /etc/file` works.
+
+**3. Standard output and standard error are different streams.**
+
+A command can successfully produce some results while also reporting errors. Production scripts should handle both.
+
+**4. Pipeline success must be checked carefully.**
+
+A successful last command does not necessarily mean every earlier command succeeded. Understand `pipefail` and `PIPESTATUS`.
+
+**5. Output suppression is not error correction.**
+
+`2>/dev/null` hides error messages. It does not resolve the underlying problem.
+
+# **Part 20 — Final mastery gate**
+
+**MODULE 01 · TOPIC 05**
+
+Lesson complete
+
+**Professional competency checklist**
+
+Teaching mastery progress
+
+# **0/16**
+
+Explain stdin, stdout and stderr
+
+Explain file descriptors 0, 1 and 2
+
+Redirect and append command output
+
+Redirect input from files
+
+Use here documents and here strings
+
+Capture errors independently
+
+Combine stdout and stderr correctly
+
+Explain redirection ordering
+
+Use /dev/null appropriately
+
+Build multi-stage pipelines
+
+Process logs with grep, sort, uniq and wc
+
+Use tee to capture live output
+
+Understand pipe buffering and process communication
+
+Explain pipeline exit status and pipefail
+
+Use conditional command chaining
+
+Build a practical diagnostic reporting pipeline
+
+Reset checklist
+
+# **Official documentation**
+
+Useful primary references:
+
+- [GNU Bash Reference Manual](https://www.gnu.org/software/bash/manual/bash.html?utm_source=chatgpt.com) — Redirections, pipelines, command execution and shell behavior.
+- [pipe(2)](https://man7.org/linux/man-pages/man2/pipe.2.html?utm_source=chatgpt.com) — Linux pipe system call.
+- [dup(2)](https://man7.org/linux/man-pages/man2/dup.2.html?utm_source=chatgpt.com) — Duplicating file descriptors.
+- [open(2)](https://man7.org/linux/man-pages/man2/open.2.html?utm_source=chatgpt.com) — Opening files and redirection-related flags.
+- [GNU Coreutils manual](https://www.gnu.org/software/coreutils/manual/coreutils.html?utm_source=chatgpt.com) — `cat`, `tee`, `head`, `tail` and other utilities.
+
+**STAGE 01 · MODULE 01**
+
+Topic 05 complete
+
+# **Next: Topic 06**
+
+**Environment Variables**
+
+This lesson will cover:
+
+1. What environment variables are.
+2. Shell variables versus environment variables.
+3. `export` and variable inheritance.
+4. `$PATH` and command discovery.
+5. `$HOME`, `$USER`, `$SHELL`, `$PWD` and other standard variables.
+6. Variable expansion and quoting.
+7. Environment variables in child processes.
+8. Setting variables temporarily and permanently.
+9. `.env` files versus actual shell environment variables.
+10. How Linux applications and services receive configuration through their environment.
+
+**Teaching takeaway:** Pipes and redirection turn individual Linux commands into complete processing systems. Once the learner understands file descriptors and streams, they can build powerful diagnostic and automation workflows without writing a separate program for every task.

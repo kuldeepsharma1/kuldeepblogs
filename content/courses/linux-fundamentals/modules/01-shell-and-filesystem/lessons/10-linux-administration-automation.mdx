@@ -1,0 +1,1189 @@
+---
+title: "Final Integration Lab: Linux Administration Automation"
+description: "Combine the module's Linux skills into a practical administration toolkit and automation project."
+slug: "10-linux-administration-automation"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 10
+readingTime: "16 min"
+tags: ['linux', 'linux-fundamentals', 'bash', 'wsl', 'shell', 'filesystem', 'scripting', 'automation']
+toc: true
+---
+
+## 1. Introduction
+
+We have reached the final topic of Module 01: Shell & Filesystem.
+
+So far, we have studied Linux commands individually:
+1. Linux distributions and filesystem hierarchy.
+2. Absolute and relative paths.
+3. File and directory operations.
+4. Pipes and redirection.
+5. Environment variables.
+6. Shell startup files and profiles.
+7. Package managers.
+8. Bash scripting fundamentals.
+
+Now we will combine these concepts into one practical administration project.
+
+The goal is to build a small Linux administration toolkit that can:
+- Inspect a Linux system.
+- Check disk and memory usage.
+- Create application directories.
+- Generate configuration files.
+- Capture command output and errors.
+- Find files and inspect logs.
+- Back up application data.
+- Produce a final system report.
+
+This is not just a collection of commands. It is a small example of how a Linux administrator approaches automation.
+
+## 2. Project Architecture
+
+We will build a project named linux-admin-toolkit.
+
+### Project structure
+
+```text
+linux-admin-toolkit/
+├── bin/
+│   ├── admin.sh
+│   ├── system-info.sh
+│   └── backup.sh
+├── config/
+│   └── app.conf
+├── data/
+│   ├── application/
+│   └── backups/
+├── logs/
+└── reports/
+```
+
+Everything will be created inside the Linux user's home directory.
+
+### What we will learn through this project
+
+| Component | Linux concepts |
+| --- | --- |
+| admin.sh | Arguments, conditions, functions |
+| system-info.sh | System inspection, command substitution |
+| backup.sh | File operations, timestamps, exit codes |
+| app.conf | Configuration and environment variables |
+| logs/ | Redirection and logging |
+| reports/ | Pipes, filtering and reporting |
+| PATH integration | Command discovery |
+
+## 3. Prepare the Lab Environment
+
+> Works in WSL2 Ubuntu
+
+All exercises will operate under:
+
+```text
+~/linux-learning/lab-10-integration/
+```
+
+No Windows host system directories will be modified.
+
+### Step 1 — Create the project
+
+```bash
+mkdir -p "$HOME/linux-learning/lab-10-integration"
+
+cd "$HOME/linux-learning/lab-10-integration"
+```
+
+### Step 2 — Create the directory structure
+
+```bash
+mkdir -p linux-admin-toolkit/{bin,config,data/application,data/backups,logs,reports}
+```
+
+Understand the command:
+- `mkdir` creates directories.
+- `-p` creates parent directories when necessary.
+- `{...}` is Bash brace expansion, which expands into multiple directory names.
+
+Verify:
+
+```bash
+find linux-admin-toolkit -maxdepth 2 -type d
+```
+
+Expected structure:
+
+```text
+linux-admin-toolkit
+linux-admin-toolkit/bin
+linux-admin-toolkit/config
+linux-admin-toolkit/data
+linux-admin-toolkit/data/application
+linux-admin-toolkit/data/backups
+linux-admin-toolkit/logs
+linux-admin-toolkit/reports
+```
+
+### Step 3 — Define the project path
+
+```bash
+export PROJECT_DIR="$HOME/linux-learning/lab-10-integration/linux-admin-toolkit"
+```
+
+Verify:
+
+```bash
+echo "$PROJECT_DIR"
+```
+
+Change into it:
+
+```bash
+cd "$PROJECT_DIR"
+```
+
+### Step 4 — Create sample application data
+
+```bash
+cat > data/application/app.txt <<'EOF'
+Linux Administration Toolkit
+Application version: 1.0
+Environment: development
+EOF
+```
+
+Create a second file:
+
+```bash
+cat > data/application/database-info.txt <<'EOF'
+Database: PostgreSQL
+Host: localhost
+Port: 5432
+EOF
+```
+
+Inspect:
+
+```bash
+find data/application -type f
+```
+
+Read the files:
+
+```bash
+cat data/application/app.txt
+cat data/application/database-info.txt
+```
+
+We now have sample data for the backup exercise.
+
+## 4. Project 1 — Build a System Information Collector
+
+Our first script will collect information about the Linux system.
+
+This is a common administrative task when diagnosing servers.
+
+### Step 1 — Create the script
+
+```bash
+nano bin/system-info.sh
+```
+
+Add:
+
+```bash
+#!/usr/bin/env bash
+
+echo "======================================"
+echo "         LINUX SYSTEM REPORT"
+echo "======================================"
+
+echo
+echo "HOST INFORMATION"
+echo "Hostname: $(hostname)"
+echo "Current user: $USER"
+echo "Home directory: $HOME"
+echo "Current directory: $PWD"
+
+echo
+echo "OPERATING SYSTEM"
+grep '^PRETTY_NAME=' /etc/os-release
+
+echo
+echo "KERNEL"
+uname -r
+
+echo
+echo "UPTIME"
+uptime
+
+echo
+echo "DISK USAGE"
+df -h /
+
+echo
+echo "MEMORY"
+free -h
+
+echo
+echo "TOP PROCESSES"
+ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -n 6
+
+echo
+echo "REPORT COMPLETED"
+```
+
+### Step 2 — Make it executable
+
+```bash
+chmod +x bin/system-info.sh
+```
+
+### Step 3 — Execute
+
+```bash
+./bin/system-info.sh
+```
+
+### Step 4 — Understand the commands
+
+| Command | Purpose |
+| --- | --- |
+| `hostname` | Shows system hostname |
+| `whoami` | Shows current user |
+| `uname -r` | Shows kernel release |
+| `uptime` | Shows system uptime and load averages |
+| `df -h /` | Reports filesystem usage |
+| `free -h` | Reports memory and swap |
+| `ps` | Displays process information |
+| `head` | Displays the first lines |
+| `grep` | Filters matching text |
+
+### Step 5 — Save the report to a file
+
+Instead of displaying the report only in the terminal:
+
+```bash
+./bin/system-info.sh > reports/system-info.txt
+```
+
+Read it:
+
+```bash
+cat reports/system-info.txt
+```
+
+Append a new report:
+
+```bash
+./bin/system-info.sh >> reports/system-info.txt
+```
+
+The difference:
+- `>` replaces the destination file.
+- `>>` appends to the destination file.
+
+> WSL note: The kernel, memory and disk figures reflect the WSL environment and its virtualization boundaries. They are not necessarily identical to the physical Windows host's resource allocation.
+
+## 5. Project 2 — Create an Application Configuration System
+
+A production application should not hardcode every configuration value.
+
+We will create a simple configuration file.
+
+### Step 1 — Create the configuration
+
+```bash
+nano config/app.conf
+```
+
+Add:
+
+```text
+APP_NAME="Linux Admin Toolkit"
+APP_ENV="development"
+APP_PORT="3000"
+APP_VERSION="1.0"
+```
+
+This is written using Bash-compatible assignment syntax.
+
+### Step 2 — Load the configuration safely for this controlled lab
+
+From the project directory:
+
+```bash
+set -a
+source config/app.conf
+set +a
+```
+
+What happens?
+- `set -a` automatically exports variables assigned afterward.
+- `source` executes the configuration file in the current shell.
+- `set +a` disables automatic exporting.
+
+Verify:
+
+```bash
+echo "$APP_NAME"
+echo "$APP_ENV"
+echo "$APP_PORT"
+```
+
+Expected:
+
+```text
+Linux Admin Toolkit
+development
+3000
+```
+
+> Security note: Sourcing a file executes shell code. Only source configuration files you trust. A production application should use a proper configuration loader or carefully controlled environment file.
+
+### Step 3 — Create a configuration report
+
+```bash
+{
+    echo "Application: $APP_NAME"
+    echo "Environment: $APP_ENV"
+    echo "Port: $APP_PORT"
+    echo "Version: $APP_VERSION"
+} > reports/application-config.txt
+```
+
+The `{ ...; }` group runs several commands in the current shell.
+
+The output is redirected into one file.
+
+Verify:
+
+```bash
+cat reports/application-config.txt
+```
+
+## 6. Project 3 — Build a Backup Automation Script
+
+Now we will create a backup utility.
+
+This combines:
+- Variables.
+- Directory checks.
+- Date and time.
+- File copying.
+- Conditions.
+- Logging.
+- Exit statuses.
+
+### Step 1 — Create the backup script
+
+```bash
+nano bin/backup.sh
+```
+
+Add:
+
+```bash
+#!/usr/bin/env bash
+
+SOURCE_DIR="$PROJECT_DIR/data/application"
+BACKUP_DIR="$PROJECT_DIR/data/backups"
+LOG_FILE="$PROJECT_DIR/logs/backup.log"
+
+TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
+DESTINATION="$BACKUP_DIR/backup-$TIMESTAMP"
+
+echo "Starting backup..."
+
+if [[ ! -d "$SOURCE_DIR" ]]; then
+    echo "ERROR: Source directory does not exist."
+    exit 1
+fi
+
+mkdir -p "$BACKUP_DIR"
+
+if cp -a "$SOURCE_DIR" "$DESTINATION"; then
+    echo "SUCCESS: Backup completed."
+    echo "Backup location: $DESTINATION"
+
+    echo "[$TIMESTAMP] Backup completed: $DESTINATION" >> "$LOG_FILE"
+else
+    echo "ERROR: Backup failed."
+    echo "[$TIMESTAMP] Backup failed." >> "$LOG_FILE"
+    exit 1
+fi
+
+echo "Backup operation finished."
+```
+
+### Step 2 — Make executable
+
+```bash
+chmod +x bin/backup.sh
+```
+
+### Step 3 — Run it
+
+Make sure PROJECT_DIR is set in your current shell:
+
+```bash
+./bin/backup.sh
+```
+
+Expected:
+
+```text
+Starting backup...
+SUCCESS: Backup completed.
+Backup location: .../data/backups/backup-...
+Backup operation finished.
+```
+
+### Step 4 — Inspect backups
+
+```bash
+find data/backups -maxdepth 3 -type f
+```
+
+### Step 5 — Inspect backup logs
+
+```bash
+cat logs/backup.log
+```
+
+### Step 6 — Run it a second time
+
+```bash
+./bin/backup.sh
+```
+
+It should create another timestamped backup.
+
+> **Important limitation:** This script currently relies on the exported PROJECT_DIR variable in your current shell.
+>
+> If you open a new terminal, the variable may not be available.
+>
+> We will fix this in the main administration script by calculating paths relative to the script's own location.
+>
+> Also, this teaching backup is not a database-consistent backup. A live production database needs database-specific backup procedures.
+
+## 7. Project 4 — Build a Log Analysis Report
+
+Linux administrators frequently analyze logs.
+
+We will generate a sample application log and use text-processing commands to inspect it.
+
+### Step 1 — Create a sample log
+
+```bash
+cat > logs/application.log <<'EOF'
+INFO Application started
+INFO Configuration loaded
+WARNING Disk usage is increasing
+ERROR Database connection failed
+INFO Retrying database connection
+ERROR Database connection failed
+INFO Database connection restored
+WARNING Memory usage is high
+INFO Application running
+EOF
+```
+
+### Step 2 — Count all log lines
+
+```bash
+wc -l logs/application.log
+```
+
+Expected:
+
+```text
+9 logs/application.log
+```
+
+### Step 3 — Find errors
+
+```bash
+grep 'ERROR' logs/application.log
+```
+
+### Step 4 — Count errors
+
+```bash
+grep -c 'ERROR' logs/application.log
+```
+
+Expected:
+
+```text
+2
+```
+
+### Step 5 — Find warnings
+
+```bash
+grep 'WARNING' logs/application.log
+```
+
+### Step 6 — Count log severity levels
+
+```bash
+grep -oE '^(INFO|WARNING|ERROR)' logs/application.log | sort | uniq -c
+```
+
+Expected:
+
+```text
+      5 INFO
+      2 WARNING
+      2 ERROR
+```
+
+Explanation:
+
+| Command | Purpose |
+| --- | --- |
+| `grep` | Filters matching lines |
+| `-o` | Prints only matched text |
+| `-E` | Enables extended regular expressions |
+| `sort` | Sorts values |
+| `uniq -c` | Counts adjacent repeated values |
+
+### Step 7 — Save an error report
+
+```bash
+grep 'ERROR' logs/application.log > reports/error-report.txt
+```
+
+Verify:
+
+```bash
+cat reports/error-report.txt
+```
+
+### Step 8 — Combine multiple reports
+
+```bash
+{
+    echo "APPLICATION LOG SUMMARY"
+    echo "========================"
+    echo
+    echo "Total lines:"
+    wc -l < logs/application.log
+    echo
+    echo "Error count:"
+    grep -c 'ERROR' logs/application.log
+    echo
+    echo "Warning count:"
+    grep -c 'WARNING' logs/application.log
+} > reports/log-summary.txt
+```
+
+Inspect:
+
+```bash
+cat reports/log-summary.txt
+```
+
+You have now combined shell grouping, redirection, pipes and filtering into one useful reporting workflow.
+
+## 8. Project 5 — Create a Main Administration Command
+
+Now we will build the central entry point for the toolkit.
+
+The administrator will be able to run:
+
+```bash
+./bin/admin.sh info
+./bin/admin.sh backup
+./bin/admin.sh logs
+./bin/admin.sh config
+```
+
+This is similar to a small command-line application.
+
+### Step 1 — Create the script
+
+```bash
+nano bin/admin.sh
+```
+
+Add:
+
+```bash
+#!/usr/bin/env bash
+
+set -u
+
+# Resolve the project directory from this script's location.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
+LOG_DIR="$PROJECT_DIR/logs"
+REPORT_DIR="$PROJECT_DIR/reports"
+
+mkdir -p "$LOG_DIR" "$REPORT_DIR"
+
+log() {
+    printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1"
+}
+
+show_usage() {
+    cat <<EOF
+Linux Administration Toolkit
+
+Usage:
+    admin.sh COMMAND
+
+Commands:
+    info       Display system information
+    backup     Back up application data
+    logs       Display application errors
+    config     Display application configuration
+    help       Display this help
+EOF
+}
+
+show_info() {
+    "$SCRIPT_DIR/system-info.sh"
+}
+
+run_backup() {
+    PROJECT_DIR="$PROJECT_DIR" "$SCRIPT_DIR/backup.sh"
+}
+
+show_logs() {
+    local FILE="$LOG_DIR/application.log"
+
+    if [[ ! -f "$FILE" ]]; then
+        echo "Application log does not exist."
+        return 1
+    fi
+
+    echo "Application errors:"
+    grep 'ERROR' "$FILE" || true
+}
+
+show_config() {
+    local FILE="$PROJECT_DIR/config/app.conf"
+
+    if [[ ! -f "$FILE" ]]; then
+        echo "Configuration file missing."
+        return 1
+    fi
+
+    cat "$FILE"
+}
+
+COMMAND="${1:-help}"
+
+case "$COMMAND" in
+    info)
+        log "Collecting system information."
+        show_info
+        ;;
+    backup)
+        log "Starting backup."
+        run_backup
+        ;;
+    logs)
+        log "Inspecting application logs."
+        show_logs
+        ;;
+    config)
+        log "Displaying configuration."
+        show_config
+        ;;
+    help|-h|--help)
+        show_usage
+        ;;
+    *)
+        echo "Unknown command: $COMMAND" >&2
+        show_usage >&2
+        exit 2
+        ;;
+    esac
+```
+
+### Step 2 — Make executable
+
+```bash
+chmod +x bin/admin.sh
+```
+
+### Step 3 — Test help
+
+```bash
+./bin/admin.sh help
+```
+
+### Step 4 — Display system information
+
+```bash
+./bin/admin.sh info
+```
+
+### Step 5 — Run a backup
+
+```bash
+./bin/admin.sh backup
+```
+
+Notice that this time the backup works even if PROJECT_DIR was not exported in your terminal.
+
+Why?
+
+The main script calculates its own location and passes the correct project directory to the backup script.
+
+### Step 6 — Inspect logs
+
+```bash
+./bin/admin.sh logs
+```
+
+### Step 7 — Display configuration
+
+```bash
+./bin/admin.sh config
+```
+
+### Step 8 — Test an invalid command
+
+```bash
+./bin/admin.sh something
+```
+
+Expected:
+
+```text
+Unknown command: something
+```
+
+The script exits with status 2.
+
+Check:
+
+```bash
+echo "$?"
+```
+
+## 9. Understand the Main Script Architecture
+
+We used several important Bash techniques.
+
+### 9.1 BASH_SOURCE
+
+```bash
+"${BASH_SOURCE[0]}"
+```
+
+This refers to the currently executing Bash source file.
+
+It helps scripts locate themselves independently of the current working directory.
+
+### 9.2 dirname
+
+```bash
+dirname -- "${BASH_SOURCE[0]}"
+```
+
+Extracts the directory portion of the script path.
+
+### 9.3 cd
+
+```bash
+cd -- "$SCRIPT_DIR/.."
+```
+
+Moves to the parent directory of bin.
+
+### 9.4 Command substitution
+
+```bash
+PROJECT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+```
+
+Executes commands and captures their output.
+
+### 9.5 local
+
+```bash
+local FILE="$LOG_DIR/application.log"
+```
+
+Creates a function-local variable.
+
+### 9.6 case
+
+```bash
+case "$COMMAND" in
+    info)
+        show_info
+        ;;
+    backup)
+        run_backup
+        ;;
+esac
+```
+
+This is useful when implementing command-line interfaces with multiple operations.
+
+### 9.7 Why grep ... || true?
+
+```bash
+grep 'ERROR' "$FILE" || true
+```
+
+grep returns:
+- 0 when a match is found.
+- 1 when no match is found.
+- A value greater than 1 for an actual error.
+
+In this report command, no matching error is an acceptable result. `|| true` prevents that normal no-match condition from being treated as a command failure.
+
+This is an intentional use of Bash's command-status behavior, not a universal solution for error handling.
+
+## 10. Project 6 — Integrate PATH
+
+A Linux administrator should be able to execute personal commands without specifying their full path.
+
+Currently:
+
+```bash
+./bin/admin.sh info
+```
+
+We can add the project's bin directory to PATH for the current shell.
+
+Run from the project directory:
+
+```bash
+export PATH="$PROJECT_DIR/bin:$PATH"
+```
+
+Now try:
+
+```bash
+admin.sh info
+```
+
+The command should resolve through PATH.
+
+Check:
+
+```bash
+command -v admin.sh
+```
+
+Expected:
+
+```text
+/home/your-user/linux-learning/lab-10-integration/linux-admin-toolkit/bin/admin.sh
+```
+
+> **Important:** This PATH change lasts only in the current shell and its child processes.
+>
+> For this lab, do not permanently add the project directory to your .bashrc. We want to keep the exercise self-contained.
+
+## 11. Project 7 — Generate a Complete Administration Report
+
+Now we will combine system information, configuration and log analysis into one final report.
+
+Create:
+
+```bash
+nano bin/full-report.sh
+```
+
+Add:
+
+```bash
+#!/usr/bin/env bash
+
+set -u
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
+REPORT_DIR="$PROJECT_DIR/reports"
+REPORT_FILE="$REPORT_DIR/full-report.txt"
+APP_LOG="$PROJECT_DIR/logs/application.log"
+CONFIG_FILE="$PROJECT_DIR/config/app.conf"
+
+mkdir -p "$REPORT_DIR"
+
+{
+    echo "===================================="
+    echo "     LINUX ADMINISTRATION REPORT"
+    echo "===================================="
+
+    echo
+    echo "GENERATED AT"
+    date
+
+    echo
+    echo "SYSTEM"
+    hostname
+    uname -r
+    grep '^PRETTY_NAME=' /etc/os-release
+
+    echo
+    echo "DISK"
+    df -h /
+
+    echo
+    echo "MEMORY"
+    free -h
+
+    echo
+    echo "APPLICATION CONFIGURATION"
+
+    if [[ -f "$CONFIG_FILE" ]]; then
+        cat "$CONFIG_FILE"
+    else
+        echo "Configuration not found."
+    fi
+
+    echo
+    echo "APPLICATION ERROR COUNT"
+
+    if [[ -f "$APP_LOG" ]]; then
+        grep -c 'ERROR' "$APP_LOG" || true
+    else
+        echo "Application log not found."
+    fi
+
+    echo
+    echo "REPORT FINISHED"
+
+} > "$REPORT_FILE"
+
+echo "Report created: $REPORT_FILE"
+```
+
+Make executable:
+
+```bash
+chmod +x bin/full-report.sh
+```
+
+Run:
+
+```bash
+./bin/full-report.sh
+```
+
+Inspect:
+
+```bash
+cat reports/full-report.txt
+```
+
+You now have a report that combines information from multiple Linux subsystems.
+
+## 12. Final Integration Test
+
+Run these commands in sequence:
+
+```bash
+cd "$HOME/linux-learning/lab-10-integration/linux-admin-toolkit"
+
+# Display toolkit help
+./bin/admin.sh help
+
+# Inspect system
+./bin/admin.sh info
+
+# Display application configuration
+./bin/admin.sh config
+
+# Inspect application errors
+./bin/admin.sh logs
+
+# Create a backup
+./bin/admin.sh backup
+
+# Generate the final report
+./bin/full-report.sh
+
+# Inspect generated files
+find . -type f -print
+
+# Inspect the final report
+cat reports/full-report.txt
+
+# Inspect backup history
+cat logs/backup.log
+```
+
+### Expected outcome
+
+You should have a working Linux administration toolkit with:
+- Executable Bash scripts.
+- Application configuration.
+- System information reports.
+- Sample application logs.
+- Error summaries.
+- Timestamped backups.
+- A central administration command.
+
+## 13. Troubleshooting the Integration Project
+
+| Problem | Likely cause | Resolution |
+| --- | --- | --- |
+| PROJECT_DIR is empty | Environment variable not exported | Use the self-resolving main script |
+| Permission denied | Script is not executable | `chmod +x script.sh` |
+| No such file or directory | Incorrect project path | Check `pwd` and `find` |
+| Backup script cannot find source | Incorrect source path | Inspect SOURCE_DIR |
+| Log report is empty | No matching errors | Check `grep` and the sample log |
+| command not found | PATH does not include bin | Export the correct PATH |
+| Syntax error | Incorrect shell syntax | `bash -n script.sh` |
+| Script behaves differently in new terminal | Shell environment differs | Inspect exported variables and startup files |
+
+### Run syntax checks on all scripts
+
+From the project directory:
+
+```bash
+for SCRIPT in bin/*.sh; do
+    echo "Checking $SCRIPT"
+    bash -n "$SCRIPT" || exit 1
+done
+```
+
+Expected: each script is checked without syntax errors.
+
+### Inspect permissions
+
+```bash
+ls -l bin/
+```
+
+You should see executable permissions on the scripts.
+
+### Inspect disk usage
+
+```bash
+du -sh .
+```
+
+This reports the total size of the project.
+
+## 14. Windows and WSL Limitations
+
+This project is fully suitable for WSL2 Ubuntu.
+
+However, remember the boundaries:
+
+| Capability | WSL2 |
+| --- | --- |
+| Bash scripting | Supported |
+| File and directory operations | Supported |
+| Pipes and redirection | Supported |
+| Environment variables | Supported |
+| APT package management | Supported |
+| Process inspection | Supported |
+| Basic filesystem backup | Supported |
+| Real physical server hardware management | Limited |
+| Physical disk administration | Limited |
+| Kernel module management | Limited |
+| Traditional production boot lifecycle | Different environment |
+
+The objective is to learn Linux administration concepts correctly while understanding where WSL differs from a physical or virtual Linux server.
+
+## 15. What Have We Actually Learned?
+
+This final project combined nearly everything from Module 01.
+
+| Earlier topic | Where it was used |
+| --- | --- |
+| Linux filesystem | Project directory structure |
+| Absolute and relative paths | Resolving project locations |
+| File operations | Creating and copying application data |
+| Pipes | Log analysis |
+| Redirection | Generating reports |
+| Environment variables | Application configuration |
+| Startup files | Understanding shell configuration and PATH |
+| Package managers | Installing and inspecting tools |
+| Bash scripting | Automation and administration |
+
+The important lesson is that Linux administration is not about memorizing hundreds of commands.
+
+It is about understanding how commands, processes, files, permissions, configuration and system tools work together.
+
+## 16. Module 01 — Final Assessment Checklist
+
+This is a teaching checklist, not a quiz.
+
+### Module 01 mastery tracker
+
+**0/15 completed**
+
+- [ ] Navigate Linux using absolute and relative paths.
+- [ ] Explain the major Linux filesystem directories.
+- [ ] Create, copy, move and remove files safely.
+- [ ] Understand inodes and symbolic links.
+- [ ] Use stdin, stdout and stderr.
+- [ ] Use pipes and command chaining.
+- [ ] Understand shell and environment variables.
+- [ ] Explain PATH and command discovery.
+- [ ] Understand login and interactive Bash startup files.
+- [ ] Install and inspect packages using APT and DPKG.
+- [ ] Understand DNF and RPM at a conceptual level.
+- [ ] Create Bash scripts with variables and arguments.
+- [ ] Use conditions, loops and functions.
+- [ ] Handle command exit statuses.
+- [ ] Build and run the administration toolkit.
+
+Mark each concept when the learner can demonstrate it.
+
+## 17. Module 01 — Completion
+
+> L1 — Linux Fundamentals
+>
+> Module 01 finished
+>
+> 10 / 10
+
+Shell & Filesystem — all 10 topics covered
+
+### What comes next
+
+Module 02 — Users, Permissions & Access
+
+1. Users and groups.
+2. Linux ownership.
+3. Read, write and execute permissions.
+4. chmod, chown and chgrp.
+5. Umask.
+6. SUID, SGID and sticky bit.
+7. Access Control Lists (ACLs).
+8. sudo policies.
+9. SSH keys and SSH agent.
+10. SCP and SFTP.
+11. Linux capabilities.
+
+## 18. Important Preparation for Module 02
+
+Before studying permissions, understand this mental model:
+
+```text
+Linux file
+    |
+    +-- Owner
+    |
+    +-- Group
+    |
+    +-- Permissions
+           |
+           +-- Read
+           +-- Write
+           +-- Execute
+```
+
+Linux does not simply ask whether you are an administrator or a normal user. It evaluates ownership, groups, permissions and additional access-control mechanisms.
+
+This is one of the most important foundations for understanding Linux security and production server administration.
+
+Next lesson: Module 02 — Topic 01: Users and Groups. We will learn how Linux identifies users, how /etc/passwd and /etc/shadow work, how groups are organized, how user accounts are created and inspected, and how Linux decides which identity a process runs under.

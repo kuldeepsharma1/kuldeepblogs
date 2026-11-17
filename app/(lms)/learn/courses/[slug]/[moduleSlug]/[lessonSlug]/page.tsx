@@ -1,8 +1,14 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getCourseBySlug, getAllCourses } from "@/lib/courses";
 import { getModulesByCourse } from "@/lib/modules";
-import { getCourseLessonBySlug, getAdjacentLessons, getAllLessonsForCourse, getLessonsByModule } from "@/lib/course-lessons";
+import {
+  getCourseLessonBySlug,
+  getAdjacentLessons,
+  getLessonsByModule,
+} from "@/lib/course-lessons";
+import { getCourseArtworkSrc, CourseArtwork } from "@/components/learning/course-artwork";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { compileMDX } from "next-mdx-remote/rsc";
@@ -12,54 +18,79 @@ import { Callout } from "@/components/mdx/callout";
 import { Tip } from "@/components/mdx/tip";
 import { Warning } from "@/components/mdx/warning";
 import { ImageFigure } from "@/components/mdx/image-figure";
+import { LinkPreview } from "@/components/mdx/link-preview";
+import {
+  ArchitectureDiagram,
+  EnvironmentCard,
+  TopicNode,
+} from "@/components/mdx/architecture-diagram";
 import { Quiz } from "@/components/Quiz";
+import { getLinkPreview } from "@/lib/link-previews";
 import {
   ChevronLeft,
   ChevronRight,
   Clock,
   BookOpen,
   CheckCircle2,
-  List,
 } from "lucide-react";
 
 const mdxComponents = {
+  ArchitectureDiagram,
+  EnvironmentCard,
+  TopicNode,
   Callout,
   Tip,
   Warning,
   ImageFigure,
-  h2: (props: React.ComponentProps<"h2">) => (
-    <h2 className="mt-12 scroll-mt-24 text-2xl font-semibold tracking-tight text-foreground" {...props} />
-  ),
-  h3: (props: React.ComponentProps<"h3">) => (
-    <h3 className="mt-8 scroll-mt-24 text-xl font-semibold text-foreground" {...props} />
-  ),
-  p: (props: React.ComponentProps<"p">) => (
-    <p className="mt-6 text-lg leading-8 text-muted-foreground" {...props} />
-  ),
-  ul: (props: React.ComponentProps<"ul">) => (
-    <ul className="mt-6 list-disc space-y-3 pl-6 text-lg leading-8 text-muted-foreground" {...props} />
-  ),
-  ol: (props: React.ComponentProps<"ol">) => (
-    <ol className="mt-6 list-decimal space-y-3 pl-6 text-lg leading-8 text-muted-foreground" {...props} />
-  ),
-  blockquote: (props: React.ComponentProps<"blockquote">) => (
-    <blockquote className="mt-8 border-l-2 border-border pl-5 text-xl italic text-muted-foreground" {...props} />
-  ),
   table: (props: React.ComponentProps<"table">) => (
     <div className="mt-8 overflow-x-auto">
-      <table className="w-full overflow-hidden rounded-2xl border border-border text-left text-sm" {...props} />
+      <table {...props} />
     </div>
   ),
-  th: (props: React.ComponentProps<"th">) => (
-    <th className="border-b border-border bg-muted/50 px-4 py-3 font-semibold text-foreground" {...props} />
-  ),
-  td: (props: React.ComponentProps<"td">) => (
-    <td className="border-b border-border px-4 py-3 text-muted-foreground" {...props} />
-  ),
-  a: (props: React.ComponentProps<"a">) => (
-    <a className="font-medium text-foreground underline decoration-muted-foreground underline-offset-4 hover:decoration-foreground transition-colors" {...props} />
-  ),
 };
+
+function isHttpUrl(value?: string): value is string {
+  if (!value) return false;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function isLessonImageUrl(value?: string): value is string {
+  if (!value) return false;
+  if (value.startsWith("/")) {
+    return /\.(avif|gif|jpe?g|png|svg|webp)(?:$|[?#])/i.test(value);
+  }
+
+  try {
+    const url = new URL(value);
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      (url.hostname === "images.openai.com" ||
+        /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(url.pathname))
+    );
+  } catch {
+    return false;
+  }
+}
+
+function InlineLessonImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={1400}
+      height={900}
+      unoptimized={src.startsWith("http://") || src.startsWith("https://")}
+      sizes="(max-width: 768px) 100vw, 768px"
+      className="my-4 inline-block h-auto max-h-144 max-w-full rounded-lg border border-border object-contain align-middle"
+    />
+  );
+}
 
 export async function generateStaticParams() {
   const courses = await getAllCourses();
@@ -111,13 +142,30 @@ export default async function LessonPage({
 
   if (!lesson || !course) notFound();
 
+  const quizQuestions = (lesson.quiz ?? []).flatMap((question) => {
+    if (
+      !("options" in question) ||
+      !("correctAnswer" in question) ||
+      typeof question.correctAnswer !== "number"
+    ) {
+      return [];
+    }
+
+    return [{
+      question: question.question,
+      options: question.options,
+      correctAnswer: question.correctAnswer,
+      explanation: question.explanation,
+    }];
+  });
+
   // Get all modules/lessons for sidebar
   const modules = await getModulesByCourse(slug);
   const modulesWithLessons = await Promise.all(
     modules.map(async (mod) => ({
       ...mod,
       lessons: await getLessonsByModule(slug, mod.slug),
-    }))
+    })),
   );
 
   const { content } = await compileMDX({
@@ -128,7 +176,53 @@ export default async function LessonPage({
         rehypePlugins: [[rehypePrettyCode, { theme: "github-dark" }]],
       },
     },
-    components: mdxComponents,
+    components: {
+      ...mdxComponents,
+      img: ({ src, alt }: React.ComponentProps<"img">) => {
+        const imageSrc =
+          typeof src === "string" && (src.startsWith("/") || isHttpUrl(src))
+            ? src
+            : getCourseArtworkSrc(course);
+        return (
+          <InlineLessonImage
+            src={imageSrc}
+            alt={alt || `${course.title} lesson illustration`}
+          />
+        );
+      },
+      a: async ({ href, children, ...props }: React.ComponentProps<"a">) => {
+        if (href?.includes("google.com/s2/favicons")) {
+          return null;
+        }
+        if (isLessonImageUrl(href)) {
+          return (
+            <InlineLessonImage
+              src={href}
+              alt={typeof children === "string" ? children : `${course.title} lesson image`}
+            />
+          );
+        }
+        if (href && isHttpUrl(href)) {
+          return (
+            <LinkPreview
+              href={href}
+              preview={await getLinkPreview(href)}
+            >
+              {children}
+            </LinkPreview>
+          );
+        }
+        return (
+          <a
+            href={href}
+            className="font-medium text-foreground underline decoration-muted-foreground underline-offset-4 transition-colors hover:decoration-foreground"
+            {...props}
+          >
+            {children}
+          </a>
+        );
+      },
+    },
   });
 
   return (
@@ -143,14 +237,50 @@ export default async function LessonPage({
         ]}
       />
 
-      <div className="grid gap-10 lg:grid-cols-[1fr_280px]">
+      <details className="group rounded-lg border border-border bg-card lg:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-foreground">
+          <span className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            Course contents
+          </span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+        </summary>
+        <nav className="max-h-72 overflow-y-auto border-t border-border py-2" aria-label="Course content">
+          {modulesWithLessons.map((mod) => (
+            <div key={mod.slug}>
+              <p className="px-4 pb-1 pt-3 text-xs font-semibold text-muted-foreground">{mod.title}</p>
+              {mod.lessons.map((item) => {
+                const isActive = item.slug === lessonSlug && mod.slug === moduleSlug;
+                return (
+                  <Link
+                    key={item.slug}
+                    href={`/learn/courses/${slug}/${mod.slug}/${item.slug}`}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`block px-4 py-2 text-sm ${isActive ? "bg-accent font-medium text-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"}`}
+                  >
+                    {item.title}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+      </details>
+
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
         {/* Main Content */}
         <article className="min-w-0">
           {/* Lesson Header */}
           <header className="mb-10">
+            <CourseArtwork
+              course={course}
+              className="mb-8 aspect-16/6 max-h-64 w-full rounded-lg"
+            />
             <div className="flex items-center gap-2 mb-3">
               {lesson.category && (
-                <Badge variant="outline" size="sm">{lesson.category}</Badge>
+                <Badge variant="outline" size="sm">
+                  {lesson.category}
+                </Badge>
               )}
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
@@ -167,10 +297,15 @@ export default async function LessonPage({
             {/* Objectives */}
             {lesson.objectives && lesson.objectives.length > 0 && (
               <div className="mt-6 rounded-xl border border-border bg-muted/20 p-5">
-                <p className="text-sm font-semibold text-foreground mb-3">Learning Objectives</p>
+                <p className="text-sm font-semibold text-foreground mb-3">
+                  Learning Objectives
+                </p>
                 <ul className="space-y-2">
                   {lesson.objectives.map((obj, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm text-muted-foreground"
+                    >
                       <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
                       {obj}
                     </li>
@@ -180,24 +315,23 @@ export default async function LessonPage({
             )}
           </header>
 
-          {/* MDX Content */}
-          <div className="prose prose-zinc max-w-none dark:prose-invert prose-headings:scroll-mt-32 prose-h2:mt-12 prose-h3:mt-8 prose-p:text-lg prose-p:leading-8 prose-a:text-foreground prose-a:underline-offset-4 prose-a:decoration-muted-foreground hover:prose-a:decoration-foreground prose-strong:text-foreground prose-pre:p-0! prose-pre:bg-transparent! prose-pre:m-0! prose-code:before:hidden prose-code:after:hidden">
-            {content}
-          </div>
-
+          <div className="lesson-prose">{content}</div>
           {/* Quiz Section */}
-          {lesson.quiz && lesson.quiz.length > 0 && (
+          {quizQuestions.length > 0 && (
             <div className="mt-16 pt-10 border-t border-border">
               <h2 className="text-2xl font-bold tracking-tight text-foreground mb-6 flex items-center gap-2">
                 <CheckCircle2 className="h-6 w-6 text-success" />
                 Test Your Knowledge
               </h2>
-              <Quiz questions={lesson.quiz as any} />
+              <Quiz questions={quizQuestions} />
             </div>
           )}
 
           {/* Navigation */}
-          <nav className="mt-12 pt-8 border-t border-border" aria-label="Lesson navigation">
+          <nav
+            className="mt-12 pt-8 border-t border-border"
+            aria-label="Lesson navigation"
+          >
             <div className="flex items-center justify-between gap-4">
               {adjacent.prev ? (
                 <Link
@@ -207,7 +341,9 @@ export default async function LessonPage({
                   <ChevronLeft className="h-4 w-4 text-muted-foreground shrink-0" />
                   <div className="min-w-0 text-left">
                     <p className="text-xs text-muted-foreground">Previous</p>
-                    <p className="font-medium text-foreground truncate">{adjacent.prev.title}</p>
+                    <p className="font-medium text-foreground truncate">
+                      {adjacent.prev.title}
+                    </p>
                   </div>
                 </Link>
               ) : (
@@ -221,7 +357,9 @@ export default async function LessonPage({
                 >
                   <div className="min-w-0 text-right">
                     <p className="text-xs text-muted-foreground">Next</p>
-                    <p className="font-medium text-foreground truncate">{adjacent.next.title}</p>
+                    <p className="font-medium text-foreground truncate">
+                      {adjacent.next.title}
+                    </p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 </Link>
@@ -251,7 +389,10 @@ export default async function LessonPage({
                   {course.title}
                 </Link>
               </div>
-              <nav className="max-h-[60vh] overflow-y-auto" aria-label="Course content">
+              <nav
+                className="max-h-[60vh] overflow-y-auto"
+                aria-label="Course content"
+              >
                 {modulesWithLessons.map((mod) => (
                   <div key={mod.slug}>
                     <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -259,7 +400,8 @@ export default async function LessonPage({
                     </p>
                     <ul>
                       {mod.lessons.map((l) => {
-                        const isActive = l.slug === lessonSlug && mod.slug === moduleSlug;
+                        const isActive =
+                          l.slug === lessonSlug && mod.slug === moduleSlug;
                         return (
                           <li key={l.slug}>
                             <Link

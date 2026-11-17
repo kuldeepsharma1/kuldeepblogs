@@ -1,10 +1,8 @@
+
 "use client"
 
 import { useTheme } from "next-themes"
 import { AnimatedThemeToggler } from "../ui/animated-theme-toggler"
-
-
-
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()

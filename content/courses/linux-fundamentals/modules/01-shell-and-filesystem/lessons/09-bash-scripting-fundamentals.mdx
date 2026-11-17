@@ -1,0 +1,1819 @@
+---
+title: "Bash Scripting Fundamentals"
+description: "Automate Linux administration tasks with Bash scripts, variables, arguments, conditions, loops and functions."
+slug: "09-bash-scripting-fundamentals"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 9
+readingTime: "22 min"
+tags: ['linux', 'linux-fundamentals', 'bash', 'wsl', 'shell', 'filesystem', 'scripting', 'automation']
+toc: true
+---
+
+## **1. Introduction**
+
+So far, we have learned how to execute Linux commands manually.
+
+For example:
+
+```
+mkdir -p ~/backups
+cp important.txt ~/backups/
+ls -lah ~/backups/
+```
+
+These commands work, but imagine doing this every day on 20 Linux servers.
+
+Or imagine needing to:
+
+- Check disk space every morning.
+- Back up application files.
+- Monitor whether a service is running.
+- Create directories for new users.
+- Collect system information.
+- Deploy an application.
+- Rotate old log files.
+
+Running commands manually is inefficient.
+
+Linux provides a solution: **Bash scripting**.
+
+A Bash script is a text file containing shell commands that Bash executes in sequence.
+
+For example:
+
+```
+#!/usr/bin/env bash
+
+echo "Starting backup..."
+
+mkdir -p "$HOME/backups"
+
+echo "Backup directory is ready."
+```
+
+Save this as:
+
+```
+backup.sh
+```
+
+Execute it:
+
+```
+bash backup.sh
+```
+
+Output:
+
+```
+Starting backup...
+Backup directory is ready.
+```
+
+You have just automated multiple commands into one reusable program.
+
+**Why this matters:** Bash scripting is fundamental to Linux administration, deployment automation, maintenance tasks, troubleshooting and production operations.
+
+# **2. Conceptual Foundation**
+
+## **2.1 What is Bash?**
+
+Bash stands for:
+
+**Bourne Again Shell**
+
+It is both:
+
+- A command-line shell.
+- A scripting language.
+
+As a shell, Bash allows you to interact with Linux.
+
+As a scripting language, Bash allows you to combine commands, variables, conditions, loops and functions into reusable programs.
+
+Example:
+
+```
+echo "Hello Linux"
+```
+
+This is a Bash command.
+
+Now:
+
+```
+#!/usr/bin/env bash
+
+NAME="Linux"
+echo "Hello $NAME"
+```
+
+This is a small Bash script.
+
+### **2.2 What is a shell script?**
+
+A shell script is a file containing commands interpreted by a shell.
+
+For example:
+
+```
+backup.sh
+deploy.sh
+monitor.sh
+cleanup.sh
+health-check.sh
+```
+
+A script can contain:
+
+- Commands.
+- Variables.
+- Arguments.
+- Conditions.
+- Loops.
+- Functions.
+- Input and output operations.
+- Error handling.
+
+### **2.3 How a Bash script executes**
+
+Consider:
+
+```
+#!/usr/bin/env bash
+
+echo "Step 1"
+echo "Step 2"
+echo "Step 3"
+```
+
+Execution flow:
+
+**Bash script execution**
+
+**User executes script**
+
+`bash script.sh`
+
+**Bash reads script**
+
+**Commands execute in sequence**
+
+**Script finishes with an exit status**
+
+Bash interprets the script and executes its commands.
+
+Some commands are Bash built-ins, such as `cd`, `echo`, `read` and `export`. Others are external executables, such as `cp`, `mkdir`, `grep` and `find`.
+
+You can inspect command types using:
+
+```
+type cd
+type mkdir
+type echo
+```
+
+# **3. Windows-to-Linux Comparison**
+
+Windows also supports scripting.
+
+| Windows                    | Linux                             |
+| -------------------------- | --------------------------------- |
+| Batch file (`.bat`)        | Bash script (`.sh`)               |
+| PowerShell script (`.ps1`) | Bash script (`.sh`)               |
+| `Write-Output`             | `echo`                            |
+| `$env:NAME`                | `$NAME`                           |
+| `if` / `else`              | `if` / `else`                     |
+| `foreach` / `for`          | `for` / `while`                   |
+| `$args`                    | `$@`                              |
+| `$LASTEXITCODE`            | `$?`                              |
+| `Get-ChildItem`            | `ls`                              |
+| `Start-Process`            | Command execution / process tools |
+
+PowerShell is a richer object-oriented shell, whereas traditional Bash scripting primarily works with text streams, command arguments and process exit statuses.
+
+For Linux administration, Bash is extremely useful because it is available on a wide range of Linux systems.
+
+# **4. Create Your First Bash Script**
+
+Works in WSL2 Ubuntu
+
+We will create all exercises inside:
+
+```
+~/linux-learning/lab-09-bash-fundamentals
+```
+
+### **Step 1 — Create the directory**
+
+```
+mkdir -p "$HOME/linux-learning/lab-09-bash-fundamentals"
+cd "$HOME/linux-learning/lab-09-bash-fundamentals"
+```
+
+### **Step 2 — Create the script**
+
+```
+nano hello.sh
+```
+
+Add:
+
+```
+#!/usr/bin/env bash
+
+echo "Hello from Linux!"
+echo "My first Bash script."
+```
+
+Save the file.
+
+### **Step 3 — Understand the shebang**
+
+The first line is:
+
+```
+#!/usr/bin/env bash
+```
+
+This is called a **shebang**.
+
+It tells the operating system which interpreter should execute the script when it is launched directly.
+
+Let's break it down:
+
+| Part           | Meaning                      |
+| -------------- | ---------------------------- |
+| `#!`           | Interpreter directive        |
+| `/usr/bin/env` | Locates a program using PATH |
+| `bash`         | Requested interpreter        |
+
+Why use `/usr/bin/env bash`?
+
+Because Bash might be installed at different locations on different systems.
+
+Using `env` locates Bash through the current PATH.
+
+Another valid form is:
+
+```
+#!/bin/bash
+```
+
+This explicitly uses Bash at `/bin/bash`.
+
+### **Step 4 — Run the script using Bash**
+
+```
+bash hello.sh
+```
+
+Expected output:
+
+```
+Hello from Linux!
+My first Bash script.
+```
+
+### **Step 5 — Make it executable**
+
+```
+chmod +x hello.sh
+```
+
+Now run:
+
+```
+./hello.sh
+```
+
+It should produce the same output.
+
+### **Important difference**
+
+These two execution methods are not identical.
+
+```
+bash hello.sh
+```
+
+Explicitly launches Bash to interpret the file. The executable permission is not required.
+
+```
+./hello.sh
+```
+
+Asks the operating system to execute the file directly. It needs executable permission and a valid interpreter directive.
+
+# **5. Variables in Bash Scripts**
+
+Variables store information that scripts can reuse.
+
+Example:
+
+```
+#!/usr/bin/env bash
+
+APP_NAME="Hytek"
+APP_ENV="development"
+
+echo "Application: $APP_NAME"
+echo "Environment: $APP_ENV"
+```
+
+Output:
+
+```
+Application: Hytek
+Environment: development
+```
+
+### **5.1 Variable assignment**
+
+Correct:
+
+```
+NAME="Linux"
+```
+
+Incorrect:
+
+```
+NAME = "Linux"
+```
+
+Bash does not allow spaces around the assignment operator.
+
+### **5.2 Access variables**
+
+```
+NAME="Linux"
+
+echo "$NAME"
+```
+
+The `$` expands the variable's value.
+
+### **5.3 Use braces**
+
+```
+APP="Linux"
+
+echo "${APP}_Server"
+```
+
+Output:
+
+```
+Linux_Server
+```
+
+Braces clearly define where the variable name ends.
+
+### **5.4 Read-only variables**
+
+```
+readonly APP_VERSION="1.0"
+```
+
+Attempting to modify it causes an error:
+
+```
+APP_VERSION="2.0"
+```
+
+### **5.5 Remove variables**
+
+```
+unset APP_NAME
+```
+
+This removes the variable from the current shell.
+
+### **5.6 Variable defaults**
+
+A useful pattern:
+
+```
+APP_ENV="${APP_ENV:-development}"
+```
+
+Meaning:
+
+- Use the existing `APP_ENV` if it is set and nonempty.
+- Otherwise use `development`.
+
+This is especially useful for scripts that accept configuration from environment variables.
+
+# **6. User Input with&#x20;**`read`
+
+Scripts sometimes need input from the person running them.
+
+Example:
+
+```
+#!/usr/bin/env bash
+
+echo "Enter your name:"
+read NAME
+
+echo "Welcome, $NAME"
+```
+
+Run:
+
+```
+bash welcome.sh
+```
+
+Example interaction:
+
+```
+Enter your name:
+Alex
+Welcome, Alex
+```
+
+### **6.1 Better way: use&#x20;**`read -r`
+
+```
+read -r NAME
+```
+
+The `-r` option prevents backslashes from being interpreted as escape characters.
+
+A safer basic script:
+
+```
+#!/usr/bin/env bash
+
+read -r -p "Enter your name: " NAME
+
+echo "Welcome, $NAME"
+```
+
+### **6.2 Read multiple values**
+
+```
+#!/usr/bin/env bash
+
+read -r -p "Enter application name and port: " APP_NAME APP_PORT
+
+echo "Application: $APP_NAME"
+echo "Port: $APP_PORT"
+```
+
+Input:
+
+```
+WebMixStudio 3000
+```
+
+Output:
+
+```
+Application: WebMixStudio
+Port: 3000
+```
+
+### **6.3 Hidden input**
+
+For sensitive terminal input:
+
+```
+read -r -s -p "Enter password: " PASSWORD
+echo
+echo "Password received."
+```
+
+`-s` suppresses terminal echo while reading.
+
+**Security note:** This only hides input on the terminal. It does not make the variable a secure secret store. Avoid printing or logging the password.
+
+# **7. Script Arguments**
+
+One of the most useful Bash features is passing arguments from the command line.
+
+Instead of asking for input every time, you can provide values when starting the script.
+
+Create:
+
+```
+nano greet.sh
+```
+
+Content:
+
+```
+#!/usr/bin/env bash
+
+echo "Hello, $1"
+```
+
+Run:
+
+```
+bash greet.sh Alex
+```
+
+Output:
+
+```
+Hello, Alex
+```
+
+Here:
+
+`$1` means the first positional argument.
+
+### **7.1 Positional arguments**
+
+| Variable | Meaning                                      |
+| -------- | -------------------------------------------- |
+| `$0`     | Script name or invocation name               |
+| `$1`     | First argument                               |
+| `$2`     | Second argument                              |
+| `$3`     | Third argument                               |
+| `$@`     | All positional arguments                     |
+| `$#`     | Number of positional arguments               |
+| `$?`     | Exit status of previous command              |
+| `$$`     | Current shell or script process ID           |
+| `$!`     | Process ID of most recently backgrounded job |
+
+Example:
+
+```
+#!/usr/bin/env bash
+
+echo "Script: $0"
+echo "First: $1"
+echo "Second: $2"
+echo "Total arguments: $#"
+```
+
+Run:
+
+```
+bash args.sh Linux Server
+```
+
+Output:
+
+```
+Script: args.sh
+First: Linux
+Second: Server
+Total arguments: 2
+```
+
+### **7.2 Use all arguments with&#x20;**`"$@"`
+
+```
+#!/usr/bin/env bash
+
+echo "Arguments received:"
+
+for ARG in "$@"; do
+    echo "Argument: $ARG"
+done
+```
+
+Run:
+
+```
+bash args.sh Linux "Production Server" Ubuntu
+```
+
+Output:
+
+```
+Arguments received:
+Argument: Linux
+Argument: Production Server
+Argument: Ubuntu
+```
+
+Why use `"$@"`?
+
+It preserves each original argument as a separate value, including arguments containing spaces.
+
+This is a very important Bash scripting rule.
+
+### **7.3 Difference between&#x20;**`"$@"`**&#x20;and&#x20;**`"$*"`
+
+- `"$@"` expands to separate arguments.
+- `"$*"` combines all arguments into one string when quoted.
+
+For most script argument processing, prefer:
+
+```
+"$@"
+```
+
+# **8. Conditional Statements —&#x20;**`if`**,&#x20;**`else`**,&#x20;**`elif`
+
+Scripts need decision-making.
+
+For example:
+
+- If a directory exists, continue.
+- If a service is running, report success.
+- If a file is missing, report an error.
+- If the user is root, allow an administrative operation.
+
+### **8.1 Basic&#x20;**`if`
+
+```
+#!/usr/bin/env bash
+
+NUMBER=10
+
+if [[ "$NUMBER" -gt 5 ]]; then
+    echo "Number is greater than 5"
+fi
+```
+
+Output:
+
+```
+Number is greater than 5
+```
+
+### **8.2&#x20;**`if`**&#x20;and&#x20;**`else`
+
+```
+#!/usr/bin/env bash
+
+NUMBER=3
+
+if [[ "$NUMBER" -gt 5 ]]; then
+    echo "Greater than 5"
+else
+    echo "5 or less"
+fi
+```
+
+### **8.3&#x20;**`if`**,&#x20;**`elif`**&#x20;and&#x20;**`else`
+
+```
+#!/usr/bin/env bash
+
+NUMBER=10
+
+if [[ "$NUMBER" -gt 10 ]]; then
+    echo "Greater than 10"
+elif [[ "$NUMBER" -eq 10 ]]; then
+    echo "Exactly 10"
+else
+    echo "Less than 10"
+fi
+```
+
+Output:
+
+```
+Exactly 10
+```
+
+### **8.4 Understand&#x20;**`[[ ... ]]`
+
+`[[ ... ]]` is Bash's conditional expression syntax.
+
+It is generally preferable to the older `[ ... ]` form in Bash scripts because it handles many expressions more safely.
+
+### **8.5 Numeric comparison operators**
+
+| Operator | Meaning               |
+| -------- | --------------------- |
+| `-eq`    | Equal                 |
+| `-ne`    | Not equal             |
+| `-gt`    | Greater than          |
+| `-ge`    | Greater than or equal |
+| `-lt`    | Less than             |
+| `-le`    | Less than or equal    |
+
+Example:
+
+```
+if [[ "$AGE" -ge 18 ]]; then
+    echo "Adult"
+fi
+```
+
+### **8.6 String comparison**
+
+```
+if [[ "$APP_ENV" == "production" ]]; then
+    echo "Production mode"
+fi
+```
+
+Other examples:
+
+```
+[[ "$NAME" != "Linux" ]]
+[[ -z "$NAME" ]]
+[[ -n "$NAME" ]]
+```
+
+| Expression | Meaning            |
+| ---------- | ------------------ |
+| `==`       | Equal              |
+| `!=`       | Not equal          |
+| `-z`       | String is empty    |
+| `-n`       | String is nonempty |
+
+### **8.7 File and directory conditions**
+
+These are extremely important for system administration.
+
+| Expression     | Meaning                          |
+| -------------- | -------------------------------- |
+| `-f file`      | Regular file exists              |
+| `-d directory` | Directory exists                 |
+| `-e path`      | Path exists                      |
+| `-r file`      | File is readable                 |
+| `-w file`      | File is writable                 |
+| `-x file`      | File is executable               |
+| `-s file`      | File exists and has nonzero size |
+
+Example:
+
+```
+#!/usr/bin/env bash
+
+FILE="$HOME/example.txt"
+
+if [[ -f "$FILE" ]]; then
+    echo "File exists"
+else
+    echo "File does not exist"
+fi
+```
+
+# **9. Loops — Automate Repeated Tasks**
+
+A loop repeats commands.
+
+Suppose you want to create five directories.
+
+Without a loop:
+
+```
+mkdir project1
+mkdir project2
+mkdir project3
+mkdir project4
+mkdir project5
+```
+
+With a loop:
+
+```
+for NUMBER in 1 2 3 4 5; do
+    mkdir -p "project$NUMBER"
+done
+```
+
+Much better.
+
+### **9.1&#x20;**`for`**&#x20;loop**
+
+General structure:
+
+```
+for VARIABLE in ITEMS; do
+    COMMANDS
+done
+```
+
+Example:
+
+```
+#!/usr/bin/env bash
+
+for NAME in Linux Ubuntu Debian Fedora; do
+    echo "Operating system: $NAME"
+done
+```
+
+### **9.2 C-style&#x20;**`for`**&#x20;loop**
+
+```
+for (( i=1; i<=5; i++ )); do
+    echo "Number: $i"
+done
+```
+
+Output:
+
+```
+Number: 1
+Number: 2
+Number: 3
+Number: 4
+Number: 5
+```
+
+### **9.3&#x20;**`while`**&#x20;loop**
+
+A `while` loop repeats while its condition is true.
+
+```
+#!/usr/bin/env bash
+
+COUNT=1
+
+while [[ "$COUNT" -le 5 ]]; do
+    echo "Count: $COUNT"
+    ((COUNT++))
+done
+```
+
+Output:
+
+```
+Count: 1
+Count: 2
+Count: 3
+Count: 4
+Count: 5
+```
+
+### **9.4&#x20;**`until`**&#x20;loop**
+
+An `until` loop repeats until the condition becomes true.
+
+```
+COUNT=1
+
+until [[ "$COUNT" -gt 5 ]]; do
+    echo "$COUNT"
+    ((COUNT++))
+done
+```
+
+### **9.5 Break and continue**
+
+`break` exits a loop.
+
+```
+for NUMBER in 1 2 3 4 5; do
+    if [[ "$NUMBER" -eq 3 ]]; then
+        break
+    fi
+
+    echo "$NUMBER"
+done
+```
+
+Output:
+
+```
+1
+2
+```
+
+`continue` skips the current iteration.
+
+```
+for NUMBER in 1 2 3 4 5; do
+    if [[ "$NUMBER" -eq 3 ]]; then
+        continue
+    fi
+
+    echo "$NUMBER"
+done
+```
+
+Output:
+
+```
+1
+2
+4
+5
+```
+
+# **10. Functions — Reusable Script Logic**
+
+When scripts become larger, repeating the same commands becomes difficult to maintain.
+
+Functions allow you to group commands into reusable blocks.
+
+Example:
+
+```
+#!/usr/bin/env bash
+
+greet() {
+    echo "Hello from Linux"
+}
+
+greet
+greet
+```
+
+Output:
+
+```
+Hello from Linux
+Hello from Linux
+```
+
+### **10.1 Functions with arguments**
+
+```
+#!/usr/bin/env bash
+
+greet() {
+    local NAME="$1"
+    echo "Hello, $NAME"
+}
+
+greet "Alex"
+greet "Sam"
+```
+
+Output:
+
+```
+Hello, Alex
+Hello, Sam
+```
+
+### **10.2 Understand&#x20;**`local`
+
+Inside a function:
+
+```
+local NAME="$1"
+```
+
+The variable is local to that function.
+
+It prevents the function from unnecessarily changing a variable in the surrounding shell.
+
+### **10.3 Return values**
+
+Bash functions can return an exit status:
+
+```
+check_directory() {
+    [[ -d "$1" ]]
+}
+
+if check_directory "$HOME"; then
+    echo "Home directory exists"
+else
+    echo "Directory missing"
+fi
+```
+
+Important distinction:
+
+Bash's `return` returns an exit status, not an arbitrary string or object.
+
+To produce text output, use `printf`:
+
+```
+get_app_name() {
+    printf '%s\n' "Linux Training"
+}
+
+APP_NAME="$(get_app_name)"
+echo "$APP_NAME"
+```
+
+This is called command substitution.
+
+# **11. Exit Codes — How Scripts Report Success or Failure**
+
+This is one of the most important concepts in production Bash scripting.
+
+Every process returns an exit status when it finishes.
+
+Conventionally:
+
+- `0` means success.
+- Nonzero means failure or another condition.
+
+Example:
+
+```
+true
+echo "$?"
+```
+
+Output:
+
+```
+0
+```
+
+Now:
+
+```
+false
+echo "$?"
+```
+
+Output:
+
+```
+1
+```
+
+### **11.1 Check command success**
+
+```
+#!/usr/bin/env bash
+
+mkdir -p "$HOME/demo"
+
+if [[ "$?" -eq 0 ]]; then
+    echo "Directory created successfully"
+else
+    echo "Directory creation failed"
+fi
+```
+
+This demonstrates exit-code checking, but there is a better pattern:
+
+```
+if mkdir -p "$HOME/demo"; then
+    echo "Directory created successfully"
+else
+    echo "Directory creation failed"
+fi
+```
+
+Why is the second better?
+
+It tests the command directly and avoids accidentally checking the exit status of another command.
+
+### **11.2 Explicit exit codes**
+
+A script can finish with:
+
+```
+exit 0
+```
+
+Or:
+
+```
+exit 1
+```
+
+Example:
+
+```
+#!/usr/bin/env bash
+
+if [[ ! -d "$HOME" ]]; then
+    echo "Home directory missing"
+    exit 1
+fi
+
+echo "Home directory exists"
+exit 0
+```
+
+### **11.3 Why exit codes matter**
+
+Imagine a deployment script:
+
+```
+Deployment script
+       |
+       v
+Install dependencies
+       |
+       v
+Build application
+       |
+       v
+Restart service
+       |
+       v
+Verify application
+```
+
+If the build fails, the deployment must not continue as though it succeeded.
+
+Exit codes allow scripts and other automation tools to detect failure.
+
+# **12. Debugging Bash Scripts**
+
+A script can fail for many reasons:
+
+- Invalid syntax.
+- Missing executable.
+- Incorrect paths.
+- Permission problems.
+- Missing environment variables.
+- Unexpected command output.
+- Incorrect conditions.
+
+Bash provides debugging options.
+
+### **12.1 Syntax check**
+
+```
+bash -n script.sh
+```
+
+This checks syntax without executing the script.
+
+### **12.2 Trace execution**
+
+```
+bash -x script.sh
+```
+
+This prints commands as Bash executes them.
+
+### **12.3 Enable debugging inside a script**
+
+```
+#!/usr/bin/env bash
+
+set -x
+
+NAME="Linux"
+echo "$NAME"
+
+set +x
+```
+
+`set -x` enables execution tracing.
+
+`set +x` disables it.
+
+Be careful: tracing may expose secrets if commands contain passwords, tokens or credentials.
+
+### **12.4 Display the current line number**
+
+```
+echo "Current line: $LINENO"
+```
+
+`LINENO` is a Bash variable that provides the current script line number.
+
+### **12.5 Inspect the previous exit code**
+
+```
+echo "$?"
+```
+
+Remember: `$?` always refers to the immediately preceding command or pipeline.
+
+# **13. Practical Demonstration — Build a System Information Script**
+
+Now we will combine variables, commands, conditions and output.
+
+Create:
+
+```
+nano system-info.sh
+```
+
+Content:
+
+```
+#!/usr/bin/env bash
+
+echo "================================"
+echo "       SYSTEM INFORMATION"
+echo "================================"
+
+echo "Hostname: $(hostname)"
+echo "User: $USER"
+echo "Home: $HOME"
+echo "Current directory: $PWD"
+
+echo
+echo "Operating System:"
+cat /etc/os-release | grep '^PRETTY_NAME='
+
+echo
+echo "Kernel:"
+uname -r
+
+echo
+echo "Disk Usage:"
+df -h /
+
+echo
+echo "Memory:"
+free -h
+
+echo
+echo "Script completed."
+```
+
+Make executable:
+
+```
+chmod +x system-info.sh
+```
+
+Run:
+
+```
+./system-info.sh
+```
+
+Expected output will contain:
+
+```
+================================
+       SYSTEM INFORMATION
+================================
+Hostname: ...
+User: ...
+Home: ...
+Current directory: ...
+
+Operating System:
+PRETTY_NAME="Ubuntu ..."
+
+Kernel:
+...
+
+Disk Usage:
+...
+
+Memory:
+...
+
+Script completed.
+```
+
+Your values will differ.
+
+### **Understand the commands**
+
+| Command               | Purpose                                       |
+| --------------------- | --------------------------------------------- |
+| `hostname`            | Displays hostname                             |
+| `uname -r`            | Displays kernel release                       |
+| `df -h /`             | Reports filesystem space                      |
+| `free -h`             | Reports memory and swap                       |
+| `cat /etc/os-release` | Reads OS identification information           |
+| `grep`                | Filters matching lines                        |
+| `$(...)`              | Executes a command and substitutes its output |
+
+This is a basic example of an administrative information-gathering script.
+
+**WSL limitation:** The reported kernel is the WSL kernel, and disk or memory information may reflect WSL's virtualized environment rather than a dedicated physical Linux server.
+
+# **14. Real-World Scenario — Automated Directory Backup**
+
+Imagine you administer a Linux application.
+
+Your application data is stored under:
+
+```
+/home/user/application-data
+```
+
+You want a script that creates a dated backup directory and copies the data.
+
+Create:
+
+```
+nano backup.sh
+```
+
+Content:
+
+```
+#!/usr/bin/env bash
+
+SOURCE="$HOME/application-data"
+BACKUP_ROOT="$HOME/backups"
+
+DATE="$(date +%Y-%m-%d_%H-%M-%S)"
+DESTINATION="$BACKUP_ROOT/$DATE"
+
+if [[ ! -d "$SOURCE" ]]; then
+    echo "Source directory does not exist: $SOURCE"
+    exit 1
+fi
+
+mkdir -p "$BACKUP_ROOT"
+
+if cp -a "$SOURCE" "$DESTINATION"; then
+    echo "Backup completed successfully."
+    echo "Backup location: $DESTINATION"
+else
+    echo "Backup failed."
+    exit 1
+fi
+```
+
+### **Test it**
+
+First create sample data:
+
+```
+mkdir -p "$HOME/application-data"
+echo "Important application data" > "$HOME/application-data/data.txt"
+```
+
+Run the script:
+
+```
+bash backup.sh
+```
+
+Expected:
+
+```
+Backup completed successfully.
+Backup location: /home/your-user/backups/2026-...
+```
+
+Verify:
+
+```
+find "$HOME/backups" -type f
+```
+
+This demonstrates:
+
+- Variables.
+- Command substitution.
+- Date generation.
+- Directory checks.
+- Conditions.
+- File copying.
+- Exit status handling.
+
+**Important production limitation:** This is a teaching example, not a complete production backup system. It does not provide atomic snapshots, database consistency, retention, encryption, remote storage or restore verification. We will develop those capabilities in later modules and projects.
+
+# **15. Practical Lab — Build an Application Deployment Helper**
+
+Works in WSL2 Ubuntu
+
+Let's build a simple script that prepares an application directory.
+
+We will not modify system directories or install services.
+
+### **Step 1 — Create the lab structure**
+
+```
+mkdir -p "$HOME/linux-learning/lab-09-bash-fundamentals/deployment"
+cd "$HOME/linux-learning/lab-09-bash-fundamentals/deployment"
+```
+
+### **Step 2 — Create the deployment script**
+
+```
+nano deploy.sh
+```
+
+Paste:
+
+```
+#!/usr/bin/env bash
+
+APP_NAME="${1:-demo-app}"
+APP_ENV="${2:-development}"
+
+BASE_DIR="$HOME/deployments"
+APP_DIR="$BASE_DIR/$APP_NAME"
+
+echo "Starting deployment preparation..."
+
+echo "Application: $APP_NAME"
+echo "Environment: $APP_ENV"
+
+if [[ "$APP_NAME" =~ [^a-zA-Z0-9_-] ]]; then
+    echo "Error: Invalid application name"
+    exit 1
+fi
+
+mkdir -p "$APP_DIR"
+
+if [[ ! -d "$APP_DIR" ]]; then
+    echo "Error: Could not create application directory"
+    exit 1
+fi
+
+cat > "$APP_DIR/config.txt" <<EOF
+APP_NAME=$APP_NAME
+APP_ENV=$APP_ENV
+EOF
+
+echo
+echo "Deployment preparation completed."
+echo "Application directory: $APP_DIR"
+```
+
+### **Step 3 — Make executable**
+
+```
+chmod +x deploy.sh
+```
+
+### **Step 4 — Execute using defaults**
+
+```
+./deploy.sh
+```
+
+Expected:
+
+```
+Starting deployment preparation...
+Application: demo-app
+Environment: development
+
+Deployment preparation completed.
+Application directory: /home/your-user/deployments/demo-app
+```
+
+### **Step 5 — Pass custom arguments**
+
+```
+./deploy.sh webmixstudio production
+```
+
+Expected:
+
+```
+Starting deployment preparation...
+Application: webmixstudio
+Environment: production
+
+Deployment preparation completed.
+Application directory: /home/your-user/deployments/webmixstudio
+```
+
+### **Step 6 — Inspect generated configuration**
+
+```
+cat "$HOME/deployments/webmixstudio/config.txt"
+```
+
+Expected:
+
+```
+APP_NAME=webmixstudio
+APP_ENV=production
+```
+
+### **Step 7 — Test invalid input**
+
+```
+./deploy.sh "web mix studio" production
+```
+
+Expected:
+
+```
+Starting deployment preparation...
+Application: web mix studio
+Environment: production
+Error: Invalid application name
+```
+
+The script exits with status `1`.
+
+Verify:
+
+```
+echo "$?"
+```
+
+Expected:
+
+```
+1
+```
+
+### **Step 8 — Test script syntax**
+
+```
+bash -n deploy.sh
+```
+
+No output means Bash found no syntax errors.
+
+### **Step 9 — Trace execution**
+
+```
+bash -x deploy.sh test-app staging
+```
+
+You will see Bash tracing the script's execution.
+
+### **Step 10 — Inspect results**
+
+```
+find "$HOME/deployments" -maxdepth 3 -type f
+```
+
+You should see configuration files for the prepared applications.
+
+### **WSL-specific notes**
+
+- All commands operate within your Linux home directory.
+- No Windows host directories are modified.
+- The exercise does not require systemd, kernel modules or physical hardware.
+- `chmod +x` and direct script execution work in normal WSL2 Linux filesystems.
+- If you place scripts on a Windows-mounted filesystem, executable permission behavior may differ depending on WSL mount configuration.
+
+# **16. Common Bash Scripting Errors**
+
+| Error                                       | Cause                                    | Solution                                     |
+| ------------------------------------------- | ---------------------------------------- | -------------------------------------------- |
+| `command not found`                         | Command unavailable or missing from PATH | Check `command -v` and PATH                  |
+| `Permission denied`                         | Script lacks execute permission          | Use `chmod +x` or `bash script.sh`           |
+| `bad interpreter`                           | Invalid shebang or interpreter path      | Check the first line                         |
+| `syntax error near unexpected token`        | Incorrect Bash syntax                    | Run `bash -n script.sh`                      |
+| Variable unexpectedly empty                 | Wrong name or missing assignment         | Inspect variable expansion                   |
+| Paths with spaces break                     | Unquoted variable expansion              | Use `"$VARIABLE"`                            |
+| Script continues after failure              | Exit status not checked                  | Use conditions and explicit failure handling |
+| Script works manually but not in automation | Environment differs                      | Configure dependencies explicitly            |
+
+### **Windows line endings problem**
+
+If you create a Bash script in Windows applications, it may use CRLF line endings.
+
+A Linux script generally expects LF line endings.
+
+An error may look like:
+
+```
+/usr/bin/env: 'bash\r': No such file or directory
+```
+
+Inspect the file:
+
+```
+file deploy.sh
+```
+
+Convert it when necessary:
+
+```
+sed -i 's/\r$//' deploy.sh
+```
+
+Verify:
+
+```
+file deploy.sh
+```
+
+You can also configure your editor to save shell scripts with LF line endings.
+
+# **17. Advanced Notes — What Beginners Should Understand Early**
+
+## **17.1 Bash is not the same as a general-purpose programming language**
+
+Bash is excellent for:
+
+- Command automation.
+- System administration.
+- File operations.
+- Process management.
+- Combining Linux utilities.
+
+It is not always the best choice for:
+
+- Complex application backends.
+- Large data-processing systems.
+- Complicated data structures.
+- High-performance computation.
+- Complex cross-platform applications.
+
+For larger software, Python, Go, Rust, JavaScript or other suitable languages may be better choices.
+
+Use Bash to orchestrate Linux operations.
+
+## **17.2 Shell expansion happens before command execution**
+
+Consider:
+
+```
+NAME="Linux"
+echo "Hello $NAME"
+```
+
+Bash expands `$NAME` before executing `echo`.
+
+This is why quoting and variable expansion matter.
+
+## **17.3 Command substitution**
+
+Example:
+
+```
+CURRENT_DATE="$(date)"
+```
+
+Bash executes `date` and substitutes its output into the assignment.
+
+Prefer:
+
+```
+CURRENT_DATE="$(date)"
+```
+
+over legacy backtick syntax:
+
+```
+CURRENT_DATE=`date`
+```
+
+The `$()` form is easier to read and supports nesting more cleanly.
+
+## **17.4 Arithmetic**
+
+Bash supports integer arithmetic:
+
+```
+A=10
+B=5
+
+TOTAL=$((A + B))
+
+echo "$TOTAL"
+```
+
+Output:
+
+```
+15
+```
+
+Bash arithmetic is integer-based. For floating-point calculations, use an appropriate external tool such as `awk`, `bc` or a programming language.
+
+## **17.5 Exit status of pipelines**
+
+Consider:
+
+```
+false | true
+echo "$?"
+```
+
+Without `pipefail`, the pipeline normally reports the exit status of the last command, which is `true`.
+
+Output:
+
+```
+0
+```
+
+This can hide an earlier command failure.
+
+Enable pipeline failure reporting with:
+
+```
+set -o pipefail
+```
+
+Now:
+
+```
+false | true
+echo "$?"
+```
+
+Output:
+
+```
+1
+```
+
+We will examine this and robust error handling in depth in the production Bash engineering stage.
+
+# **18. A First Look at Production Bash Safety**
+
+You will encounter this pattern in professional Bash scripts:
+
+```
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+```
+
+It enables stricter behavior:
+
+- `-e`: Exit on certain unhandled command failures.
+- `-E`: Inherit `ERR` traps in functions, command substitutions and subshell environments.
+- `-u`: Treat certain unset variable expansions as errors.
+- `-o pipefail`: Make a pipeline fail if a command in it fails.
+
+However, `set -e` has exceptions and context-dependent behavior. It does not make a script automatically safe or replace explicit error handling.
+
+For example:
+
+```
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+if ! mkdir -p "$HOME/test-directory"; then
+    echo "Directory creation failed"
+    exit 1
+fi
+
+echo "Directory ready"
+```
+
+This is a useful first introduction, not a complete production error-handling standard.
+
+We will study traps, locking, idempotency, dry-run modes, logging and robust error handling in Module 10.
+
+# **19. Complete Command Reference**
+
+| Command / syntax      | Purpose                              |
+| --------------------- | ------------------------------------ |
+| `bash script.sh`      | Execute a script through Bash        |
+| `chmod +x script.sh`  | Add executable permission            |
+| `./script.sh`         | Execute a script directly            |
+| `#!/usr/bin/env bash` | Bash interpreter directive           |
+| `NAME="value"`        | Assign variable                      |
+| `"$NAME"`             | Expand variable safely               |
+| `read -r NAME`        | Read input                           |
+| `$1`, `$2`            | Positional arguments                 |
+| `"$@"`                | All arguments, preserving boundaries |
+| `$#`                  | Argument count                       |
+| `$?`                  | Previous command exit status         |
+| `if`                  | Conditional execution                |
+| `for`                 | Iterate over values                  |
+| `while`               | Repeat while condition is true       |
+| `until`               | Repeat until condition is true       |
+| `break`               | Exit loop                            |
+| `continue`            | Skip current loop iteration          |
+| `function_name()`     | Define function                      |
+| `local`               | Declare function-local variable      |
+| `return`              | Return function status               |
+| `exit`                | Exit script with status              |
+| `bash -n`             | Check script syntax                  |
+| `bash -x`             | Trace script execution               |
+| `$(command)`          | Command substitution                 |
+| `$((expression))`     | Arithmetic expansion                 |
+| `set -o pipefail`     | Detect failures in pipelines         |
+
+# **20. Teaching Summary**
+
+At the end of this lesson, the learner should understand:
+
+1. What Bash is and how scripts execute.
+2. Why scripts use a shebang.
+3. How to create and execute `.sh` files.
+4. How variables work in scripts.
+5. How to collect user input.
+6. How to accept command-line arguments.
+7. How to make decisions with `if`, `elif` and `else`.
+8. How to automate repeated tasks with loops.
+9. How to create reusable functions.
+10. How Linux processes report success or failure using exit codes.
+11. How to debug scripts.
+12. How to create a basic administrative automation script.
+
+### **Mastery checklist**
+
+- Create and execute a Bash script.
+- Understand the shebang.
+- Use variables and parameter expansion.
+- Read user input.
+- Process command-line arguments.
+- Use conditions and file tests.
+- Use `for` and `while` loops.
+- Create functions with arguments.
+- Understand exit statuses.
+- Debug scripts using `bash -n` and `bash -x`.
+- Complete the system information script.
+- Complete the deployment preparation lab.
+
+## **21. Official Documentation**
+
+- [GNU Bash Reference Manual](https://www.gnu.org/software/bash/manual/bash.html?utm_source=chatgpt.com)
+- [GNU Bash — Shell Scripts](https://www.gnu.org/software/bash/manual/html_node/Shell-Scripts.html?utm_source=chatgpt.com)
+- [GNU Bash — Conditional Constructs](https://www.gnu.org/software/bash/manual/html_node/Conditional-Constructs.html?utm_source=chatgpt.com)
+- [GNU Bash — Shell Functions](https://www.gnu.org/software/bash/manual/html_node/Shell-Functions.html?utm_source=chatgpt.com)
+- [ShellCheck — Bash script static analysis](https://www.shellcheck.net/?utm_source=chatgpt.com)
+
+**Module 01 — Shell & Filesystem**
+
+Topic 09 complete
+
+# **9 / 10**
+
+**Next: Topic 10 — Module 01 Final Integration Lab**
+
+We will combine filesystem operations, pipes, redirection, environment variables, startup configuration, package management and Bash scripting into one practical Linux administration project.
+
+**Teaching recommendation:** Have the learner actually type and run the scripts rather than only read them. The objective is to build the habit of automating Linux operations, not memorizing Bash syntax.

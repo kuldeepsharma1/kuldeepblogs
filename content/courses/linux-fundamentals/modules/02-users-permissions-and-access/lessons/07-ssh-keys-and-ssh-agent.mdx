@@ -1,0 +1,1371 @@
+---
+title: "SSH Keys and SSH Agent"
+description: "Understand SSH public-key authentication, host verification, key management, and SSH agent workflows."
+slug: "07-ssh-keys-and-ssh-agent"
+courseSlug: "linux-fundamentals"
+moduleSlug: "02-users-permissions-and-access"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 7
+readingTime: "21 min"
+tags: ["linux", "ssh", "openssh", "ssh-keys", "security"]
+toc: true
+---
+
+## **1. Introduction**
+
+Imagine that you have a Linux production server hosted by a cloud provider.
+
+You need to connect to it from your Windows computer.
+
+You might use:
+
+- Windows Terminal
+- PowerShell
+- WSL Ubuntu
+- VS Code Remote SSH
+- A CI/CD deployment pipeline
+
+A typical connection looks like:
+
+```
+Your Windows computer
+        |
+        | SSH connection
+        |
+        ▼
+Linux production server
+```
+
+You could authenticate using a password. However, password-based remote administration has limitations:
+
+- Passwords can be guessed or stolen.
+- Humans may reuse passwords.
+- Automation cannot conveniently handle interactive password prompts.
+- Password authentication can create a larger attack surface.
+
+SSH supports **public-key authentication**, which uses a cryptographic key pair.
+
+This lets a user authenticate without sending their private key or password to the server.
+
+It is one of the most important skills for production Linux administration.
+
+## **2. Conceptual Foundation**
+
+### **2.1 What is SSH?**
+
+SSH means **Secure Shell**.
+
+It is a network protocol used to securely communicate with another computer.
+
+Common uses include:
+
+- Remote Linux administration.
+- Remote command execution.
+- Secure file transfer.
+- Tunnelling network connections.
+- Accessing Git repositories over SSH.
+- Automated deployments.
+
+SSH normally uses TCP port `22`.
+
+A simplified architecture:
+
+```
+┌────────────────────────┐
+│ Your computer          │
+│                        │
+│ SSH client             │
+│ ssh                    │
+│ scp                    │
+│ sftp                   │
+└───────────┬────────────┘
+            │
+            │ Encrypted SSH connection
+            │ TCP port 22
+            ▼
+┌────────────────────────┐
+│ Remote Linux server    │
+│                        │
+│ SSH server: sshd       │
+│                        │
+│ Remote user account    │
+└────────────────────────┘
+```
+
+There are two important components:
+
+| Component           | Purpose                                  |
+| ------------------- | ---------------------------------------- |
+| SSH client          | Initiates the connection                 |
+| SSH server (`sshd`) | Accepts and manages incoming connections |
+
+On Ubuntu, the client and server are installed separately:
+
+- `openssh-client`
+- `openssh-server`
+
+You can connect to other Linux machines with the client without running an SSH server on your own computer.
+
+### **2.2 How SSH protects a connection**
+
+At a high level, SSH establishes an encrypted connection through a process involving:
+
+1. Network connection establishment.
+2. Cryptographic algorithm negotiation.
+3. Key exchange to establish shared session keys.
+4. Server host-key authentication.
+5. User authentication.
+6. Encrypted communication.
+
+A simplified diagram:
+
+```
+SSH client                         SSH server
+    |                                  |
+    |---------- Connect -------------->|
+    |                                  |
+    |<------ Server identification ----|
+    |                                  |
+    |<---- Cryptographic negotiation ->|
+    |                                  |
+    |<------ Host authentication ------|
+    |                                  |
+    |------ User authentication ------>|
+    |                                  |
+    |<======= Encrypted session ======>|
+```
+
+SSH encrypts the communication, helping protect commands, data and authentication exchanges against network interception.
+
+But encryption alone is not sufficient. The client must also verify that it is connecting to the intended server.
+
+This brings us to two different kinds of keys.
+
+## **3. Server Host Keys vs User Authentication Keys**
+
+Beginners often confuse these two.
+
+They have different responsibilities.
+
+### **3.1 Server host key**
+
+A host key identifies the SSH server.
+
+When your computer connects to a server for the first time, SSH may display a message like:
+
+```
+The authenticity of host 'example.com' can't be established.
+
+ED25519 key fingerprint is SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxx.
+
+Are you sure you want to continue connecting?
+```
+
+This is asking you to verify the server's identity.
+
+The server has a host key pair:
+
+```
+SSH server
+
+Private host key:
+  /etc/ssh/ssh_host_ed25519_key
+
+Public host key:
+  /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+The private host key must remain on the server.
+
+The public host key is presented to clients during authentication.
+
+Your SSH client can store the verified host key in:
+
+```
+~/.ssh/known_hosts
+```
+
+### **3.2 User authentication key**
+
+A user authentication key identifies a client user who is trying to access the server.
+
+For example:
+
+```
+Your computer
+
+Private key:
+~/.ssh/id_ed25519
+
+Public key:
+~/.ssh/id_ed25519.pub
+```
+
+The private key stays with the client.
+
+The public key is installed on the server in:
+
+```
+~/.ssh/authorized_keys
+```
+
+The two key types solve different problems:
+
+| Key                | Identifies                 | Typical storage            |
+| ------------------ | -------------------------- | -------------------------- |
+| Server host key    | The server                 | Server's `/etc/ssh/`       |
+| Client private key | The connecting user        | Client's `~/.ssh/`         |
+| Client public key  | Approved client identity   | Server's `authorized_keys` |
+| Known host entry   | Previously verified server | Client's `known_hosts`     |
+
+**Remember:** `authorized_keys` and `known_hosts` are not interchangeable.
+
+## **4. Understanding Public-Key Authentication**
+
+A cryptographic key pair contains two related keys.
+
+**Client key pair**
+
+**Private key**
+
+Keep secret
+
+Stored on your computer. Never send it to the server or share it with anyone.
+
+**Public key**
+
+Shareable
+
+Installed on remote accounts that should accept this key.
+
+Suppose Alice wants to connect to a Linux server.
+
+The server has Alice's public key in:
+
+```
+/home/alice/.ssh/authorized_keys
+```
+
+When Alice connects:
+
+1. The server checks whether the offered public key is authorized.
+2. The server sends a cryptographic authentication challenge.
+3. The client proves possession of the matching private key by producing a valid signature.
+4. The server verifies the signature using the public key.
+5. If the authentication and account checks succeed, access is granted.
+
+The private key is not uploaded to the server.
+
+This is the central security advantage of public-key authentication.
+
+### **4.1 What happens if someone steals the public key?**
+
+The public key is not secret.
+
+Possessing the public key alone does not provide the ability to authenticate as the corresponding user.
+
+The private key is the sensitive part.
+
+### **4.2 Should private keys have a passphrase?**
+
+Usually, yes.
+
+A passphrase encrypts the private key file at rest.
+
+Without a passphrase, someone who obtains the private key file may be able to use it directly.
+
+With a passphrase, they must also obtain the passphrase or otherwise defeat its protection.
+
+A passphrase protects the key file, but it does not protect you from every compromise scenario. For example, malware running inside an already authenticated user session may still abuse available credentials.
+
+## **5. Windows-to-Linux Comparison**
+
+| Windows concept               | Linux/SSH equivalent              |
+| ----------------------------- | --------------------------------- |
+| Remote Desktop connection     | SSH remote shell                  |
+| SSH client in Windows OpenSSH | `ssh`                             |
+| SSH private key               | Private authentication key        |
+| SSH public key                | Public authentication key         |
+| Stored server identity        | `known_hosts`                     |
+| Approved client keys          | `authorized_keys`                 |
+| Credential forwarding/caching | SSH agent                         |
+| Remote PowerShell over SSH    | Remote command execution over SSH |
+
+Windows 10 and 11 include OpenSSH client capabilities in many standard installations, and WSL Ubuntu also provides an OpenSSH client.
+
+For this curriculum, we will use WSL Ubuntu because it offers a consistent Linux terminal.
+
+## **6. Linux Implementation — Check SSH Client Tools**
+
+Check whether the SSH client is installed:
+
+```
+command -v ssh
+command -v ssh-keygen
+command -v ssh-agent
+command -v ssh-add
+```
+
+Inspect the version:
+
+```
+ssh -V
+```
+
+The version output goes to standard error on common OpenSSH builds, which is normal.
+
+If the client is missing:
+
+```
+sudo apt update
+sudo apt install openssh-client
+```
+
+Check the manuals:
+
+```
+man ssh
+man ssh-keygen
+man ssh-agent
+man ssh-add
+```
+
+These are the primary reference commands for SSH client operation.
+
+## **7. Generating an SSH Key Pair**
+
+We will generate a dedicated learning key.
+
+Do not overwrite an existing personal SSH key.
+
+### **7.1 Create the SSH directory**
+
+```
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+```
+
+Explanation:
+
+- `mkdir -p` creates the directory if needed.
+- `~/.ssh` is the current user's SSH configuration directory.
+- `chmod 700` restricts the directory to its owner.
+
+Inspect:
+
+```
+ls -ld ~/.ssh
+```
+
+Expected permission pattern:
+
+```
+drwx------ 
+```
+
+### **7.2 Generate an Ed25519 key**
+
+Run:
+
+```
+ssh-keygen -t ed25519 -a 64 -C "wsl-linux-learning" -f ~/.ssh/id_ed25519_lab
+```
+
+Explanation:
+
+| Option       | Meaning                                          |
+| ------------ | ------------------------------------------------ |
+| `-t ed25519` | Selects the Ed25519 key type                     |
+| `-a 64`      | Sets the passphrase KDF work factor to 64 rounds |
+| `-C`         | Adds a descriptive comment                       |
+| `-f`         | Specifies the output filename                    |
+
+You will be prompted for a passphrase.
+
+Use a strong passphrase for a real key.
+
+For this lab, avoid reusing any personal password.
+
+**Important:** If the filename already exists, stop and select another filename rather than overwriting the existing key.
+
+The generated files are:
+
+```
+~/.ssh/id_ed25519_lab
+~/.ssh/id_ed25519_lab.pub
+```
+
+### **7.3 Understand the two files**
+
+```
+ls -l ~/.ssh/id_ed25519_lab*
+```
+
+You should see:
+
+```
+-rw-------  id_ed25519_lab
+-rw-r--r--  id_ed25519_lab.pub
+```
+
+The first is the private key.
+
+The second is the public key.
+
+Set the permissions explicitly:
+
+```
+chmod 600 ~/.ssh/id_ed25519_lab
+chmod 644 ~/.ssh/id_ed25519_lab.pub
+```
+
+Do not email or upload the private key to a server, Git repository, public storage location or chat.
+
+### **7.4 Display the public key**
+
+```
+cat ~/.ssh/id_ed25519_lab.pub
+```
+
+An Ed25519 public key normally starts with:
+
+```
+ssh-ed25519
+```
+
+It is safe to copy the public key to a server's `authorized_keys` file.
+
+Never copy the private key.
+
+### **7.5 Inspect the key fingerprint**
+
+```
+ssh-keygen -lf ~/.ssh/id_ed25519_lab.pub
+```
+
+The fingerprint provides a compact representation of the public key.
+
+You can use it to identify and verify the key.
+
+### **7.6 Reconstruct the public key from the private key**
+
+```
+ssh-keygen -y -f ~/.ssh/id_ed25519_lab
+```
+
+This reads the private key and outputs its corresponding public key.
+
+It may request the key's passphrase.
+
+This is useful when the public key file is missing but the private key remains available.
+
+## **8. Installing the Public Key on a Server**
+
+Generating a key pair does not automatically authorize it on a server.
+
+The server account must have the public key installed.
+
+The standard file is:
+
+```
+/home/alice/.ssh/authorized_keys
+```
+
+A simplified layout:
+
+```
+Remote server
+│
+└── /home/alice/
+    └── .ssh/
+        └── authorized_keys
+             │
+             ├── Alice's laptop public key
+             ├── Alice's desktop public key
+             └── CI/CD deployment public key
+```
+
+Each public key is normally stored on its own line.
+
+### **8.1 Use&#x20;**`ssh-copy-id`
+
+For a real reachable server:
+
+```
+ssh-copy-id -i ~/.ssh/id_ed25519_lab.pub alice@server.example.com
+```
+
+This normally:
+
+- Connects using an available authentication method.
+- Creates the remote `.ssh` directory if required.
+- Adds the public key to `authorized_keys`.
+- Applies suitable basic permissions.
+
+It generally requires an initial authentication method that already permits the operation, such as a password or an existing key.
+
+The `ssh-copy-id` utility is not included in every client installation.
+
+### **8.2 Manual installation**
+
+You can also install the public key manually.
+
+Create the remote directory:
+
+```
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+```
+
+Then add the public key to:
+
+```
+~/.ssh/authorized_keys
+```
+
+Make sure:
+
+```
+chmod 600 ~/.ssh/authorized_keys
+```
+
+For a real server, the file must be owned by the correct remote account.
+
+A common installation issue is incorrect ownership or overly permissive directory/file permissions. SSH's `StrictModes` checks can reject insecure key files.
+
+### **8.3 Understanding&#x20;**`authorized_keys`
+
+This file tells the server which public keys are allowed to authenticate as the account.
+
+Example structure:
+
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... wsl-linux-learning
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... office-laptop
+```
+
+An account can have multiple authorized public keys.
+
+Removing a public-key line revokes that particular key's authorization for that account.
+
+It does not delete the private key from the client computer.
+
+## **9. Understanding&#x20;**`known_hosts`
+
+When you connect to a server for the first time, SSH may ask you to trust its host key.
+
+Once accepted, the host key is stored in:
+
+```
+~/.ssh/known_hosts
+```
+
+This helps detect unexpected server identity changes later.
+
+Inspect it:
+
+```
+cat ~/.ssh/known_hosts
+```
+
+The contents may be hashed, so the server names may not be visible in plain text.
+
+List the known host fingerprints:
+
+```
+ssh-keygen -lf ~/.ssh/known_hosts
+```
+
+### **9.1 Why host-key checking matters**
+
+Imagine you connect to:
+
+```
+production.example.com
+```
+
+Later, SSH displays:
+
+```
+WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
+```
+
+Do not immediately remove the old host key and continue.
+
+Possible explanations include:
+
+- The server was legitimately rebuilt.
+- The server's host keys were rotated.
+- DNS or network routing changed.
+- You are connecting to a different machine.
+- A man-in-the-middle attack is possible.
+
+First verify the new fingerprint through a trusted channel with the server administrator.
+
+After verifying a legitimate host-key change, you can remove the old entry:
+
+```
+ssh-keygen -R production.example.com
+```
+
+For a non-default port, include the bracketed host and port:
+
+```
+ssh-keygen -R '[production.example.com]:2222'
+```
+
+Then reconnect and verify the new fingerprint.
+
+**Never treat a changed host-key warning as a routine inconvenience.**
+
+## **10. Connecting to a Linux Server**
+
+The basic syntax is:
+
+```
+ssh username@hostname
+```
+
+Example:
+
+```
+ssh alice@192.0.2.20
+```
+
+### **10.1 Specify a private key**
+
+```
+ssh -i ~/.ssh/id_ed25519_lab alice@192.0.2.20
+```
+
+The `-i` option specifies the identity file.
+
+### **10.2 Use a non-default port**
+
+```
+ssh -p 2222 alice@192.0.2.20
+```
+
+The `-p` option specifies the SSH server's TCP port.
+
+### **10.3 Force a particular key**
+
+```
+ssh -i ~/.ssh/id_ed25519_lab -o IdentitiesOnly=yes alice@192.0.2.20
+```
+
+`IdentitiesOnly=yes` tells the client to use only the explicitly configured identity files and not offer every other key available through the agent.
+
+This can solve problems when a client has many keys loaded.
+
+### **10.4 Execute one remote command**
+
+```
+ssh alice@192.0.2.20 "hostname"
+```
+
+Or:
+
+```
+ssh alice@192.0.2.20 "df -h"
+```
+
+The remote command runs on the server and its output is returned to your terminal.
+
+SSH does not require you to start an interactive shell for every operation.
+
+### **10.5 Verbose debugging**
+
+```
+ssh -v alice@192.0.2.20
+```
+
+More detailed:
+
+```
+ssh -vvv alice@192.0.2.20
+```
+
+The verbose output can help diagnose:
+
+- Which identity files were found.
+- Which keys were offered.
+- Whether the server accepted a public key.
+- Host-key verification.
+- Authentication methods attempted.
+- Connection and negotiation failures.
+
+Avoid sharing verbose logs publicly without checking them for usernames, hostnames, IP addresses and other sensitive environment details.
+
+## **11. SSH Configuration File**
+
+Typing the same options repeatedly is inconvenient.
+
+SSH supports:
+
+```
+~/.ssh/config
+```
+
+This is the client configuration file.
+
+An example:
+
+```
+Host production-web
+    HostName 192.0.2.20
+    User deploy
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519_lab
+    IdentitiesOnly yes
+```
+
+Now connect using:
+
+```
+ssh production-web
+```
+
+You do not need to repeatedly type the username, address, key and port.
+
+### **11.1 Configuration directives**
+
+| Directive             | Purpose                                     |
+| --------------------- | ------------------------------------------- |
+| `Host`                | Defines a connection alias or pattern       |
+| `HostName`            | Actual server address                       |
+| `User`                | Remote username                             |
+| `Port`                | SSH port                                    |
+| `IdentityFile`        | Private key to use                          |
+| `IdentitiesOnly`      | Restricts offered identities                |
+| `UserKnownHostsFile`  | Specifies the host-key database             |
+| `ServerAliveInterval` | Sends periodic keepalive messages           |
+| `ConnectTimeout`      | Limits time spent establishing a connection |
+| `ProxyJump`           | Connects through a jump host                |
+
+### **11.2 Secure configuration permissions**
+
+```
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/config
+```
+
+Private key files should also have restrictive permissions.
+
+Do not blindly copy configuration that disables host-key verification or turns on unrestricted agent forwarding.
+
+## **12. SSH Agent**
+
+Now we have a private key protected by a passphrase.
+
+But entering that passphrase every time you use SSH becomes inconvenient.
+
+The SSH agent solves this problem.
+
+### **12.1 What is ssh-agent?**
+
+`ssh-agent` is a program that holds unlocked private-key material in memory and provides authentication operations to SSH clients.
+
+The private-key file remains on your computer.
+
+Instead of asking you to repeatedly enter the key passphrase, SSH can ask the agent to perform the needed signing operation.
+
+```
+Your terminal
+    │
+    ▼
+SSH client
+    │
+    ▼
+SSH agent
+    │
+    ├── Holds unlocked key material
+    │
+    └── Performs signing operations
+```
+
+The agent is accessed through a Unix-domain socket, identified by the environment variable:
+
+```
+echo "$SSH_AUTH_SOCK"
+```
+
+The agent does not normally send your private key file to the remote server.
+
+### **12.2 Start the agent**
+
+```
+eval "$(ssh-agent -s)"
+```
+
+The output may resemble:
+
+```
+Agent pid 12345
+```
+
+The exact process ID will differ.
+
+What happens?
+
+- `ssh-agent -s` prints shell commands that define environment variables.
+- `eval` runs those commands in the current shell.
+- The shell receives the agent connection details.
+
+### **12.3 Add your private key**
+
+```
+ssh-add ~/.ssh/id_ed25519_lab
+```
+
+You will be prompted for the key passphrase.
+
+The key is now available to the agent.
+
+### **12.4 List loaded keys**
+
+```
+ssh-add -l
+```
+
+This displays the fingerprints of loaded keys.
+
+For public-key details:
+
+```
+ssh-add -L
+```
+
+### **12.5 Remove one key**
+
+```
+ssh-add -d ~/.ssh/id_ed25519_lab
+```
+
+### **12.6 Remove all keys**
+
+```
+ssh-add -D
+```
+
+This removes identities from the agent, but does not delete the private-key files from disk.
+
+### **12.7 Add a key with a time limit**
+
+```
+ssh-add -t 1h ~/.ssh/id_ed25519_lab
+```
+
+This asks the agent to remove the identity after one hour.
+
+The time limit can reduce the period during which an unlocked key remains available.
+
+### **12.8 Stop the agent**
+
+```
+eval "$(ssh-agent -k)"
+```
+
+This stops the agent and clears the relevant shell variables.
+
+### **12.9 Agent forwarding**
+
+SSH supports forwarding the agent to a remote machine.
+
+A common option is:
+
+```
+ssh -A alice@server.example.com
+```
+
+This allows a remote session to request authentication operations from your local agent.
+
+Security warning
+
+Agent forwarding should be used cautiously.
+
+A compromised remote machine may be able to use your forwarded agent connection while your session is active, even though it does not receive the private-key file.
+
+Do not enable forwarding on every connection by default.
+
+For production administration, use a jump host with carefully managed access or another controlled design rather than unrestricted agent forwarding.
+
+## **13. Linux Server SSH Configuration**
+
+The OpenSSH server configuration is generally located at:
+
+```
+/etc/ssh/sshd_config
+```
+
+Some Ubuntu releases also include configuration fragments from:
+
+```
+/etc/ssh/sshd_config.d/
+```
+
+Inspect the configuration:
+
+```
+sudo less /etc/ssh/sshd_config
+```
+
+Common directives include:
+
+| Directive                | Purpose                                       |
+| ------------------------ | --------------------------------------------- |
+| `Port`                   | Server listening port                         |
+| `ListenAddress`          | Addresses on which SSH listens                |
+| `PubkeyAuthentication`   | Controls public-key authentication            |
+| `PasswordAuthentication` | Controls password authentication              |
+| `PermitRootLogin`        | Controls direct root login                    |
+| `AuthorizedKeysFile`     | Specifies authorized public-key file location |
+| `AllowUsers`             | Restricts logins to specified users           |
+| `MaxAuthTries`           | Limits authentication attempts per connection |
+| `AllowAgentForwarding`   | Controls agent forwarding                     |
+| `X11Forwarding`          | Controls X11 forwarding                       |
+
+### **13.1 Inspect effective configuration**
+
+After making configuration changes, inspect the effective configuration:
+
+```
+sudo sshd -T
+```
+
+Check a specific setting:
+
+```
+sudo sshd -T | grep -E 'pubkeyauthentication|passwordauthentication|permitrootlogin'
+```
+
+This is useful because configuration includes and `Match` blocks can influence actual behavior.
+
+### **13.2 Validate SSH server configuration**
+
+Before reloading the service:
+
+```
+sudo sshd -t
+```
+
+If the configuration is valid, the command normally produces no output.
+
+If there is a syntax error, it reports the problem.
+
+### **13.3 Restarting or reloading SSH safely**
+
+On a system using systemd:
+
+```
+sudo systemctl reload ssh
+```
+
+Or inspect service status:
+
+```
+sudo systemctl status ssh
+```
+
+Depending on the Ubuntu service setup, the service name may be `ssh`.
+
+On a system using a compatible service wrapper:
+
+```
+sudo service ssh status
+```
+
+**Production safety rule:** Never disable password authentication on a remote production server until key-based access has been verified in a separate connection and you have a reliable recovery path.
+
+If you disable the only working authentication method, you may lock yourself out.
+
+## **14. Practical Demonstration — SSH Key Lab in WSL2**
+
+Works in WSL2 Ubuntu
+
+We will create a local SSH server that listens only on the loopback address `127.0.0.1` and port `2222`.
+
+This keeps the practice environment local. It is not a production server and is not configured to accept network connections from other machines.
+
+### **Step 1 — Create the learning directory**
+
+```
+mkdir -p ~/linux-learning/lab-16-ssh
+cd ~/linux-learning/lab-16-ssh
+```
+
+### **Step 2 — Install OpenSSH tools**
+
+```
+sudo apt update
+sudo apt install openssh-client openssh-server
+```
+
+Confirm:
+
+```
+command -v ssh
+command -v ssh-keygen
+command -v sshd
+```
+
+### **Step 3 — Generate the learning key**
+
+Check whether the key already exists:
+
+```
+ls -l ~/.ssh/id_ed25519_lab*
+```
+
+If it does not exist:
+
+```
+ssh-keygen -t ed25519 -a 64 -C "wsl-linux-learning" -f ~/.ssh/id_ed25519_lab
+```
+
+Use a passphrase.
+
+Set permissions:
+
+```
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_ed25519_lab
+chmod 644 ~/.ssh/id_ed25519_lab.pub
+```
+
+### **Step 4 — Create a disposable SSH account**
+
+Check whether the account exists:
+
+```
+getent passwd sshlab
+```
+
+If it does not exist:
+
+```
+sudo useradd -m -s /bin/bash sshlab
+sudo passwd sshlab
+```
+
+Set a temporary lab password when prompted. This account is only for your local SSH lab; do not reuse an important password.
+
+The test server configuration will disable password authentication.
+
+### **Step 5 — Install the public key**
+
+Create the remote account's SSH directory with correct ownership:
+
+```
+sudo install -d -o sshlab -g sshlab -m 700 /home/sshlab/.ssh
+```
+
+Copy the public key:
+
+```
+sudo install -o sshlab -g sshlab -m 600 \
+  ~/.ssh/id_ed25519_lab.pub \
+  /home/sshlab/.ssh/authorized_keys
+```
+
+Verify:
+
+```
+sudo ls -ld /home/sshlab/.ssh
+sudo ls -l /home/sshlab/.ssh/authorized_keys
+```
+
+### **Step 6 — Generate server host keys**
+
+```
+sudo ssh-keygen -A
+```
+
+This generates any missing default host keys.
+
+Create the runtime directory required by the SSH server:
+
+```
+sudo install -d -o root -g root -m 0755 /run/sshd
+```
+
+### **Step 7 — Create an isolated SSH server configuration**
+
+Create a dedicated configuration file:
+
+```
+sudo tee /tmp/sshd-lab.conf >/dev/null <<'EOF'
+Port 2222
+ListenAddress 127.0.0.1
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+PubkeyAuthentication yes
+AuthenticationMethods publickey
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+
+AllowUsers sshlab
+AuthorizedKeysFile .ssh/authorized_keys
+StrictModes yes
+UsePAM no
+
+AllowAgentForwarding no
+AllowTcpForwarding no
+X11Forwarding no
+
+PidFile /tmp/sshd-lab.pid
+Subsystem sftp internal-sftp
+EOF
+```
+
+Protect the configuration file:
+
+```
+sudo chmod 600 /tmp/sshd-lab.conf
+```
+
+This isolated configuration:
+
+- Listens only on localhost.
+- Uses port `2222`.
+- Accepts public-key authentication.
+- Does not permit password authentication.
+- Allows only the disposable account `sshlab`.
+- Disables agent forwarding and TCP forwarding for this lab.
+
+### **Step 8 — Validate the configuration**
+
+```
+sudo /usr/sbin/sshd -t -f /tmp/sshd-lab.conf
+```
+
+Expected: no output when valid.
+
+### **Step 9 — Inspect the server's host-key fingerprint**
+
+```
+sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+Record the displayed fingerprint.
+
+This is the server identity we will verify from the client.
+
+### **Step 10 — Start the local SSH server**
+
+Run:
+
+```
+sudo /usr/sbin/sshd -D -e -f /tmp/sshd-lab.conf
+```
+
+The command stays in the foreground.
+
+- `-D` prevents daemonization.
+- `-e` writes logs to standard error.
+- `-f` selects the lab configuration.
+
+Keep this terminal running.
+
+Open a second WSL terminal for the remaining steps.
+
+### **Step 11 — Connect to the server**
+
+In your second terminal:
+
+```
+ssh -p 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1
+```
+
+On the first connection, SSH asks whether to trust the host key.
+
+Compare the displayed fingerprint with the fingerprint you recorded from:
+
+```
+sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+Only accept the connection when they match.
+
+After successful login, run:
+
+```
+whoami
+id
+hostname
+pwd
+```
+
+Expected:
+
+```
+sshlab
+```
+
+Exit:
+
+```
+exit
+```
+
+WSL note: The server is intentionally bound to 127.0.0.1. Do not change it to 0.0.0.0 or expose port 2222 to a network for this exercise.
+
+## **15. Practical Demonstration — SSH Agent**
+
+Continue with the local SSH lab.
+
+Start the agent:
+
+```
+eval "$(ssh-agent -s)"
+```
+
+Add your key:
+
+```
+ssh-add ~/.ssh/id_ed25519_lab
+```
+
+Enter the passphrase.
+
+Inspect:
+
+```
+ssh-add -l
+```
+
+Connect again:
+
+```
+ssh -p 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1
+```
+
+The SSH client can use the agent to perform authentication without asking you to re-enter the key passphrase.
+
+Exit:
+
+```
+exit
+```
+
+Remove the key from the agent:
+
+```
+ssh-add -D
+```
+
+Stop the agent when finished with its demonstration:
+
+```
+eval "$(ssh-agent -k)"
+```
+
+## **16. Troubleshooting SSH**
+
+| Error or symptom                                           | Possible cause                                   | What to inspect                    |
+| ---------------------------------------------------------- | ------------------------------------------------ | ---------------------------------- |
+| `Connection refused`                                       | SSH server not running or wrong port             | `ss -tnlp`, server process         |
+| `Connection timed out`                                     | Network or firewall problem                      | Address, port, route, firewall     |
+| `Permission denied (publickey)`                            | Wrong key or missing authorization               | `ssh -vvv`, `authorized_keys`      |
+| `UNPROTECTED PRIVATE KEY FILE`                             | Private key is too accessible                    | `chmod 600 private-key`            |
+| `Host key verification failed`                             | Host key mismatch or incorrect known-host record | Verify server fingerprint          |
+| `Too many authentication failures`                         | Too many agent identities offered                | `IdentitiesOnly=yes`, `ssh-add -l` |
+| `Could not open a connection to your authentication agent` | Agent not started or environment not set         | `echo "$SSH_AUTH_SOCK"`            |
+| `ssh: command not found`                                   | Client package missing                           | `command -v ssh`                   |
+| `sshd: command not found`                                  | Server package missing                           | Install `openssh-server`           |
+| Public key ignored                                         | Incorrect ownership, permissions or key format   | `namei -l`, `getfacl`, server logs |
+
+Useful diagnostics:
+
+```
+ssh -vvv user@server
+```
+
+On a typical systemd server:
+
+```
+sudo journalctl -u ssh -b
+```
+
+On Ubuntu systems with traditional authentication logs:
+
+```
+sudo tail -f /var/log/auth.log
+```
+
+For WSL, logging and service availability depend on how the distribution is configured.
+
+## **17. Advanced Notes**
+
+### **17.1 One key per purpose**
+
+A useful security practice is to maintain separate keys for different purposes:
+
+```
+~/.ssh/
+├── id_ed25519_personal
+├── id_ed25519_work
+├── id_ed25519_deployment
+└── known_hosts
+```
+
+This makes revocation and access management easier.
+
+### **17.2 SSH certificates**
+
+Larger environments may use SSH certificates.
+
+Instead of manually distributing public keys to every server, an SSH certificate authority can sign approved user keys.
+
+Servers can then trust keys issued by the configured authority.
+
+This becomes valuable when managing large fleets of Linux machines.
+
+### **17.3 Private-key backup**
+
+Protect private-key backups carefully.
+
+If a private key is lost, you can create a new key and install its public key on the server.
+
+If a private key is compromised, remove its public-key entry from every affected account's `authorized_keys` and issue a replacement.
+
+### **17.4 WSL and SSH keys**
+
+Keys generated under WSL's Linux home directory are Linux files:
+
+```
+/home/your-user/.ssh/
+```
+
+Keep Linux SSH private keys in that location with restrictive permissions.
+
+Avoid using shared Windows-mounted folders for private keys unless the permissions and protection behavior are deliberately understood.
+
+## **18. Teaching Summary**
+
+**Topic 07 — SSH keys and SSH agent**
+
+- SSH provides encrypted remote access.
+- `ssh` is the client; `sshd` is the server.
+- Server host keys identify the server.
+- Client public keys authorize users.
+- Private keys remain on the client.
+- `authorized_keys` stores approved client public keys.
+- `known_hosts` stores previously verified server host keys.
+- `ssh-keygen` generates keys.
+- `ssh-keygen -lf` displays fingerprints.
+- `ssh-agent` holds unlocked keys in memory.
+- `ssh-add` loads or removes identities.
+- `~/.ssh/config` simplifies client connections.
+- Verify host keys and protect private keys.
+- Do not disable password authentication on a real server before verifying key-based access.

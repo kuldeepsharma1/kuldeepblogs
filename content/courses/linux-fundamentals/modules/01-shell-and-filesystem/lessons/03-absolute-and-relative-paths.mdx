@@ -1,0 +1,3589 @@
+---
+title: "Absolute and Relative Paths"
+description: "Learn how Linux identifies files and directories and how paths are resolved from the filesystem root or current directory."
+slug: "03-absolute-and-relative-paths"
+courseSlug: "linux-fundamentals"
+moduleSlug: "01-shell-and-filesystem"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 3
+readingTime: "46 min"
+tags: ['linux', 'linux-fundamentals', 'bash', 'wsl', 'shell', 'filesystem']
+toc: true
+---
+
+# **Part 1 — Introduction: What is a path?**
+
+In the previous lesson, we established that Linux organizes files and directories underneath one root directory:
+
+```
+/
+├── etc
+├── home
+├── usr
+├── var
+└── tmp
+```
+
+Now consider a file:
+
+```
+/home/student/projects/api/config/database.json
+```
+
+How does Linux know where this file is located?
+
+It uses a **path**.
+
+A path is a sequence of directory and file names that identifies a location in the filesystem hierarchy.
+
+Think about a physical address:
+
+```
+Country → State → City → Street → Building → Room
+```
+
+A filesystem path describes a similar hierarchy:
+
+```
+/ → home → student → projects → api → config → database.json
+```
+
+The path tells the operating system how to reach a particular filesystem location.
+
+## **1.1 Why do paths matter?**
+
+Almost every Linux administration activity involves paths.
+
+For example:
+
+| Task                               | Path                    |
+| ---------------------------------- | ----------------------- |
+| Inspect system configuration       | `/etc/`                 |
+| Find a user's files                | `/home/student/`        |
+| Read application logs              | `/var/log/`             |
+| Execute a program                  | `/usr/bin/python3`      |
+| Inspect process information        | `/proc/`                |
+| Run a local project                | `~/projects/my-app/`    |
+| Access Windows storage through WSL | `/mnt/c/Users/Student/` |
+
+Consider a production incident:
+
+A developer says:
+
+> My deployment script cannot find config.yaml.
+
+The file might actually exist at:
+
+```
+/var/www/myapp/config/config.yaml
+```
+
+But the script attempts to access:
+
+```
+config.yaml
+```
+
+The problem may not be that the file is missing. The script might be running from a different directory.
+
+This is one of the most common problems with Linux paths.
+
+**The same relative path can refer to different files depending on the current working directory.**
+
+That single concept is essential for Linux administration, Bash scripting, application deployment and troubleshooting.
+
+# **Part 2 — The two fundamental path types**
+
+Linux primarily uses two ways to identify a location:
+
+1. Absolute paths.
+2. Relative paths.
+
+Understanding the difference is the foundation of this lesson.
+
+## **2.1 Absolute paths**
+
+An absolute path identifies a location starting from the filesystem root:
+
+```
+/
+```
+
+It describes the location without depending on the current working directory.
+
+Example:
+
+```
+/home/student/projects/api/config.json
+```
+
+Another example:
+
+```
+/etc/ssh/sshd_config
+```
+
+Another:
+
+```
+/var/log/syslog
+```
+
+All these paths begin with `/`.
+
+**Absolute path resolution**
+
+**/**
+
+Filesystem root
+
+**home/**
+
+**student/**
+
+**projects/**
+
+**api/**
+
+config.json
+
+The path starts from `/`, regardless of which directory the shell currently occupies.
+
+### **Example**
+
+Suppose the current working directory is:
+
+```
+/home/student
+```
+
+You execute:
+
+```
+cat /etc/os-release
+```
+
+Linux reads:
+
+```
+/etc/os-release
+```
+
+It does not search inside:
+
+```
+/home/student/etc/os-release
+```
+
+Why?
+
+Because the path starts with `/`, so it is absolute.
+
+### **Important characteristics**
+
+An absolute path:
+
+- Begins with `/`.
+- Starts navigation from the root of the process's filesystem namespace.
+- Does not depend on the shell's current working directory.
+- Can be used from anywhere, provided the target exists and permissions allow access.
+- Is generally easier to reason about in automation when a fixed filesystem location is intended.
+
+### **Another example**
+
+Suppose the learner is currently inside:
+
+```
+/home/student/projects/
+```
+
+They execute:
+
+```
+cd /var/log
+```
+
+The shell moves to:
+
+```
+/var/log
+```
+
+The original directory has no influence on the destination.
+
+## **2.2 Relative paths**
+
+A relative path identifies a location starting from the current working directory, or another explicitly supplied directory context.
+
+It does not begin with `/`.
+
+Examples:
+
+```
+projects
+projects/api
+../Downloads
+./config.json
+```
+
+Suppose the learner is currently in:
+
+```
+/home/student
+```
+
+Then:
+
+```
+cd projects
+```
+
+Means:
+
+```
+/home/student/projects
+```
+
+The shell combines the current working directory with the relative path.
+
+Conceptually:
+
+```
+Current directory:
+    /home/student
+
+Relative path:
+    projects
+
+Resolved location:
+    /home/student/projects
+```
+
+Now suppose the learner changes into:
+
+```
+/var
+```
+
+And executes the same command:
+
+```
+cd projects
+```
+
+Linux attempts to navigate to:
+
+```
+/var/projects
+```
+
+It does not return to `/home/student/projects`.
+
+That is the fundamental difference.
+
+**How relative paths change with the current directory**
+
+**Starting directory**
+
+/home/student
+
+Command:
+
+```
+cd projects
+```
+
+Result:
+
+```
+/home/student/projects
+```
+
+**Different starting directory**
+
+/var
+
+Same command:
+
+```
+cd projects
+```
+
+Result:
+
+```
+/var/projects
+```
+
+This succeeds only when that destination exists and is accessible.
+
+### **Important characteristics**
+
+A relative path:
+
+- Does not begin with `/`.
+- Is interpreted relative to a working directory or specified directory descriptor.
+- Can resolve to different locations in different contexts.
+- Is useful for navigating within a project.
+- Is convenient for portable directory structures.
+
+## **2.3 Absolute versus relative: Complete comparison**
+
+| Feature                              | Absolute path              | Relative path                                   |
+| ------------------------------------ | -------------------------- | ----------------------------------------------- |
+| Starting point                       | Filesystem root `/`        | Current directory or supplied directory context |
+| Begins with `/`                      | Yes                        | No                                              |
+| Depends on current working directory | No                         | Yes, unless another base is supplied            |
+| Example                              | `/etc/hosts`               | `../etc/hosts`                                  |
+| Typical use                          | Fixed system locations     | Navigation within projects                      |
+| Common problem                       | Target or mount may differ | Wrong working directory                         |
+
+**Teaching rule:** Whenever a path is interpreted, first establish its starting point.
+
+That prevents many navigation mistakes.
+
+# **Part 3 — Understanding the current working directory**
+
+Before explaining path navigation further, the learner needs to understand one important operating-system concept.
+
+## **3.1 What is the current working directory?**
+
+The current working directory (CWD) is the directory that a process uses as its default location for resolving relative paths.
+
+For example:
+
+```
+/home/student/projects/api
+```
+
+If Bash is currently working inside that directory, a relative filename:
+
+```
+config.yaml
+```
+
+normally resolves to:
+
+```
+/home/student/projects/api/config.yaml
+```
+
+The current working directory provides the reference point for relative path interpretation.
+
+## **3.2 How do you identify the current working directory?**
+
+Use:
+
+```
+pwd
+```
+
+`pwd` stands for **print working directory**.
+
+It displays the current directory.
+
+Representative output:
+
+```
+/home/student
+```
+
+Another example:
+
+```
+cd /etc
+pwd
+```
+
+Expected output:
+
+```
+/etc
+```
+
+### **Is&#x20;**`pwd`**&#x20;an external program or a shell built-in?**
+
+This is a useful command-resolution concept.
+
+In Bash, `pwd` is generally available as a shell built-in. An external implementation may also be available, depending on the distribution.
+
+Check it:
+
+```
+type pwd
+```
+
+Possible output:
+
+```
+pwd is a shell builtin
+```
+
+The shell built-in can report Bash's logical working directory.
+
+You can also inspect the executable version:
+
+```
+command -v pwd
+```
+
+Depending on Bash command resolution, this may identify the built-in rather than a separate external executable.
+
+**Remember:** Built-ins execute as part of the shell; external programs are separate executable processes.
+
+## **3.3 Logical versus physical working directory**
+
+Bash supports two useful forms of `pwd`:
+
+```
+pwd -L
+```
+
+And:
+
+```
+pwd -P
+```
+
+Understand the distinction.
+
+**Logical directory (**`-L`**)**
+
+Reports the logical directory, preserving symbolic-link components where possible.
+
+**Physical directory (**`-P`**)**
+
+Reports the physical directory after resolving symbolic links.
+
+Consider:
+
+```
+/home/student/current-project
+```
+
+Suppose `current-project` is a symbolic link to:
+
+```
+/home/student/projects/api
+```
+
+The logical and physical paths may differ.
+
+We will explore symbolic links in Topic 04, but remember that logical and physical paths are not always identical.
+
+## **3.4 The shell and the kernel both have working-directory concepts**
+
+This is an important internal detail.
+
+The shell is a process.
+
+Like other Linux processes, it has a current working directory maintained by the kernel.
+
+Bash uses the `chdir()` system call when executing a directory change.
+
+When you run:
+
+```
+cd /etc
+```
+
+Bash invokes the relevant system call to change its own working directory.
+
+The kernel then maintains that process state.
+
+Conceptually:
+
+```
+User enters: cd /etc
+          |
+          v
+Bash recognizes cd
+          |
+          v
+Bash checks target directory
+          |
+          v
+chdir() system call
+          |
+          v
+Linux kernel updates Bash's
+current working directory
+          |
+          v
+pwd displays the new location
+```
+
+There is a subtle but important point:
+
+`cd` is normally a shell built-in because changing the working directory of a separate child process would not change the parent shell's working directory.
+
+If Bash launched an external program to perform the directory change, only that child process would change directories. The interactive shell would remain where it was.
+
+This is why `cd` is implemented inside the shell.
+
+We will revisit the shell execution model later.
+
+# **Part 4 — Special path components:&#x20;**`.`**,&#x20;**`..`**&#x20;and&#x20;**`~`
+
+Linux provides special conventions that make navigation easier.
+
+These are not ordinary directory names invented for a particular project. They have defined meanings in pathname handling and shell expansion.
+
+## **4.1 The single dot&#x20;**`.`**&#x20;— Current directory**
+
+The special component:
+
+```
+.
+```
+
+represents the current directory.
+
+Suppose the working directory is:
+
+```
+/home/student/projects
+```
+
+Then:
+
+```
+cd .
+```
+
+Keeps you in:
+
+```
+/home/student/projects
+```
+
+Why is this useful?
+
+You can reference files in the current directory explicitly.
+
+Example:
+
+```
+ls ./config.json
+```
+
+This identifies:
+
+```
+/home/student/projects/config.json
+```
+
+assuming that is the current working directory and the file exists.
+
+Another example:
+
+```
+./script.sh
+```
+
+This means:
+
+> Execute the file named `script.sh` in the current directory.
+
+This is particularly important because Bash does not normally include the current directory in its command search path.
+
+For instance:
+
+```
+script.sh
+```
+
+and:
+
+```
+./script.sh
+```
+
+are not equivalent.
+
+The first asks the shell to search its command lookup locations.
+
+The second explicitly identifies a relative executable path.
+
+We will explore executable permissions and scripts further in Topics 08 and 09.
+
+## **4.2 The double dot&#x20;**`..`**&#x20;— Parent directory**
+
+The component:
+
+```
+..
+```
+
+represents the parent directory.
+
+Suppose the current directory is:
+
+```
+/home/student/projects/api
+```
+
+Execute:
+
+```
+cd ..
+```
+
+The new directory becomes:
+
+```
+/home/student/projects
+```
+
+Execute it again:
+
+```
+cd ..
+```
+
+Now:
+
+```
+/home/student
+```
+
+Again:
+
+```
+cd ..
+```
+
+Now:
+
+```
+/home
+```
+
+And once again:
+
+```
+cd ..
+```
+
+Now:
+
+```
+/
+```
+
+The navigation looks like this:
+
+**Understanding&#x20;**`..`
+
+Current location
+
+**/home/student/projects/api**
+
+cd ..
+
+**/home/student/projects**
+
+cd ..
+
+**/home/student**
+
+cd ..
+
+**/home**
+
+cd ..
+
+**/**
+
+### **What happens when you run&#x20;**`cd ..`**&#x20;from&#x20;**`/`**?**
+
+The root directory has no parent directory above it in the filesystem hierarchy.
+
+Therefore:
+
+```
+cd /
+cd ..
+pwd
+```
+
+The result remains:
+
+```
+/
+```
+
+The root remains the root.
+
+### **Navigate multiple levels**
+
+You do not need to execute `cd ..` repeatedly.
+
+Example:
+
+```
+cd ../..
+```
+
+If the starting location is:
+
+```
+/home/student/projects/api
+```
+
+Then:
+
+```
+../..
+```
+
+resolves to:
+
+```
+/home/student
+```
+
+Another example:
+
+```
+cd ../../..
+```
+
+This navigates three parent-directory levels upward.
+
+### **Access a sibling directory**
+
+Suppose the structure is:
+
+```
+/home/student/projects/
+├── api/
+└── frontend/
+```
+
+The current directory is:
+
+```
+/home/student/projects/api
+```
+
+To navigate to the sibling directory:
+
+```
+cd ../frontend
+```
+
+Resolution:
+
+```
+Current directory:
+    /home/student/projects/api
+
+../
+    /home/student/projects
+
+frontend
+    /home/student/projects/frontend
+```
+
+This is one of the most frequently used relative-path patterns in software development.
+
+## **4.3 The tilde&#x20;**`~`**&#x20;— Current user's home directory**
+
+The tilde character:
+
+```
+~
+```
+
+is expanded by Bash to the current user's home directory.
+
+For example, suppose:
+
+```
+HOME=/home/student
+```
+
+Then:
+
+```
+cd ~
+```
+
+Takes the learner to:
+
+```
+/home/student
+```
+
+The same location can be written as:
+
+```
+cd "$HOME"
+```
+
+Or:
+
+```
+cd /home/student
+```
+
+These three commands reach the same location in this example.
+
+### **Common tilde patterns**
+
+| Expression    | Meaning                                       |
+| ------------- | --------------------------------------------- |
+| `~`           | Current user's home directory                 |
+| `~/projects`  | Projects directory inside current user's home |
+| `~alice`      | Alice's home directory, if resolvable         |
+| `~+/projects` | Projects under the current logical directory  |
+| `~-/projects` | Projects under the previous logical directory |
+
+Bash performs tilde expansion before executing the command.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+GNU+1
+
+
+
+### **An important distinction: Bash expansion versus Linux kernel pathname syntax**
+
+This is an advanced but important concept.
+
+The kernel does not interpret `~` as a home directory shortcut.
+
+Bash expands it before passing the resulting pathname to the program or system call.
+
+For example:
+
+```
+cd ~/projects
+```
+
+Bash first transforms it into something like:
+
+```
+cd /home/student/projects
+```
+
+Then Bash performs the directory change.
+
+That means an application receiving a literal pathname containing `~` does not automatically get the same behavior.
+
+For example, a program that receives the string:
+
+```
+~/projects
+```
+
+does not necessarily understand it as a home directory reference.
+
+**Teaching point:** `~` is a shell expansion convention, not a special directory in the filesystem.
+
+## **4.4 The tilde expansion trap**
+
+Consider:
+
+```
+echo ~
+```
+
+Expected output:
+
+```
+/home/student
+```
+
+Now:
+
+```
+echo "~"
+```
+
+Output:
+
+```
+~
+```
+
+Why?
+
+In the first example, the tilde is unquoted, so Bash expands it.
+
+In the second example, it is quoted, so Bash treats it as literal text.
+
+This matters in shell scripts.
+
+Correct:
+
+```
+cd "$HOME/projects"
+```
+
+Also correct:
+
+```
+cd ~/projects
+```
+
+Incorrect for navigating to the home directory:
+
+```
+cd "~"
+```
+
+This attempts to find a directory literally named `~` relative to the current directory.
+
+# **Part 5 — The most important navigation commands**
+
+Now the learner understands the different path types and special path components.
+
+We can introduce Linux navigation commands in a systematic way.
+
+## **5.1&#x20;**`pwd`**&#x20;— Print working directory**
+
+Syntax:
+
+```
+pwd [OPTION]
+```
+
+Purpose: Display the current working directory.
+
+Examples:
+
+```
+pwd
+```
+
+Display the default working directory.
+
+```
+pwd -L
+```
+
+Display the logical working directory.
+
+```
+pwd -P
+```
+
+Display the physical working directory.
+
+Check the command type:
+
+```
+type pwd
+```
+
+Typical Bash output:
+
+```
+pwd is a shell builtin
+```
+
+### **Practical usage**
+
+```
+cd /home
+pwd
+```
+
+Expected output:
+
+```
+/home
+```
+
+The command is useful when a script or administrator needs to establish the current navigation context.
+
+## **5.2&#x20;**`cd`**&#x20;— Change directory**
+
+Syntax:
+
+```
+cd [DIRECTORY]
+```
+
+`cd` changes the current working directory of the current shell.
+
+It is a shell built-in.
+
+Check:
+
+```
+type cd
+```
+
+Typical output:
+
+```
+cd is a shell builtin
+```
+
+Important variations:
+
+| Command    | Result                               |
+| ---------- | ------------------------------------ |
+| `cd /etc`  | Change to `/etc`                     |
+| `cd ..`    | Move to parent directory             |
+| `cd .`     | Stay in current directory            |
+| `cd ~`     | Move to current user's home          |
+| `cd`       | Normally move to current user's home |
+| `cd -`     | Return to previous working directory |
+| `cd ../..` | Move two levels upward               |
+| `cd /`     | Move to filesystem root              |
+
+### **The&#x20;**`cd -`**&#x20;command**
+
+This is particularly useful.
+
+Suppose the learner runs:
+
+```
+cd /etc
+```
+
+Then:
+
+```
+cd /var/log
+```
+
+Now execute:
+
+```
+cd -
+```
+
+The shell returns to:
+
+```
+/etc
+```
+
+Execute again:
+
+```
+cd -
+```
+
+It returns to:
+
+```
+/var/log
+```
+
+The shell switches between the current and previous directories.
+
+Bash stores the previous directory in:
+
+```
+$OLDPWD
+```
+
+Inspect it:
+
+```
+echo "$OLDPWD"
+```
+
+The current logical directory is also commonly exposed through:
+
+```
+echo "$PWD"
+```
+
+These variables are managed by Bash during normal directory changes.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+GNU+1
+
+
+
+## **5.3&#x20;**`ls`**&#x20;— List directory contents**
+
+Although we introduced `ls` earlier, it is important to understand its relationship with paths.
+
+Syntax:
+
+```
+ls [OPTIONS] [PATH]
+```
+
+Examples:
+
+```
+ls
+```
+
+Lists the current directory.
+
+```
+ls /etc
+```
+
+Lists `/etc`.
+
+```
+ls ../
+```
+
+Lists the parent directory.
+
+```
+ls ~/projects
+```
+
+Lists a directory inside the current user's home directory.
+
+```
+ls -la /var/log
+```
+
+Displays detailed information, including hidden entries, for `/var/log`.
+
+An important distinction:
+
+`ls` does not require the learner to change directories to inspect another location.
+
+You can supply the path directly.
+
+## **5.4&#x20;**`realpath`**&#x20;— Resolve a path to its canonical absolute form**
+
+The `realpath` utility can resolve a pathname into a canonical absolute pathname.
+
+Example:
+
+```
+realpath .
+```
+
+This prints the physical canonical path of the current directory.
+
+Another example:
+
+```
+realpath ../..
+```
+
+It resolves the relative path and displays its canonical absolute result.
+
+A useful practical command:
+
+```
+realpath ~/linux-learning
+```
+
+This tells you the actual resolved path of the learning directory.
+
+### **What does canonical mean here?**
+
+A canonical path is a normalized absolute representation after resolving applicable path components and symbolic links according to the utility's behavior and options.
+
+For example, repeated separators and `.` or `..` components can be normalized.
+
+The exact behavior when components do not exist depends on the utility and options.
+
+On Ubuntu, inspect:
+
+```
+realpath --help
+```
+
+Do not assume every Unix-like platform implements all options identically.
+
+## **5.5&#x20;**`readlink`**&#x20;— Inspect symbolic links**
+
+We will properly study symbolic links in Topic 04, but paths and links are closely related.
+
+Example:
+
+```
+readlink -f /bin
+```
+
+On a merged-/usr Ubuntu installation, this may resolve to:
+
+```
+/usr/bin
+```
+
+The `-f` option follows symbolic links and produces a canonical path where resolution succeeds.
+
+This command is useful when a path looks like one directory but actually points somewhere else.
+
+## **5.6&#x20;**`basename`**&#x20;— Extract the final path component**
+
+Example:
+
+```
+basename /home/student/projects/api/server.js
+```
+
+Output:
+
+```
+server.js
+```
+
+The command extracts the final component of the pathname.
+
+Useful when writing scripts that need to identify a filename from a longer path.
+
+## **5.7&#x20;**`dirname`**&#x20;— Extract the directory component**
+
+Example:
+
+```
+dirname /home/student/projects/api/server.js
+```
+
+Output:
+
+```
+/home/student/projects/api
+```
+
+The command extracts the parent-directory portion of a pathname.
+
+Compare:
+
+```
+basename /home/student/projects/api/server.js
+```
+
+```
+dirname /home/student/projects/api/server.js
+```
+
+Together they help shell scripts process paths.
+
+## **5.8&#x20;**`stat`**&#x20;— Inspect filesystem metadata**
+
+Example:
+
+```
+stat /etc/os-release
+```
+
+This displays file metadata.
+
+Representative output:
+
+```
+  File: /etc/os-release
+  Size: 386
+  Blocks: 8
+  IO Block: 4096 regular file
+Device: ...
+Inode: ...
+Links: 1
+Access: (...)
+Uid: (...)
+Gid: (...)
+Access: ...
+Modify: ...
+Change: ...
+Birth: ...
+```
+
+The values vary by system.
+
+Why does this matter?
+
+Paths tell you where a file is.
+
+`stat` tells you more about the filesystem object at that location.
+
+This becomes useful for:
+
+- Permission investigations.
+- Ownership troubleshooting.
+- Timestamp inspection.
+- Inode-related diagnostics.
+- Understanding symbolic links and file types.
+
+# **Part 6 — Windows paths versus Linux paths**
+
+The learner uses Windows as the primary operating system.
+
+Therefore, this comparison is essential.
+
+## **6.1 Windows path syntax**
+
+Windows commonly uses:
+
+```
+C:\Users\Student\Documents\project
+```
+
+Important characteristics:
+
+- Drive letters such as `C:`.
+- Backslash separators in conventional paths.
+- A drive-specific directory hierarchy.
+- Case-insensitive behavior by default for many Windows paths, subject to filesystem and configuration.
+
+Example:
+
+```
+C:\Program Files\Nodejs\
+```
+
+## **6.2 Linux path syntax**
+
+Linux uses forward slashes:
+
+```
+/home/student/projects
+```
+
+Important characteristics:
+
+- One unified root namespace per process view.
+- Forward slash as the pathname separator.
+- No normal drive-letter convention.
+- Filename lookup is ordinarily case-sensitive on common Linux filesystems.
+
+Example:
+
+```
+/usr/bin/python3
+```
+
+### **Direct comparison**
+
+| Concept             | Windows                             | Linux                             |
+| ------------------- | ----------------------------------- | --------------------------------- |
+| Root                | `C:\`                               | `/`                               |
+| Directory separator | `\`                                 | `/`                               |
+| Home directory      | `C:\Users\Student`                  | `/home/student`                   |
+| Parent directory    | `..`                                | `..`                              |
+| Current directory   | `.`                                 | `.`                               |
+| Absolute example    | `C:\Users\Student\file.txt`         | `/home/student/file.txt`          |
+| Case behavior       | Usually case-insensitive by default | Usually case-sensitive            |
+| Drive mount         | Drive letter                        | Mount point within directory tree |
+
+## **6.3 Case sensitivity**
+
+Consider two filenames:
+
+```
+config.json
+Config.json
+```
+
+On a typical Linux filesystem, these are two different names.
+
+For example:
+
+```
+touch config.json
+touch Config.json
+```
+
+Now:
+
+```
+ls
+```
+
+Both files can appear separately.
+
+But:
+
+```
+cat CONFIG.JSON
+```
+
+Will generally fail because that exact uppercase filename does not exist.
+
+This is an extremely common problem when applications are developed on Windows and deployed on Linux.
+
+### **Real-world scenario**
+
+A developer writes:
+
+```
+import config from "./Config.js";
+```
+
+But the actual file is:
+
+```
+config.js
+```
+
+A Windows development environment may allow the code to work because of case-insensitive path lookup.
+
+A conventional Linux environment generally does not.
+
+The deployment then fails.
+
+**Engineering principle:** Use consistent filename casing and ensure import paths match the actual filesystem names exactly.
+
+## **6.4 Convert paths between Windows and Linux using&#x20;**`wslpath`
+
+WSL provides a useful utility called:
+
+```
+wslpath
+```
+
+It translates Windows and Linux path representations.
+
+Microsoft documents it as the supported WSL path-conversion utility.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn
+
+
+
+### **Windows to Linux**
+
+Run:
+
+```
+wslpath 'C:\Users\Student\Documents'
+```
+
+Representative output:
+
+```
+/mnt/c/Users/Student/Documents
+```
+
+The actual username and path may differ.
+
+### **Linux to Windows**
+
+Run:
+
+```
+wslpath -w /home/student
+```
+
+Representative output:
+
+```
+\\wsl.localhost\Ubuntu\home\student
+```
+
+The exact distribution name may differ.
+
+### **Linux to Windows with forward slashes**
+
+```
+wslpath -m /mnt/c/Users/Student/Documents
+```
+
+Representative output:
+
+```
+C:/Users/Student/Documents
+```
+
+### **Important command options**
+
+| Option    | Meaning                                              |
+| --------- | ---------------------------------------------------- |
+| No option | Convert Windows path to Linux format                 |
+| `-w`      | Convert to Windows path format using backslashes     |
+| `-m`      | Convert to Windows path format using forward slashes |
+| `-u`      | Convert to UNIX/Linux path format                    |
+
+Check:
+
+```
+wslpath --help
+```
+
+This is useful for scripts that interact with Windows applications.
+
+# **Part 7 — How the Bash shell interprets paths**
+
+Now we move beyond navigation into shell engineering.
+
+A Linux path is not always passed directly to a program in the exact form the learner types.
+
+Bash performs several expansions before executing a command.
+
+Understanding this prevents subtle scripting bugs.
+
+## **7.1 Shell expansion**
+
+Consider:
+
+```
+ls ~/projects
+```
+
+The shell sees the unquoted `~` and expands it.
+
+Suppose:
+
+```
+HOME=/home/student
+```
+
+Then the shell effectively executes:
+
+```
+ls /home/student/projects
+```
+
+The kernel receives the expanded pathname, not a magic home-directory expression.
+
+## **7.2 Variable expansion inside paths**
+
+Suppose the learner sets:
+
+```
+PROJECT_DIR="$HOME/projects"
+```
+
+Then executes:
+
+```
+cd "$PROJECT_DIR"
+```
+
+Bash substitutes the value of the variable.
+
+The resulting path becomes:
+
+```
+/home/student/projects
+```
+
+Why quote the variable?
+
+Because filenames can contain spaces and other characters that the shell might otherwise interpret specially.
+
+Correct:
+
+```
+cd "$PROJECT_DIR"
+```
+
+Potentially unsafe:
+
+```
+cd $PROJECT_DIR
+```
+
+When a variable contains spaces, the unquoted form can undergo word splitting and produce incorrect arguments.
+
+This will be covered much more thoroughly in Stage 04, but the habit should start now.
+
+## **7.3 Paths containing spaces**
+
+Consider a directory:
+
+```
+/home/student/My Projects/
+```
+
+This command is wrong:
+
+```
+cd /home/student/My Projects
+```
+
+The shell interprets the space as an argument separator.
+
+Bash effectively treats it as two arguments:
+
+```
+/home/student/My
+Projects
+```
+
+Correct method 1: Quote the path.
+
+```
+cd "/home/student/My Projects"
+```
+
+Correct method 2: Escape the space.
+
+```
+cd /home/student/My\ Projects
+```
+
+Both methods represent a single pathname.
+
+### **Best practice**
+
+For shell scripts, prefer quoting variables:
+
+```
+TARGET_DIR="$HOME/My Projects"
+cd "$TARGET_DIR"
+```
+
+This is much safer.
+
+## **7.4 Hidden files and paths**
+
+In Linux, filenames beginning with a dot are normally hidden from standard `ls` output.
+
+Examples:
+
+```
+.bashrc
+.profile
+.ssh
+.config
+```
+
+To list them:
+
+```
+ls -la ~
+```
+
+The `-a` option includes hidden entries.
+
+A hidden filename is still a normal pathname component. It is not inaccessible or fundamentally different from another filename.
+
+Important distinction:
+
+```
+.
+..
+.bashrc
+```
+
+- `.` represents the current directory.
+- `..` represents the parent directory.
+- `.bashrc` is a filename whose first character is a dot.
+
+## **7.5 Paths with unusual characters**
+
+A Linux filename can contain spaces and many characters that require careful quoting in the shell.
+
+For example:
+
+```
+report final.txt
+report(2026).txt
+file[backup].txt
+```
+
+Safe examples:
+
+```
+cat "report final.txt"
+```
+
+```
+cat "report(2026).txt"
+```
+
+```
+cat 'file[backup].txt'
+```
+
+Single quotes prevent shell expansion within their contents.
+
+Double quotes allow certain expansions, such as variables.
+
+We will explain the full quoting model in the Bash fundamentals and production Bash modules.
+
+# **Part 8 — How the Linux kernel resolves a path internally**
+
+This is where the learner moves from using Linux paths to understanding operating-system behavior.
+
+## **8.1 Path resolution is not just string manipulation**
+
+Suppose an application executes:
+
+```
+cat /home/student/projects/config.json
+```
+
+It is tempting to think Linux simply searches for a matching text string.
+
+That is not what happens.
+
+The kernel performs pathname resolution.
+
+It walks through the filesystem hierarchy, looking up each component and checking whether the requested operation is permitted.
+
+The Linux `path_resolution(7)` documentation explains the process in detail.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://man7.org\&sz=32)
+
+Linux manual page+1
+
+
+
+## **8.2 Absolute path resolution**
+
+Consider:
+
+```
+/home/student/projects/config.json
+```
+
+The kernel begins with the root directory of the calling process.
+
+Then it resolves the components in sequence:
+
+```
+/
+ |
+ +-- home/
+      |
+      +-- student/
+             |
+             +-- projects/
+                    |
+                    +-- config.json
+```
+
+Conceptually:
+
+```
+Application requests pathname
+           |
+           v
+Path begins with /
+           |
+           v
+Start from process root directory
+           |
+           v
+Look up home
+           |
+           v
+Look up student
+           |
+           v
+Look up projects
+           |
+           v
+Look up config.json
+           |
+           v
+Perform requested file operation
+```
+
+## **8.3 Relative path resolution**
+
+Now consider:
+
+```
+cat projects/config.json
+```
+
+Assume the process's current working directory is:
+
+```
+/home/student
+```
+
+The kernel starts resolution from that working directory.
+
+```
+Process current working directory
+              |
+              v
+       /home/student
+              |
+              v
+          projects/
+              |
+              v
+          config.json
+```
+
+The resulting target is:
+
+```
+/home/student/projects/config.json
+```
+
+Change the current working directory to:
+
+```
+/var
+```
+
+Then the same relative path:
+
+```
+projects/config.json
+```
+
+is resolved starting from `/var`.
+
+The path therefore identifies a different possible location.
+
+This is why the current working directory is so important.
+
+## **8.4 Path resolution through directory components**
+
+Every slash separates pathname components.
+
+Consider:
+
+```
+/etc/ssh/sshd_config
+```
+
+The components are:
+
+```
+etc
+ssh
+sshd_config
+```
+
+The kernel resolves the components one after another.
+
+For intermediate directory components, the process needs the appropriate directory search permissions.
+
+This introduces an important preview of the permissions module:
+
+**Execute permission on a directory allows traversal through it.**
+
+Read permission and execute permission on a directory have different purposes.
+
+A user may be able to access a known file through a directory without being able to list all its entries, provided the relevant permissions and other access checks allow it.
+
+We will examine this distinction in Module 02.
+
+## **8.5 What happens if a component does not exist?**
+
+Suppose the learner executes:
+
+```
+cat /home/student/unknown/config.json
+```
+
+If `unknown` does not exist, pathname resolution fails.
+
+A typical error is:
+
+```
+cat: /home/student/unknown/config.json:
+No such file or directory
+```
+
+At the operating-system interface, this is commonly associated with the `ENOENT` error.
+
+Another example:
+
+```
+cat /home/student/projects
+```
+
+If `projects` is a directory, `cat` cannot read it as an ordinary text file.
+
+The exact error depends on the operation and target.
+
+## **8.6 What if an intermediate component is not a directory?**
+
+Imagine:
+
+```
+/home/student/config.txt
+```
+
+is a regular file.
+
+The learner tries:
+
+```
+cat /home/student/config.txt/settings
+```
+
+Linux cannot navigate through `config.txt` as if it were a directory.
+
+This commonly results in:
+
+```
+Not a directory
+```
+
+At the system-call level, this is associated with `ENOTDIR`.
+
+This distinction helps diagnose incorrect path construction.
+
+## **8.7 What role does the VFS play?**
+
+Linux uses a subsystem known as the **Virtual Filesystem Switch (VFS)**.
+
+VFS provides a common interface for accessing different filesystem implementations.
+
+Examples include:
+
+- ext4.
+- XFS.
+- Btrfs.
+- procfs.
+- sysfs.
+- tmpfs.
+- Network filesystems.
+
+An application can request a file operation without needing to understand every internal detail of the filesystem implementation.
+
+Conceptually:
+
+**Linux pathname lookup architecture**
+
+**Application**
+
+cat · Python · Nginx · Database
+
+**System call interface**
+
+openat · statx · chdir
+
+**Linux VFS**
+
+Path lookup · Directory entries · Inodes · Mount traversal
+
+**ext4 / XFS**
+
+Disk filesystems
+
+**procfs / sysfs**
+
+Virtual filesystems
+
+**tmpfs**
+
+Memory-backed filesystem
+
+**Other filesystems**
+
+Network and device interfaces
+
+The important engineering idea is that many different filesystems can be accessed through a common Linux filesystem interface.
+
+The VFS helps applications work with files without needing to know whether the underlying source is an ordinary disk filesystem or a virtual interface.
+
+## **8.8 What is&#x20;**`openat()`**&#x20;and why should administrators care?**
+
+A conventional program might open a file using an absolute or relative pathname through an interface such as `open()`.
+
+Modern Linux also provides interfaces such as:
+
+```
+openat()
+```
+
+`openat()` accepts a directory file descriptor that can serve as the starting location for relative path resolution.
+
+For example, an application can:
+
+1. Open a trusted directory.
+2. Retain its directory file descriptor.
+3. Request a file relative to that directory.
+
+This is important in applications that handle files safely, especially when working with user-provided paths.
+
+It also demonstrates that the current working directory is not the only possible base for relative pathname resolution.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://man7.org\&sz=32)
+
+Linux manual page+1
+
+
+
+We will revisit this concept in advanced system programming and Linux security.
+
+## **8.9 Each process has its own current working directory**
+
+Another critical detail:
+
+The current working directory is a property of a process, not a single global directory shared by the entire machine.
+
+For example:
+
+```
+Linux machine
+     |
+     +-- Bash process
+     |      CWD: /home/student
+     |
+     +-- Application process
+     |      CWD: /var/lib/myapp
+     |
+     +-- Background process
+            CWD: /tmp
+```
+
+These processes can have different working directories simultaneously.
+
+A child process normally inherits its parent's working directory when it is created.
+
+If the Bash process executes `cd`, it changes its own working directory, not every other process's working directory.
+
+This explains why changing directories in one terminal does not automatically change the location of a service running elsewhere.
+
+# **Part 9 — Symbolic links and their relationship with paths**
+
+We will study symbolic links in Topic 04, but we must understand one thing now: a path can lead through another path.
+
+Consider:
+
+```
+/home/student/current
+```
+
+Suppose `current` is a symbolic link pointing to:
+
+```
+/home/student/projects/api
+```
+
+When Linux resolves:
+
+```
+cat /home/student/current/config.json
+```
+
+It encounters the symbolic link and follows its target as part of pathname resolution.
+
+Conceptually:
+
+```
+/home/student/current
+           |
+           | Symbolic link
+           v
+/home/student/projects/api
+           |
+           v
+config.json
+```
+
+This is why two different pathnames can refer to the same underlying file.
+
+## **9.1 Logical paths and physical paths**
+
+Suppose the learner runs:
+
+```
+cd /home/student
+ln -s projects/api current
+cd current
+```
+
+The shell may report:
+
+```
+pwd -L
+```
+
+Output:
+
+```
+/home/student/current
+```
+
+But:
+
+```
+pwd -P
+```
+
+May report:
+
+```
+/home/student/projects/api
+```
+
+Why?
+
+- `pwd -L` preserves the logical route used to reach the directory.
+- `pwd -P` reports its physical location after resolving symbolic links.
+
+The exact behavior depends on the current shell state and filesystem structure.
+
+This distinction matters when debugging scripts that rely on exact directory names.
+
+# **Part 10 — Real-world production scenarios**
+
+## **Scenario 1: A script works manually but fails when automated**
+
+A developer has a script:
+
+```
+#!/bin/bash
+
+cat config.yaml
+```
+
+They run it manually:
+
+```
+cd /var/www/myapp
+./deploy.sh
+```
+
+It works.
+
+Later, a scheduler runs:
+
+```
+/home/deploy/deploy.sh
+```
+
+And it fails:
+
+```
+cat: config.yaml: No such file or directory
+```
+
+### **What happened?**
+
+The script uses a relative path.
+
+When launched manually, the current working directory is:
+
+```
+/var/www/myapp
+```
+
+When launched by the scheduler, its working directory may be something else.
+
+The script is incorrectly assuming that the working directory is always the script's own directory.
+
+### **How should an experienced administrator solve it?**
+
+There are two approaches.
+
+**Approach A: Use an absolute path**
+
+```
+cat /var/www/myapp/config.yaml
+```
+
+This is appropriate when the configuration location is fixed.
+
+**Approach B: Resolve the script's own directory**
+
+```
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+
+CONFIG_FILE="$SCRIPT_DIR/config.yaml"
+
+cat "$CONFIG_FILE"
+```
+
+This determines the directory containing the script and builds the configuration path relative to it.
+
+We will demonstrate this in the practical lab.
+
+**Engineering lesson:** A script's directory and its process's current working directory are not automatically the same.
+
+## **Scenario 2: An application works on Windows but fails on Linux**
+
+A developer has:
+
+```
+src/
+├── app.js
+└── Config.js
+```
+
+The code imports:
+
+```
+import config from "./config.js";
+```
+
+Windows works.
+
+Linux fails.
+
+### **Root cause**
+
+The actual file is:
+
+```
+Config.js
+```
+
+But the import refers to:
+
+```
+config.js
+```
+
+On typical Linux filesystems, these are different filenames.
+
+### **Diagnosis**
+
+```
+ls -la src/
+```
+
+Then verify the actual filename and import statement.
+
+### **Correction**
+
+Use the exact case:
+
+```
+import config from "./Config.js";
+```
+
+**Engineering lesson:** Filesystem case sensitivity is part of application portability.
+
+## **Scenario 3: A developer cannot find a file that exists**
+
+A developer says:
+
+> The file is in my project, but Linux says it does not exist.
+
+The administrator first establishes the current working directory:
+
+```
+pwd
+```
+
+Then checks:
+
+```
+ls -la
+```
+
+Then uses an absolute path:
+
+```
+realpath /home/student/projects/app/config.yaml
+```
+
+If that path exists, the administrator compares it with the relative path used by the application.
+
+The root cause may simply be an incorrect working directory.
+
+## **Scenario 4: A web application suffers a path traversal vulnerability**
+
+Suppose an application accepts a user-supplied filename.
+
+A developer expects the input to be:
+
+```
+report.pdf
+```
+
+But a malicious request contains:
+
+```
+../../etc/passwd
+```
+
+The application combines this with its file directory:
+
+```
+/var/www/uploads/../../etc/passwd
+```
+
+Path resolution can reach:
+
+```
+/etc/passwd
+```
+
+If the application fails to enforce proper access boundaries, it may expose sensitive files.
+
+This is called **path traversal**.
+
+### **Why does this happen?**
+
+The application trusts a path supplied by an external user without properly constraining the location it can access.
+
+### **Engineering safeguards**
+
+- Do not blindly append user input to filesystem paths.
+- Use strict filename allowlists where appropriate.
+- Resolve and validate paths against an allowed directory.
+- Check that resolved paths remain within the authorized boundary.
+- Use suitable file-opening APIs and secure directory-relative operations.
+- Apply least-privilege filesystem permissions.
+
+A simple string prefix check alone is not a sufficient security boundary. Symlinks and filesystem races can complicate path validation.
+
+The most important lesson is that path handling is also a security subject, not just a navigation subject.
+
+# **Part 11 — Troubleshooting common path problems**
+
+An administrator should not immediately assume that a file is missing when Linux reports a path error.
+
+There are several different possible causes.
+
+## **11.1 Common error messages**
+
+| Error                               | Likely meaning                                                                   | Investigation                         |
+| ----------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------- |
+| `No such file or directory`         | A path component or target does not exist                                        | `ls`, `realpath`, `find`              |
+| `Not a directory`                   | An intermediate path component is a regular file or another non-directory object | `file`, `stat`                        |
+| `Permission denied`                 | Access is restricted by permissions or security policy                           | `ls -ld` on each parent directory     |
+| `Is a directory`                    | A command expecting a regular file received a directory                          | Check the target with `file`          |
+| `command not found`                 | Shell could not resolve the command name                                         | `command -v`, `type`, inspect `$PATH` |
+| `Too many levels of symbolic links` | Symbolic links form a loop or exceed resolution limits                           | `readlink`, `ls -l`                   |
+| Incorrect file found                | Relative path resolved against an unexpected working directory                   | `pwd`, inspect the full path          |
+
+## **11.2 Problem: No such file or directory**
+
+Suppose:
+
+```
+cat config.yaml
+```
+
+Returns:
+
+```
+cat: config.yaml: No such file or directory
+```
+
+Do not immediately create another configuration file.
+
+First:
+
+```
+pwd
+```
+
+Then:
+
+```
+ls -la
+```
+
+Then inspect the intended absolute location:
+
+```
+ls -la /home/student/projects/myapp/
+```
+
+If the file exists there, use:
+
+```
+cat /home/student/projects/myapp/config.yaml
+```
+
+This establishes whether the problem is incorrect path context rather than missing data.
+
+### **A useful command**
+
+```
+find /home/student/projects -name "config.yaml" -type f
+```
+
+Explanation:
+
+- `find` searches recursively.
+- `/home/student/projects` is the starting directory.
+- `-name` matches a filename.
+- `"config.yaml"` specifies the name.
+- `-type f` restricts matches to regular files.
+
+The search is limited to the project area, which is safer and more efficient than searching the entire filesystem.
+
+## **11.3 Problem: Permission denied**
+
+Suppose:
+
+```
+cat /etc/shadow
+```
+
+Returns:
+
+```
+Permission denied
+```
+
+This is expected for an ordinary user on a normally configured Linux machine.
+
+The issue is not necessarily the pathname.
+
+The filesystem may have correctly resolved the path but denied access.
+
+Inspect metadata without reading the file:
+
+```
+ls -l /etc/shadow
+```
+
+Then:
+
+```
+stat /etc/shadow
+```
+
+For a path with multiple directory components, permissions on the parent directories also matter.
+
+For example:
+
+```
+/home/alice/private/config.json
+```
+
+A user needs appropriate access to traverse each directory and access the final object.
+
+We will cover directory search permissions thoroughly in Module 02.
+
+## **11.4 Problem: Not a directory**
+
+Suppose:
+
+```
+cd /etc/hostname/config
+```
+
+Returns:
+
+```
+Not a directory
+```
+
+The administrator should inspect:
+
+```
+file /etc/hostname
+```
+
+Then:
+
+```
+stat /etc/hostname
+```
+
+The file `/etc/hostname` is normally a regular file, not a directory.
+
+The attempted pathname incorrectly assumes it has child directories.
+
+## **11.5 Problem: Command not found**
+
+Consider:
+
+```
+my-tool
+```
+
+The shell reports:
+
+```
+my-tool: command not found
+```
+
+The command may exist but its directory may not be included in the shell's command search path.
+
+Inspect:
+
+```
+echo "$PATH"
+```
+
+Then:
+
+```
+command -v my-tool
+```
+
+If the executable exists at:
+
+```
+/home/student/tools/my-tool
+```
+
+You can run it using:
+
+```
+/home/student/tools/my-tool
+```
+
+Or, from its directory:
+
+```
+./my-tool
+```
+
+This distinction introduces a concept that the learner must not confuse with filesystem path resolution.
+
+### **What is&#x20;**`PATH`**?**
+
+`PATH` is an environment variable containing a colon-separated list of directories.
+
+For example:
+
+```
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+```
+
+When the learner types:
+
+```
+python3
+```
+
+The shell searches the relevant command lookup locations to find an executable named `python3`.
+
+It does not search every filesystem directory.
+
+Compare:
+
+| Expression         | Meaning                                          |
+| ------------------ | ------------------------------------------------ |
+| `/usr/bin/python3` | Filesystem pathname of an executable             |
+| `python3`          | Command name resolved using shell command lookup |
+| `$PATH`            | List of executable search directories            |
+
+An executable can exist without being found through its short command name.
+
+## **11.6 Problem: A path containing spaces fails**
+
+Incorrect:
+
+```
+cat /home/student/My Projects/report.txt
+```
+
+Correct:
+
+```
+cat "/home/student/My Projects/report.txt"
+```
+
+The quotes tell Bash to treat the expanded path as one argument.
+
+Check:
+
+```
+ls -l "/home/student/My Projects/"
+```
+
+## **11.7 Problem: A symbolic-link path looks different**
+
+Suppose:
+
+```
+pwd
+```
+
+Produces:
+
+```
+/home/student/current
+```
+
+But the actual directory is:
+
+```
+/home/student/projects/api
+```
+
+Investigate:
+
+```
+pwd -L
+```
+
+```
+pwd -P
+```
+
+```
+readlink -f /home/student/current
+```
+
+This distinguishes the logical path from the resolved physical destination.
+
+## **11.8 A professional troubleshooting sequence**
+
+Use this workflow whenever a path-related error occurs.
+
+```
+          Path error
+              |
+              v
+       Inspect current directory
+              |
+              v
+       pwd / pwd -P
+              |
+              v
+       Is the path absolute?
+          /        \
+        Yes         No
+         |           |
+         v           v
+  Check from /   Resolve against CWD
+         |           |
+         +-----+-----+
+               |
+               v
+       Does the target exist?
+          /          \
+        Yes           No
+         |             |
+         v             v
+  Check permissions   Inspect intended path
+         |             |
+         +------+------+
+                |
+                v
+       Inspect symlinks and mounts
+                |
+                v
+       Apply corrective action
+                |
+                v
+       Verify the resolved location
+```
+
+This process eliminates guessing.
+
+# **Part 12 — Advanced topic: Relative paths inside Bash scripts**
+
+This is particularly important for a developer who will eventually administer real Linux servers.
+
+A script is a process, and its filesystem operations use its process context.
+
+## **12.1 The common mistake**
+
+Imagine this directory structure:
+
+```
+myapp/
+├── config.yaml
+└── scripts/
+    └── deploy.sh
+```
+
+The script contains:
+
+```
+#!/usr/bin/env bash
+
+cat config.yaml
+```
+
+The developer assumes that `config.yaml` will be found because it is inside the project.
+
+But consider the execution:
+
+```
+cd /home/student/myapp
+bash scripts/deploy.sh
+```
+
+The script will generally find the file because its process inherited:
+
+```
+/home/student/myapp
+```
+
+as its working directory.
+
+Now run it from another location:
+
+```
+cd /tmp
+bash /home/student/myapp/scripts/deploy.sh
+```
+
+It searches for:
+
+```
+/tmp/config.yaml
+```
+
+It does not automatically search the script's own directory or the parent project directory.
+
+This is a frequent production failure.
+
+## **12.2 The better technique: Resolve the script directory**
+
+Use:
+
+```
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+
+CONFIG_FILE="$SCRIPT_DIR/../config.yaml"
+
+cat "$CONFIG_FILE"
+```
+
+Let's understand each part.
+
+### `BASH_SOURCE[0]`
+
+This is a Bash array element identifying the source file being executed or sourced.
+
+For an ordinary script execution, it identifies the script's pathname as Bash received it.
+
+### `dirname`
+
+```
+dirname -- "${BASH_SOURCE[0]}"
+```
+
+Extracts the directory part of the script path.
+
+For example:
+
+```
+/home/student/myapp/scripts/deploy.sh
+```
+
+Becomes:
+
+```
+/home/student/myapp/scripts
+```
+
+### **Command substitution**
+
+```
+$(...)
+```
+
+Executes the enclosed command and substitutes its standard output into the surrounding expression.
+
+### `cd --`
+
+Changes the current directory of the subshell to the script directory.
+
+The `--` marks the end of options, avoiding accidental interpretation of a directory name beginning with a dash as an option.
+
+### `pwd -P`
+
+Reports the physical directory path.
+
+### `SCRIPT_DIR=...`
+
+Stores the resulting directory in a variable.
+
+### `CONFIG_FILE=...`
+
+Builds the configuration file path relative to the actual script directory.
+
+### `cat "$CONFIG_FILE"`
+
+Reads the intended file, even when the script is started from another working directory.
+
+**Why this design is better**
+
+Fragile
+
+**Assume CWD**
+
+Works only when the caller happens to use the expected directory.
+
+Reliable
+
+**Resolve script location**
+
+Builds paths from the script's own directory.
+
+This pattern is useful for scripts deployed with a stable directory structure. Special handling may be necessary when scripts are invoked through complex chains of symbolic links.
+
+This is a foundational shell-engineering practice. We will build on it in Stage 04.
+
+# **Part 13 — Practical lab: Linux path navigation and resolution**
+
+**LAB 03 — Path Navigation**
+
+WSL READY
+
+## **Build and navigate a Linux project**
+
+**Objective:** Practice absolute and relative paths, parent and current-directory references, home-directory expansion, path quoting, WSL path conversion and script-relative paths.
+
+Difficulty: Beginner → Intermediate · Estimated hands-on time: 35–45 minutes
+
+**Safety:** All files are created under `~/linux-learning/lab-03`. No system configuration is changed.
+
+## **13.1 Starting state**
+
+Open Ubuntu.
+
+Create the lab directory:
+
+```
+mkdir -p ~/linux-learning/lab-03
+```
+
+Navigate into it:
+
+```
+cd ~/linux-learning/lab-03
+```
+
+Verify:
+
+```
+pwd
+```
+
+Expected output pattern:
+
+```
+/home/student/linux-learning/lab-03
+```
+
+Your username will differ.
+
+## **13.2 Task 1: Build the project directory structure**
+
+Run:
+
+```
+mkdir -p project/config
+mkdir -p project/data
+mkdir -p project/scripts
+mkdir -p archive
+```
+
+The resulting layout:
+
+```
+lab-03/
+├── project/
+│   ├── config/
+│   ├── data/
+│   └── scripts/
+└── archive/
+```
+
+Create a configuration file:
+
+```
+cat > project/config/app.conf <<'EOF'
+APPLICATION_NAME=inventory-api
+ENVIRONMENT=development
+PORT=8080
+EOF
+```
+
+Create a data file:
+
+```
+cat > project/data/sample.txt <<'EOF'
+Inventory record 1
+Inventory record 2
+Inventory record 3
+EOF
+```
+
+Verify:
+
+```
+find project -print
+```
+
+## **13.3 Task 2: Practice absolute paths**
+
+First:
+
+```
+pwd
+```
+
+Now inspect the configuration using its absolute path:
+
+```
+cat "$HOME/linux-learning/lab-03/project/config/app.conf"
+```
+
+This works regardless of the learner's current working directory, assuming the directory exists and the user has access.
+
+Now move somewhere else:
+
+```
+cd /tmp
+```
+
+Verify:
+
+```
+pwd
+```
+
+It should report:
+
+```
+/tmp
+```
+
+Read the same file again:
+
+```
+cat "$HOME/linux-learning/lab-03/project/config/app.conf"
+```
+
+It should still work.
+
+**What this demonstrates:** An absolute pathname does not depend on the current working directory.
+
+## **13.4 Task 3: Practice relative paths**
+
+Move to the project directory:
+
+```
+cd "$HOME/linux-learning/lab-03/project"
+```
+
+Check:
+
+```
+pwd
+```
+
+Now run:
+
+```
+cat config/app.conf
+```
+
+This is a relative path.
+
+Linux resolves it from the current directory:
+
+```
+Current:
+.../lab-03/project
+
+Relative:
+config/app.conf
+
+Result:
+.../lab-03/project/config/app.conf
+```
+
+Now navigate into `data`:
+
+```
+cd data
+```
+
+Run:
+
+```
+cat sample.txt
+```
+
+It works because the file is in the current directory.
+
+Now:
+
+```
+cat ../config/app.conf
+```
+
+Explain the components:
+
+- `..` moves to the parent directory `project`.
+- `config` moves into the configuration directory.
+- `app.conf` identifies the file.
+
+## **13.5 Task 4: Practice parent navigation**
+
+From:
+
+```
+.../project/data
+```
+
+Execute:
+
+```
+cd ..
+```
+
+Then:
+
+```
+pwd
+```
+
+Expected location:
+
+```
+.../project
+```
+
+Move upward twice:
+
+```
+cd ../..
+```
+
+Expected location:
+
+```
+.../lab-03
+```
+
+Now return to the project:
+
+```
+cd project
+```
+
+And navigate to the sibling directory:
+
+```
+cd ../archive
+```
+
+Expected location:
+
+```
+.../lab-03/archive
+```
+
+This demonstrates how relative paths can navigate between sibling directories.
+
+## **13.6 Task 5: Practice current directory and home directory**
+
+Run:
+
+```
+cd ~
+```
+
+Then:
+
+```
+pwd
+```
+
+Expected:
+
+```
+/home/student
+```
+
+Now:
+
+```
+cd ~/linux-learning/lab-03
+```
+
+The tilde expands to the home directory.
+
+Execute:
+
+```
+cd .
+```
+
+The location does not change.
+
+Then:
+
+```
+cd -
+```
+
+The shell returns to the previous directory.
+
+Now inspect:
+
+```
+echo "$PWD"
+```
+
+And:
+
+```
+echo "$OLDPWD"
+```
+
+Explain that these variables represent the current and previous logical directories maintained by Bash.
+
+## **13.7 Task 6: Practice paths containing spaces**
+
+Create a directory:
+
+```
+mkdir -p "$HOME/linux-learning/lab-03/My Projects"
+```
+
+Create a file:
+
+```
+touch "$HOME/linux-learning/lab-03/My Projects/release notes.txt"
+```
+
+Inspect it:
+
+```
+ls -la "$HOME/linux-learning/lab-03/My Projects"
+```
+
+Now read its metadata:
+
+```
+stat "$HOME/linux-learning/lab-03/My Projects/release notes.txt"
+```
+
+The exercise demonstrates why path quoting matters.
+
+## **13.8 Task 7: Compare logical and physical paths**
+
+First create a symbolic link:
+
+```
+cd "$HOME/linux-learning/lab-03"
+```
+
+Then:
+
+```
+ln -s project/data current-data
+```
+
+This creates a symbolic link named `current-data` pointing to `project/data`.
+
+Navigate through it:
+
+```
+cd current-data
+```
+
+Now:
+
+```
+pwd -L
+```
+
+And:
+
+```
+pwd -P
+```
+
+The outputs may look like:
+
+```
+/home/student/linux-learning/lab-03/current-data
+```
+
+And:
+
+```
+/home/student/linux-learning/lab-03/project/data
+```
+
+This demonstrates the difference between logical and physical path representations.
+
+`ln -s` is included here to support the path experiment; we will explain symbolic links completely in the next topic.
+
+## **13.9 Task 8: Practice path conversion in WSL**
+
+Convert a Linux path into Windows format:
+
+```
+wslpath -w "$HOME/linux-learning/lab-03"
+```
+
+Representative output:
+
+```
+\\wsl.localhost\Ubuntu\home\student\linux-learning\lab-03
+```
+
+The output depends on the distribution name and username.
+
+Now inspect your Windows user directory:
+
+```
+ls /mnt/c/Users/
+```
+
+Select the actual Windows account directory and convert it:
+
+```
+wslpath '/mnt/c/Users/Student/Documents'
+```
+
+Replace `Student` with the actual Windows account directory.
+
+## **13.10 Task 9: Create a script that works from different directories**
+
+This is the most important part of the lab.
+
+Create the script:
+
+```
+cat > project/scripts/show-config.sh <<'EOF'
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+
+CONFIG_FILE="$SCRIPT_DIR/../config/app.conf"
+
+echo "Script directory:"
+echo "$SCRIPT_DIR"
+
+echo
+echo "Configuration file:"
+echo "$CONFIG_FILE"
+
+echo
+echo "Configuration contents:"
+cat "$CONFIG_FILE"
+EOF
+```
+
+Make it executable:
+
+```
+chmod +x project/scripts/show-config.sh
+```
+
+We will formally study `chmod` and executable permissions in Module 02.
+
+Run from the lab root:
+
+```
+./project/scripts/show-config.sh
+```
+
+Now move to `/tmp`:
+
+```
+cd /tmp
+```
+
+Execute using the full script pathname:
+
+```
+"$HOME/linux-learning/lab-03/project/scripts/show-config.sh"
+```
+
+Both executions should display the same configuration file.
+
+Why?
+
+Because the script resolves the location of the script itself instead of assuming that its caller is in the project directory.
+
+### **Expected behavior**
+
+The script prints:
+
+```
+Script directory:
+/home/student/linux-learning/lab-03/project/scripts
+
+Configuration file:
+/home/student/linux-learning/lab-03/project/scripts/../config/app.conf
+
+Configuration contents:
+APPLICATION_NAME=inventory-api
+ENVIRONMENT=development
+PORT=8080
+```
+
+The displayed configuration pathname contains `..`, which is valid.
+
+It still resolves to the correct file.
+
+This demonstrates that a path does not always have to be manually normalized before it can be used.
+
+## **13.11 Task 10: Resolve and inspect paths**
+
+Return to the lab:
+
+```
+cd "$HOME/linux-learning/lab-03"
+```
+
+Inspect the canonical path:
+
+```
+realpath project/config/app.conf
+```
+
+Extract the filename:
+
+```
+basename project/config/app.conf
+```
+
+Expected output:
+
+```
+app.conf
+```
+
+Extract the parent directory:
+
+```
+dirname project/config/app.conf
+```
+
+Expected output:
+
+```
+project/config
+```
+
+Inspect metadata:
+
+```
+stat project/config/app.conf
+```
+
+Find all `.conf` files:
+
+```
+find project -type f -name "*.conf"
+```
+
+The output should identify:
+
+```
+project/config/app.conf
+```
+
+## **13.12 Success criteria**
+
+The lab is complete when the learner has:
+
+- Created the project hierarchy.
+- Successfully navigated using absolute paths.
+- Navigated using relative paths.
+- Used `.` and `..` correctly.
+- Used `~` and `$HOME`.
+- Navigated directories containing spaces.
+- Converted Windows and Linux paths using `wslpath`.
+- Observed logical versus physical paths.
+- Written a script that operates independently of the calling directory.
+- Verified the correct paths using `realpath`, `stat` and `find`.
+
+### **Cleanup**
+
+The exercise can remain in the learning directory for future reference.
+
+When finished, inspect:
+
+```
+ls -la "$HOME/linux-learning/"
+```
+
+To remove only this exercise:
+
+```
+rm -r "$HOME/linux-learning/lab-03"
+```
+
+Destructive command
+
+This permanently removes the lab directory and its contents. Confirm the exact path before executing. Never replace the target with a system directory.
+
+# **Part 14 — Teaching summary and command reference**
+
+## **14.1 Fundamental concepts**
+
+| Concept                   | Meaning                                                            |
+| ------------------------- | ------------------------------------------------------------------ |
+| Path                      | Identifies a filesystem location                                   |
+| Absolute path             | Starts from `/`                                                    |
+| Relative path             | Starts from the current directory or supplied directory context    |
+| Current working directory | Default location for resolving relative paths                      |
+| `.`                       | Current directory                                                  |
+| `..`                      | Parent directory                                                   |
+| `~`                       | Current user's home directory, expanded by Bash                    |
+| `$HOME`                   | Environment variable containing home directory                     |
+| `$PWD`                    | Bash variable containing logical working directory                 |
+| `$OLDPWD`                 | Bash variable containing previous working directory                |
+| `PATH`                    | List of directories used for executable command lookup             |
+| Path resolution           | Process of resolving pathname components                           |
+| VFS                       | Linux interface for accessing different filesystem implementations |
+
+## **14.2 Important commands**
+
+| Command            | Purpose                                              |
+| ------------------ | ---------------------------------------------------- |
+| `pwd`              | Show current working directory                       |
+| `pwd -L`           | Show logical working directory                       |
+| `pwd -P`           | Show physical working directory                      |
+| `cd /etc`          | Navigate using an absolute path                      |
+| `cd projects`      | Navigate using a relative path                       |
+| `cd ..`            | Move to parent directory                             |
+| `cd ../..`         | Move two levels upward                               |
+| `cd .`             | Remain in current directory                          |
+| `cd ~`             | Navigate to home                                     |
+| `cd -`             | Switch to previous directory                         |
+| `ls -la`           | Inspect directory entries                            |
+| `realpath PATH`    | Resolve a path to canonical form                     |
+| `readlink -f PATH` | Resolve symbolic links                               |
+| `dirname PATH`     | Extract directory portion                            |
+| `basename PATH`    | Extract final path component                         |
+| `stat PATH`        | Inspect filesystem metadata                          |
+| `find PATH ...`    | Search a directory tree                              |
+| `wslpath -w PATH`  | Convert Linux path into Windows format               |
+| `wslpath -m PATH`  | Convert path to Windows format using forward slashes |
+
+## **14.3 Important shell expressions**
+
+| Expression         | Purpose                      |
+| ------------------ | ---------------------------- |
+| `~`                | Home directory               |
+| `~/projects`       | Projects inside home         |
+| `.`                | Current directory            |
+| `./script.sh`      | Script in current directory  |
+| `..`               | Parent directory             |
+| `../config`        | Config directory in parent   |
+| `../../file`       | File two levels above        |
+| `$HOME`            | Home directory variable      |
+| `"$HOME/projects"` | Quoted path using a variable |
+| `"$PWD"`           | Current logical directory    |
+| `"$OLDPWD"`        | Previous logical directory   |
+
+# **Part 15 — Final mastery standard**
+
+The learner should now be capable of navigating an unfamiliar Linux filesystem without relying on random trial and error.
+
+**MODULE 01 · TOPIC 03 MASTERY GATE**
+
+The learner should independently demonstrate:
+
+Practical completion checklist
+
+**Practical progress**
+
+# **0/12**
+
+Explain absolute versus relative paths
+
+Navigate using pwd and cd
+
+Use . and .. correctly
+
+Navigate using \~ and $HOME
+
+Switch between previous directories using cd -
+
+Handle filenames and directory names containing spaces
+
+Explain Linux case sensitivity
+
+Convert paths between Windows and WSL
+
+Explain how the kernel resolves pathname components
+
+Diagnose an incorrect working-directory problem
+
+Write a script that resolves its own directory
+
+Explain the relationship between PATH and filesystem paths
+
+Reset checklist
+
+## **15.1 Real-world mastery exercise**
+
+The final standard for this topic is simple:
+
+Give the learner an application directory:
+
+```
+/home/student/deployment/api/
+├── config/
+│   └── database.conf
+├── logs/
+├── scripts/
+│   └── deploy.sh
+└── data/
+```
+
+They should be able to:
+
+1. Navigate into each directory using relative paths.
+2. Locate the configuration using an absolute path.
+3. Navigate from `scripts` to `config` using `..`.
+4. Explain why a script's working directory may differ from its own location.
+5. Make the script work from another directory.
+6. Diagnose a missing-file error without randomly creating or deleting files.
+
+This proves that they understand path resolution instead of simply memorizing `cd` commands.
+
+# **Part 16 — Official documentation and further reading**
+
+These references are useful for the teacher and for learners who want to understand the underlying technical behavior.
+
+**Linux pathname resolution**
+
+[image](https://www.google.com/s2/favicons?domain=https://man7.org\&sz=32)
+
+**Linux man-pages**
+
+[path_resolution(7) — How Linux resolves paths](https://man7.org/linux/man-pages/man7/path_resolution.7.html?utm_source=chatgpt.com)[chdir(2) — Change working directory](https://man7.org/linux/man-pages/man2/chdir.2.html?utm_source=chatgpt.com)[openat(2) — Directory-relative file operations](https://man7.org/linux/man-pages/man2/openat.2.html?utm_source=chatgpt.com)
+
+**Bash shell behavior**
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gnu.org\&sz=32)
+
+**GNU Bash documentation**
+
+[GNU Bash Reference Manual](https://www.gnu.org/software/bash/manual/bash.html?utm_source=chatgpt.com)[Tilde expansion](https://www.gnu.org/software/bash/manual/html_node/Tilde-Expansion.html?utm_source=chatgpt.com)[Bash built-in commands](https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Builtins.html?utm_source=chatgpt.com)
+
+**Windows and WSL integration**
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+**Microsoft Learn**
+
+[Windows and Linux interoperability](https://learn.microsoft.com/en-us/windows/dev-environment/wsl-interop?utm_source=chatgpt.com)[Working across Windows and Linux filesystems](https://learn.microsoft.com/en-us/windows/wsl/filesystems?utm_source=chatgpt.com)
+
+# **Final teaching takeaway**
+
+The learner should leave this lesson with one important understanding:
+
+**A pathname is interpreted within a context.**
+
+An absolute path starts at the process's root directory. A relative path starts at the process's current working directory or another explicitly supplied directory context. Bash additionally expands shortcuts such as `~` and variables before many commands are executed.
+
+These principles underpin practically everything that follows:
+
+- Installing software.
+- Running applications.
+- Managing services.
+- Writing shell scripts.
+- Deploying applications.
+- Accessing configuration.
+- Managing storage.
+- Troubleshooting permission errors.
+- Securing applications against path traversal.
+
+Understanding paths properly prevents a surprising number of production failures.
+
+**STAGE 01 · MODULE 01**
+
+Topic 03 complete
+
+# **Next: Topic 04**
+
+**File and directory operations**
+
+The next lesson will cover how Linux actually creates, copies, moves, renames, removes and inspects files and directories.
+
+Main commands will include:
+
+`touch`, `mkdir`, `cp`, `mv`, `rm`, `rmdir`, `file`, `stat`, `find`, `tree` and `install`.
+
+We will also cover symbolic links, hard links, recursive operations, hidden files, safe deletion, file metadata and production-safe file management.

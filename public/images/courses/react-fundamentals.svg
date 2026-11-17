@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="45" y1="22" x2="1150" y2="676" gradientUnits="userSpaceOnUse"><stop stop-color="#172A34"/><stop offset="1" stop-color="#32443D"/></linearGradient>
+    <linearGradient id="orb" x1="405" y1="165" x2="778" y2="508" gradientUnits="userSpaceOnUse"><stop stop-color="#91D2C6"/><stop offset="1" stop-color="#48A9A1"/></linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" stroke="#F0F1E9" stroke-opacity=".08"/></pattern>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h1200v675H0z"/><path fill="url(#grid)" d="M0 0h1200v675H0z"/>
+  <circle cx="1034" cy="112" r="220" fill="#E5B175" fill-opacity=".14"/><circle cx="144" cy="596" r="220" fill="#8ECFC0" fill-opacity=".13"/>
+  <g transform="translate(0 10)">
+    <ellipse cx="603" cy="340" rx="257" ry="91" stroke="#D4E8DE" stroke-width="3" transform="rotate(30 603 340)"/>
+    <ellipse cx="603" cy="340" rx="257" ry="91" stroke="#D4E8DE" stroke-width="3" transform="rotate(-30 603 340)"/>
+    <ellipse cx="603" cy="340" rx="257" ry="91" stroke="#D4E8DE" stroke-width="3"/>
+    <circle cx="603" cy="340" r="43" fill="url(#orb)"/><circle cx="603" cy="340" r="15" fill="#163534"/>
+    <circle cx="389" cy="217" r="17" fill="#ED9771"/><circle cx="817" cy="217" r="17" fill="#E9C07D"/><circle cx="817" cy="463" r="17" fill="#8FCAB3"/>
+  </g>
+  <rect x="70" y="78" width="172" height="39" rx="19.5" fill="#E8F0E7" fill-opacity=".1" stroke="#E8F0E7" stroke-opacity=".22"/><text x="94" y="103" fill="#E8F0E7" font-family="Arial,sans-serif" font-size="14" letter-spacing="2">UI ENGINEERING</text>
+  <text x="70" y="604" fill="#E8F0E7" font-family="Arial,sans-serif" font-size="21" letter-spacing="3">COMPONENTS · STATE · COMPOSITION</text>
+  <text x="1005" y="604" fill="#E8F0E7" font-family="Arial,sans-serif" font-size="16" letter-spacing="2">REACT / 01</text>
+</svg>

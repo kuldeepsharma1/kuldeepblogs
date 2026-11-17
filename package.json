@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "validate:content": "node scripts/validate-content.mjs",
+    "validate:content:json": "node scripts/validate-content.mjs --json",
+    "validate:content:quiet": "node scripts/validate-content.mjs --quiet"
   },
   "dependencies": {
     "@mdx-js/react": "^3.1.1",
@@ -21,6 +24,7 @@
     "next": "16.2.12",
     "next-mdx-remote": "^6.0.0",
     "next-themes": "^0.4.6",
+    "open-graph-scraper": "^6.13.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "rehype-pretty-code": "^0.14.5",

@@ -1,0 +1,1321 @@
+---
+title: "SCP and SFTP"
+description: "Transfer files securely with SCP and SFTP and understand practical remote file-transfer workflows."
+slug: "08-scp-and-sftp"
+courseSlug: "linux-fundamentals"
+moduleSlug: "02-users-permissions-and-access"
+publishedAt: "2026-11-15"
+author: "Kuldeep Sharma"
+order: 8
+readingTime: "19 min"
+tags: ["linux", "ssh", "scp", "sftp", "file-transfer"]
+toc: true
+---
+
+## **1. Introduction**
+
+Once you can securely connect to a Linux server, the next common requirement is transferring files.
+
+Imagine you have developed an application locally and need to deploy it to a production server.
+
+You may need to transfer:
+
+- Application files.
+- Configuration files.
+- Backup archives.
+- Database exports.
+- Log files.
+- Deployment packages.
+- Diagnostic reports.
+
+Linux administrators commonly use two SSH-based file-transfer tools:
+
+**SCP — Secure Copy Protocol**
+
+Copies files between local and remote systems.
+
+**SFTP — SSH File Transfer Protocol**
+
+Provides an interactive file-transfer interface over SSH.
+
+Both use SSH authentication and encrypted connections.
+
+```
+Local machine
+    |
+    | SSH connection
+    |
+    ├──────── SCP
+    |          └── Copy files
+    |
+    └──────── SFTP
+               └── Interactive file management
+    |
+    ▼
+Remote Linux server
+```
+
+## **2. Conceptual Foundation**
+
+### **2.1 What is SCP?**
+
+SCP is a command-line utility for copying files between hosts.
+
+Its general syntax is:
+
+```
+scp SOURCE DESTINATION
+```
+
+Both source and destination can be local paths or remote paths.
+
+For example:
+
+```
+scp report.txt alice@server.example.com:/home/alice/
+```
+
+This copies a local file to a remote server.
+
+Downloading from the server:
+
+```
+scp alice@server.example.com:/home/alice/report.txt .
+```
+
+This copies the remote file into the current local directory.
+
+### **2.2 What is SFTP?**
+
+SFTP provides a file-transfer session over an SSH connection.
+
+It allows you to:
+
+- List remote directories.
+- Navigate remote directories.
+- Upload files.
+- Download files.
+- Create directories.
+- Rename files.
+- Remove files.
+- Inspect file permissions.
+- Change permitted file permissions.
+
+Unlike SCP's normal one-command transfer model, SFTP provides an interactive session.
+
+Example:
+
+```
+sftp alice@server.example.com
+```
+
+You then receive an SFTP prompt where you can enter commands.
+
+### **2.3 SCP vs SFTP**
+
+| Feature                      | SCP                       | SFTP                                     |
+| ---------------------------- | ------------------------- | ---------------------------------------- |
+| Main purpose                 | Copy files                | Interactive file management and transfer |
+| Connection security          | SSH                       | SSH                                      |
+| Interactive session          | No, normally              | Yes                                      |
+| Single-file transfer         | Yes                       | Yes                                      |
+| Recursive directory transfer | Yes, with `-r`            | Yes                                      |
+| Remote directory navigation  | Limited to path arguments | Yes                                      |
+| Batch operation              | Shell/script based        | Batch commands supported                 |
+| Permission operations        | Limited                   | Supports operations such as `chmod`      |
+| Best use                     | Quick file copies         | Managed file-transfer sessions           |
+
+### **2.4 An important OpenSSH detail**
+
+Modern OpenSSH `scp` uses the SFTP protocol for data transfers by default. This behavior has been in place since OpenSSH 9.0.
+
+The `-O` option selects the older SCP protocol for compatibility with certain older servers or behaviors. Prefer the default SFTP-based transfer unless a specific compatibility requirement requires legacy mode.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://man.openbsd.org\&sz=32)
+
+OpenBSD manual pages+1
+
+
+
+This distinction matters because the command is still named `scp`, even though modern implementations commonly use SFTP underneath.
+
+## **3. Windows-to-Linux Comparison**
+
+| Windows workflow                     | Linux equivalent          |
+| ------------------------------------ | ------------------------- |
+| File copy through Explorer           | `scp` or `sftp`           |
+| Remote file manager                  | SFTP client               |
+| Copy over a secure remote connection | SCP                       |
+| Interactive remote file management   | SFTP                      |
+| WinSCP                               | Graphical SFTP/SCP client |
+| PowerShell OpenSSH                   | `scp`, `sftp` and `ssh`   |
+
+A Windows administrator might use WinSCP to transfer files to a Linux server.
+
+A Linux administrator commonly performs the same work directly from the terminal.
+
+## **4. SCP — Basic Syntax and Commands**
+
+### **4.1 Upload a file**
+
+General syntax:
+
+```
+scp LOCAL_FILE USER@SERVER:REMOTE_PATH
+```
+
+Example:
+
+```
+scp report.txt alice@192.0.2.20:/home/alice/
+```
+
+The file is copied from your computer to the remote user's home directory.
+
+### **4.2 Download a file**
+
+General syntax:
+
+```
+scp USER@SERVER:REMOTE_FILE LOCAL_DIRECTORY
+```
+
+Example:
+
+```
+scp alice@192.0.2.20:/home/alice/report.txt ~/Downloads/
+```
+
+This copies the remote file to your local Downloads directory.
+
+### **4.3 Copy a directory**
+
+Use `-r` for recursive copying:
+
+```
+scp -r website/ alice@192.0.2.20:/var/www/
+```
+
+This transfers the directory and its contents.
+
+The remote user must have permission to write to the destination.
+
+### **4.4 Copy using a specific private key**
+
+```
+scp -i ~/.ssh/id_ed25519_lab report.txt alice@192.0.2.20:/home/alice/
+```
+
+The `-i` option selects the identity file used by SSH authentication.
+
+### **4.5 Use a custom SSH port**
+
+This is an easy option to confuse.
+
+For SSH:
+
+```
+ssh -p 2222 alice@192.0.2.20
+```
+
+For SCP:
+
+```
+scp -P 2222 report.txt alice@192.0.2.20:/home/alice/
+```
+
+Notice the difference:
+
+| Command | Port option    |
+| ------- | -------------- |
+| `ssh`   | Lowercase `-p` |
+| `scp`   | Uppercase `-P` |
+| `sftp`  | Uppercase `-P` |
+
+### **4.6 Preserve file timestamps and modes**
+
+```
+scp -p report.txt alice@192.0.2.20:/home/alice/
+```
+
+The lowercase `-p` option preserves file modification times, access times and mode bits.
+
+Do not confuse it with SCP's uppercase `-P`, which specifies the remote port.
+
+### **4.7 Compression**
+
+```
+scp -C backup.tar alice@192.0.2.20:/home/alice/
+```
+
+`-C` enables compression.
+
+Compression may help when transferring compressible data over a constrained connection.
+
+It may provide little benefit for files already compressed, such as ZIP, JPEG or many compressed archives.
+
+### **4.8 Verbose transfer output**
+
+```
+scp -v report.txt alice@192.0.2.20:/home/alice/
+```
+
+Use it to investigate authentication and connection problems.
+
+More detailed output is available with:
+
+```
+scp -vvv report.txt alice@192.0.2.20:/home/alice/
+```
+
+### **4.9 Limit transfer bandwidth**
+
+```
+scp -l 2000 backup.tar alice@192.0.2.20:/home/alice/
+```
+
+The `-l` option limits transfer bandwidth in Kbit/s.
+
+This can help prevent a large transfer from consuming too much network capacity.
+
+### **4.10 Copy with an SSH configuration alias**
+
+Suppose your SSH configuration contains:
+
+```
+Host production-web
+    HostName 192.0.2.20
+    User deploy
+    IdentityFile ~/.ssh/id_ed25519_deployment
+    IdentitiesOnly yes
+```
+
+You can use:
+
+```
+scp report.txt production-web:/home/deploy/
+```
+
+SCP uses the SSH client configuration, so you do not need to repeat every connection setting.
+
+## **5. Understanding Remote Paths**
+
+Remote path syntax is important.
+
+For example:
+
+```
+scp report.txt alice@server.example.com:/home/alice/reports/
+```
+
+Breakdown:
+
+```
+report.txt
+    │
+    └── Local source
+
+alice@server.example.com
+    │
+    └── Remote account and host
+
+:/home/alice/reports/
+    │
+    └── Remote destination path
+```
+
+### **5.1 Relative remote path**
+
+```
+scp report.txt alice@server.example.com:reports/
+```
+
+The relative path is interpreted in the remote user's context, generally relative to their home directory.
+
+### **5.2 Absolute remote path**
+
+```
+scp report.txt alice@server.example.com:/var/www/application/
+```
+
+The leading `/` indicates an absolute remote path.
+
+### **5.3 Filenames containing spaces**
+
+Use appropriate quoting:
+
+```
+scp "quarterly report.txt" alice@server.example.com:"/home/alice/reports/"
+```
+
+When filenames contain shell-special characters, remember that the local shell and remote path interpretation are separate concerns.
+
+For complicated filenames, prefer SFTP's interactive commands or carefully tested quoting.
+
+## **6. SFTP — Interactive File Transfer**
+
+### **6.1 Connect to a server**
+
+Basic syntax:
+
+```
+sftp alice@server.example.com
+```
+
+With a custom port:
+
+```
+sftp -P 2222 alice@server.example.com
+```
+
+With a particular key:
+
+```
+sftp -i ~/.ssh/id_ed25519_lab alice@server.example.com
+```
+
+You can combine them:
+
+```
+sftp -P 2222 -i ~/.ssh/id_ed25519_lab alice@server.example.com
+```
+
+A successful connection normally gives an interactive prompt:
+
+```
+sftp>
+```
+
+### **6.2 Understand local and remote directories**
+
+SFTP maintains two working-directory contexts:
+
+- Remote working directory.
+- Local working directory.
+
+Useful commands:
+
+| Command | Meaning                 |
+| ------- | ----------------------- |
+| `pwd`   | Show remote directory   |
+| `lpwd`  | Show local directory    |
+| `ls`    | List remote directory   |
+| `lls`   | List local directory    |
+| `cd`    | Change remote directory |
+| `lcd`   | Change local directory  |
+
+This distinction is critical.
+
+In SFTP:
+
+```
+cd /var/www
+```
+
+changes the remote directory.
+
+Whereas:
+
+```
+lcd ~/Downloads
+```
+
+changes the local directory.
+
+### **6.3 Upload a file**
+
+```
+sftp> put report.txt
+```
+
+Upload it to a named remote path:
+
+```
+sftp> put report.txt /home/alice/reports/report.txt
+```
+
+### **6.4 Download a file**
+
+```
+sftp> get /home/alice/reports/report.txt
+```
+
+Download to a particular local path:
+
+```
+sftp> get /home/alice/reports/report.txt ~/Downloads/report.txt
+```
+
+### **6.5 Upload a directory**
+
+```
+sftp> put -r website/
+```
+
+This recursively uploads a directory.
+
+### **6.6 Download a directory**
+
+```
+sftp> get -r /home/alice/website/
+```
+
+This recursively downloads the remote directory.
+
+### **6.7 Create a remote directory**
+
+```
+sftp> mkdir reports
+```
+
+### **6.8 Rename a remote file**
+
+```
+sftp> rename old-name.txt new-name.txt
+```
+
+### **6.9 Delete a remote file**
+
+```
+sftp> rm report.txt
+```
+
+### **6.10 Remove a remote directory**
+
+```
+sftp> rmdir old-reports
+```
+
+The directory must be empty for the normal `rmdir` operation.
+
+### **6.11 Change remote file permissions**
+
+```
+sftp> chmod 640 report.txt
+```
+
+The remote user must have the necessary privileges.
+
+### **6.12 Exit SFTP**
+
+```
+sftp> exit
+```
+
+Or:
+
+```
+sftp> quit
+```
+
+### **6.13 View available SFTP commands**
+
+```
+sftp> help
+```
+
+This displays the commands supported by your installed OpenSSH SFTP client.
+
+## **7. SFTP Batch Mode**
+
+SFTP can execute commands from a file.
+
+This is useful for repeatable transfers and automation.
+
+Create a batch file:
+
+```
+cat > transfer.batch <<'EOF'
+pwd
+ls
+mkdir reports
+put report.txt reports/report.txt
+ls reports
+EOF
+```
+
+Run:
+
+```
+sftp -b transfer.batch alice@server.example.com
+```
+
+With a custom port and key:
+
+```
+sftp -b transfer.batch \
+  -P 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  alice@server.example.com
+```
+
+Batch mode is useful when the transfer commands are predictable.
+
+However, automation should also check exit codes and handle connection failures. Do not assume that a partially completed transfer means the whole workflow succeeded.
+
+## **8. SCP and SFTP in Production Workflows**
+
+Consider a developer deploying a website.
+
+The local project contains:
+
+```
+website/
+├── index.html
+├── assets/
+│   ├── app.css
+│   └── app.js
+└── images/
+```
+
+The deployment workflow might be:
+
+```
+Developer's computer
+        │
+        ▼
+Build website
+        │
+        ▼
+Transfer build files
+        │
+        ▼
+Linux server
+        │
+        ▼
+Deploy into application directory
+        │
+        ▼
+Web server serves new version
+```
+
+A simple upload might use:
+
+```
+scp -r dist/ deploy@server.example.com:/var/www/myapp/
+```
+
+But production deployments often require a more controlled process:
+
+- Upload to a temporary release directory.
+- Verify the files.
+- Set correct ownership and permissions.
+- Run application checks.
+- Switch the active release.
+- Roll back if validation fails.
+
+SCP and SFTP transfer files. They do not automatically make an application deployment safe.
+
+### **When should you use SCP?**
+
+Use SCP when you need a simple, direct copy:
+
+- Upload a configuration file.
+- Download a server log.
+- Transfer a backup archive.
+- Copy a deployment artifact.
+
+### **When should you use SFTP?**
+
+Use SFTP when you need:
+
+- Interactive remote navigation.
+- Multiple uploads and downloads in one session.
+- Remote file management.
+- Scripted batch transfers.
+- A dedicated file-transfer workflow.
+
+### **When should you consider rsync?**
+
+For large directories, repeated backups, incremental deployments or transfers that benefit from synchronization, `rsync` over SSH is often more appropriate.
+
+For example:
+
+```
+rsync -avz -e ssh ./website/ deploy@server.example.com:/var/www/myapp/
+```
+
+Rsync is a separate topic to explore later in production operations.
+
+## **9. Practical Demonstration — File Transfer Lab in WSL2**
+
+Works in WSL2 Ubuntu
+
+We will reuse the local SSH server from Topic 07.
+
+Keep the SSH server running in the first WSL terminal:
+
+```
+sudo /usr/sbin/sshd -D -e -f /tmp/sshd-lab.conf
+```
+
+Perform the following steps in your second WSL terminal.
+
+### **Step 1 — Define the lab paths**
+
+```
+LAB="$HOME/linux-learning/lab-17-transfer"
+
+mkdir -p "$LAB/source/assets" "$LAB/downloads"
+```
+
+The structure will be:
+
+```
+lab-17-transfer/
+├── source/
+│   └── assets/
+└── downloads/
+```
+
+### **Step 2 — Create sample files**
+
+```
+printf 'Linux file transfer demonstration\n' > "$LAB/source/report.txt"
+
+printf 'body { font-family: sans-serif; }\n' > "$LAB/source/assets/app.css"
+
+printf 'console.log("Hello Linux");\n' > "$LAB/source/assets/app.js"
+```
+
+Inspect:
+
+```
+find "$LAB/source" -type f -print
+```
+
+### **Step 3 — Verify the SSH connection**
+
+```
+ssh -p 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1 "whoami"
+```
+
+Expected:
+
+```
+sshlab
+```
+
+### **Step 4 — Create the remote destination**
+
+```
+ssh -p 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1 "mkdir -p ~/incoming"
+```
+
+This creates a directory on the remote test account.
+
+### **Step 5 — Upload one file using SCP**
+
+```
+scp -P 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  "$LAB/source/report.txt" \
+  sshlab@127.0.0.1:incoming/
+```
+
+The file is now on the remote machine.
+
+### **Step 6 — Verify the remote file**
+
+```
+ssh -p 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1 "ls -l ~/incoming"
+```
+
+You should see:
+
+```
+report.txt
+```
+
+### **Step 7 — Download the file**
+
+```
+scp -P 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1:incoming/report.txt \
+  "$LAB/downloads/"
+```
+
+Verify:
+
+```
+ls -l "$LAB/downloads"
+cat "$LAB/downloads/report.txt"
+```
+
+### **Step 8 — Upload a directory recursively**
+
+```
+scp -r -P 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  "$LAB/source/assets" \
+  sshlab@127.0.0.1:incoming/
+```
+
+Verify remotely:
+
+```
+ssh -p 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1 "find ~/incoming -type f -print"
+```
+
+### **Step 9 — Verify file integrity**
+
+Calculate the local checksum:
+
+```
+sha256sum "$LAB/source/report.txt"
+```
+
+Calculate the remote checksum:
+
+```
+ssh -p 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1 "sha256sum ~/incoming/report.txt"
+```
+
+The two hashes should match.
+
+This confirms that the transferred file's contents are identical.
+
+## **10. Practical Demonstration — SFTP Interactive Session**
+
+Start:
+
+```
+sftp -P 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1
+```
+
+At the SFTP prompt, run:
+
+```
+pwd
+lpwd
+ls
+lls
+```
+
+You should see the remote and local working directories.
+
+Create a remote directory:
+
+```
+mkdir sftp-test
+```
+
+Upload a local file:
+
+```
+put /home/YOUR_LINUX_USER/linux-learning/lab-17-transfer/source/report.txt sftp-test/report.txt
+```
+
+Replace `YOUR_LINUX_USER` with your actual WSL Linux username.
+
+List the remote directory:
+
+```
+ls sftp-test
+```
+
+Download the file:
+
+```
+get sftp-test/report.txt
+```
+
+Create a local destination folder from the SFTP prompt:
+
+```
+lcd /home/YOUR_LINUX_USER/linux-learning/lab-17-transfer/downloads
+```
+
+Download to that folder:
+
+```
+get sftp-test/report.txt
+```
+
+Inspect:
+
+```
+lls
+```
+
+Rename the remote file:
+
+```
+rename sftp-test/report.txt sftp-test/final-report.txt
+```
+
+Inspect the result:
+
+```
+ls sftp-test
+```
+
+Exit:
+
+```
+quit
+```
+
+This demonstrates that SFTP can manage remote files and directories interactively, not merely copy a single file.
+
+## **11. Practical Demonstration — SFTP Batch Transfer**
+
+Create a batch file:
+
+```
+cat > "$LAB/sftp.batch" <<'EOF'
+mkdir batch-upload
+put /home/REPLACE_WITH_USER/linux-learning/lab-17-transfer/source/report.txt batch-upload/report.txt
+ls batch-upload
+EOF
+```
+
+Edit the path by replacing `REPLACE_WITH_USER` with your WSL username.
+
+Then execute:
+
+```
+sftp -b "$LAB/sftp.batch" \
+  -P 2222 \
+  -i ~/.ssh/id_ed25519_lab \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/known_hosts_lab \
+  sshlab@127.0.0.1
+```
+
+The batch commands should execute without requiring manual interaction for each operation.
+
+**Note:** The batch file is just text containing SFTP commands. It is not a Bash script.
+
+## **12. Troubleshooting SCP and SFTP**
+
+| Problem                                 | Possible cause                                       | What to inspect                     |
+| --------------------------------------- | ---------------------------------------------------- | ----------------------------------- |
+| `Connection refused`                    | SSH server is not listening                          | `ss -tnlp`, SSH server terminal     |
+| `Permission denied`                     | Wrong key, user or remote directory permissions      | `ssh -vvv`, `ls -ld` remotely       |
+| `No such file or directory`             | Incorrect local or remote path                       | `pwd`, SFTP `pwd`, `ls`             |
+| `not a regular file`                    | Source is a directory without recursive transfer     | Use `scp -r`                        |
+| SCP uses wrong port                     | Used `-p` instead of `-P`                            | Inspect the SCP command             |
+| File uploaded to unexpected path        | Relative path interpreted in remote home context     | Use an absolute path                |
+| SFTP login works but transfer fails     | Remote directory is not writable                     | `ls -ld`, `id` remotely             |
+| Host key verification failure           | Server identity changed or known-host entry mismatch | Verify fingerprint                  |
+| `Permission denied (publickey)`         | Key absent from `authorized_keys` or wrong account   | Inspect server account and key file |
+| Transfer works but output is incomplete | Transfer failed or destination was incorrect         | Check exit code and verify checksum |
+
+### **12.1 Inspect remote permissions**
+
+Connect:
+
+```
+ssh -p 2222 sshlab@127.0.0.1
+```
+
+Then:
+
+```
+pwd
+ls -ld .
+ls -la
+```
+
+A user may authenticate successfully but still lack permission to write to a particular directory.
+
+Authentication and filesystem authorization are separate checks.
+
+### **12.2 Check SSH connectivity**
+
+```
+ss -tnlp
+```
+
+This displays listening TCP sockets and their associated processes where permissions allow.
+
+For our lab, you should see SSH listening on the loopback address and port `2222`.
+
+### **12.3 Check exit codes**
+
+After running SCP:
+
+```
+echo $?
+```
+
+Typically:
+
+```
+0
+```
+
+means success.
+
+A nonzero exit status means the operation failed. You should examine the preceding error messages rather than assume that the destination received a complete file.
+
+### **12.4 Verify transferred data**
+
+For important files:
+
+```
+sha256sum local-file
+```
+
+Then calculate the checksum remotely:
+
+```
+ssh user@server "sha256sum /remote/path/file"
+```
+
+Compare the hashes.
+
+SSH already protects data integrity during network transport, but an independent checksum is useful for verifying the final files and detecting mistakes in paths or subsequent processing.
+
+## **13. Security Practices for File Transfers**
+
+### **13.1 Never transfer a private SSH key to the server**
+
+Bad practice:
+
+```
+scp ~/.ssh/id_ed25519 user@server:/home/user/
+```
+
+This exposes your private key to the remote machine.
+
+The server needs the public key in `authorized_keys`, not your private key.
+
+### **13.2 Avoid transferring secrets into public directories**
+
+For example, do not casually upload:
+
+```
+.env
+database-passwords.txt
+private-key.pem
+```
+
+to directories accessible to unrelated accounts or web users.
+
+### **13.3 Check destination permissions**
+
+Before copying sensitive files:
+
+```
+ssh user@server "ls -ld /path/to/destination"
+```
+
+Make sure the remote account has the intended access and the directory is not unnecessarily accessible to others.
+
+### **13.4 Use separate deployment identities**
+
+A dedicated deployment account is often preferable to using a human administrator's personal account for automation.
+
+For example:
+
+```
+deploy
+```
+
+The account should receive only the required access to application directories and deployment operations.
+
+### **13.5 Use resumable/synchronization tools for larger transfers**
+
+SCP is convenient but is not a complete synchronization or backup system.
+
+For large directory trees and repeated deployments, consider:
+
+- `rsync`
+- Managed backup tools
+- Object storage transfer tools
+- Dedicated deployment systems
+
+## **14. Real-World Scenario — Moving a Backup to a Server**
+
+Imagine a database backup exists locally:
+
+```
+~/backups/database-2026-11-15.sql.gz
+```
+
+You need to upload it to a backup server.
+
+A simple command:
+
+```
+scp -i ~/.ssh/id_ed25519_backup \
+  ~/backups/database-2026-11-15.sql.gz \
+  backup@backup.example.com:/srv/backups/
+```
+
+After transfer, verify its presence:
+
+```
+ssh -i ~/.ssh/id_ed25519_backup backup@backup.example.com \
+  "ls -lh /srv/backups/database-2026-11-15.sql.gz"
+```
+
+Then verify its checksum.
+
+In a production backup process, you should also consider:
+
+- Backup encryption.
+- Restricted backup-account access.
+- Retention policies.
+- Backup integrity testing.
+- Restore testing.
+- Monitoring and failure notification.
+
+A successful file transfer does not prove that a backup can be restored.
+
+That will become important in the later host-operations projects.
+
+## **15. Advanced Notes**
+
+### **15.1 SCP vs SFTP vs rsync**
+
+| Tool  | Best suited for                                  |
+| ----- | ------------------------------------------------ |
+| SCP   | Straightforward file copying                     |
+| SFTP  | Interactive and scripted file management         |
+| rsync | Efficient synchronization and repeated transfers |
+
+### **15.2 SSH jump hosts**
+
+In production, a server may not be directly reachable from your computer.
+
+You may need to connect through an intermediate host.
+
+SSH supports jump hosts through `ProxyJump`.
+
+Example:
+
+```
+Host production-internal
+    HostName 10.0.0.20
+    User deploy
+    ProxyJump bastion
+    IdentityFile ~/.ssh/id_ed25519_deployment
+
+Host bastion
+    HostName bastion.example.com
+    User gateway
+    IdentityFile ~/.ssh/id_ed25519_gateway
+```
+
+Now:
+
+```
+ssh production-internal
+```
+
+SSH connects through the bastion host.
+
+SCP and SFTP can use SSH configuration too.
+
+### **15.3 SFTP restrictions**
+
+Administrators can configure accounts to use SFTP without receiving a normal interactive shell.
+
+A common mechanism is:
+
+```
+ForceCommand internal-sftp
+```
+
+combined with appropriate account restrictions, directories and possibly chroot configuration.
+
+This is useful for accounts whose purpose is file transfer only.
+
+However, a chroot environment needs careful ownership and directory-layout configuration. Do not experiment with it on a production server without a recovery path.
+
+## **16. WSL-Specific Considerations**
+
+The SSH, SCP and SFTP commands work in WSL2 Ubuntu.
+
+A few important distinctions:
+
+- Your WSL Linux home directory is separate from your Windows user profile.
+- Files under `/home/your-user` use Linux filesystem behavior.
+- Windows files may be accessible under `/mnt/c`.
+- Remote file paths are interpreted by the remote server, not your Windows host.
+- Your WSL SSH client does not automatically configure Windows' separate OpenSSH configuration or agent environment.
+- Running an SSH server inside WSL is a useful practice exercise, but it is not a substitute for securing a publicly reachable Linux server.
+
+For the course, keep private keys, configuration and lab data under:
+
+```
+~/linux-learning/
+```
+
+## **17. Lab Cleanup**
+
+When you have completed both SSH and file-transfer exercises, stop the local SSH server.
+
+Return to the terminal where it is running and press:
+
+```
+Ctrl + C
+```
+
+Then clean up the disposable account and host-key database.
+
+Inspect the resources first:
+
+```
+sudo ls -la /home/sshlab
+ls -l ~/.ssh/known_hosts_lab
+```
+
+Remove the disposable test account:
+
+```
+sudo userdel -r sshlab
+```
+
+Remove the isolated configuration:
+
+```
+sudo rm -f /tmp/sshd-lab.conf /tmp/sshd-lab.pid
+```
+
+Remove only the lab-specific SSH key and known-host file if you no longer need them:
+
+```
+rm -f ~/.ssh/id_ed25519_lab
+rm -f ~/.ssh/id_ed25519_lab.pub
+rm -f ~/.ssh/known_hosts_lab
+```
+
+Do not remove your normal `~/.ssh` directory or other keys.
+
+You can keep the transfer exercise files for future revision:
+
+```
+~/linux-learning/lab-17-transfer/
+```
+
+## **18. Teaching Summary**
+
+**Topic 08 — SCP and SFTP**
+
+**SCP**
+
+- `scp source destination` — Copy files.
+- `scp -r` — Copy directories recursively.
+- `scp -i` — Select private key.
+- `scp -P` — Select remote port.
+- `scp -p` — Preserve timestamps and mode bits.
+- Modern OpenSSH uses SFTP transport by default.
+
+**SFTP**
+
+- `sftp user@host` — Start a session.
+- `put` — Upload.
+- `get` — Download.
+- `ls` — List remote files.
+- `lls` — List local files.
+- `cd` — Change remote directory.
+- `lcd` — Change local directory.
+- `mkdir`, `rename`, `rm`, `rmdir` — Manage remote files and directories.
+- `-b` — Run a batch file.
+
+**Production principles**
+
+- Protect private keys.
+- Verify server host keys.
+- Check remote directory permissions.
+- Verify important transfers with checksums.
+- Use dedicated deployment identities.
+
+# **MODULE 02 — PROGRESS**
+
+**Users, Permissions & Access**
+
+# **8/9**
+
+Eight of nine curriculum areas covered.
+
+1. Users and Groups&#x20;
+
+   Covered
+
+2. File Permissions: rwx and umask&#x20;
+
+   Covered
+
+3. Ownership and Group Ownership&#x20;
+
+   Covered
+
+4. SUID, SGID and Sticky Bit&#x20;
+
+   Covered
+
+5. Access Control Lists (ACLs)&#x20;
+
+   Covered
+
+6. sudo and Administrative Policy&#x20;
+
+   Covered
+
+7. SSH Keys and SSH Agent&#x20;
+
+   Covered
+
+8. SCP and SFTP&#x20;
+
+   Covered
+
+9. Linux Capabilities Overview
+
+## **Next lesson — Final topic of Module 02**
+
+**Topic 09 — Linux Capabilities Overview**
+
+We will examine how Linux divides traditional root privileges into smaller capabilities, including:
+
+- `CAP_NET_BIND_SERVICE`
+- `CAP_NET_ADMIN`
+- `CAP_SYS_ADMIN`
+- `CAP_CHOWN`
+- `CAP_SETUID`
+- `CAP_DAC_OVERRIDE`
+- `getcap` and `setcap`
+- Capability inspection through `/proc`
+- File capabilities vs process capabilities
+- How capabilities relate to containers and service security
+- Production examples and security risks
+
+After that, we will complete Module 02 and move into **Module 03 — Services and Scheduling**.
+
+Reference for current OpenSSH SCP behavior: [OpenBSD scp manual](https://man.openbsd.org/scp?utm_source=chatgpt.com).
